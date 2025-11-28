@@ -3,7 +3,7 @@ import { ComponentCard } from '@/components/calculator/ComponentCard';
 import { PriceSummary } from '@/components/calculator/PriceSummary';
 import { useComponents } from '@/hooks/useComponents';
 import { useSettings } from '@/hooks/useSettings';
-import { Search, Sparkles, Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useMemo } from 'react';
 
@@ -38,21 +38,6 @@ const Index = () => {
       <Header />
       
       <main className="container py-8 lg:py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
-            Professional Software Cost Calculator
-          </div>
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4">
-            Build Your Perfect
-            <span className="gradient-text block">Software Quote</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Select the components you need and get an instant, detailed price estimate for your project.
-          </p>
-        </div>
-
         <div className="grid lg:grid-cols-[1fr,380px] gap-8">
           {/* Components Section */}
           <div className="space-y-6">
