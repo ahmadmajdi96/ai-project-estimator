@@ -1,29 +1,37 @@
 import { Header } from '@/components/layout/Header';
 import { ComponentCard } from '@/components/calculator/ComponentCard';
 import { PriceSummary } from '@/components/calculator/PriceSummary';
-import { useCalculatorStore } from '@/store/calculatorStore';
-import { Search, Sparkles } from 'lucide-react';
+import { useComponents } from '@/hooks/useComponents';
+import { useSettings } from '@/hooks/useSettings';
+import { Search, Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useMemo } from 'react';
 
 const Index = () => {
-  const { components } = useCalculatorStore();
+  const { data: components, isLoading: isLoadingComponents } = useComponents();
+  const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  const profitMargin = settings?.profit_margin || 25;
+
   const categories = useMemo(() => {
+    if (!components) return [];
     const cats = new Set(components.map((c) => c.category));
     return Array.from(cats);
   }, [components]);
 
   const filteredComponents = useMemo(() => {
+    if (!components) return [];
     return components.filter((c) => {
       const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.description.toLowerCase().includes(searchQuery.toLowerCase());
+        (c.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       const matchesCategory = !selectedCategory || c.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
   }, [components, searchQuery, selectedCategory]);
+
+  const isLoading = isLoadingComponents || isLoadingSettings;
 
   return (
     <div className="min-h-screen bg-background">
@@ -94,7 +102,7 @@ const Index = () => {
                   className="animate-fade-in"
                   style={{ animationDelay: `${(index + 2) * 0.05}s` }}
                 >
-                  <ComponentCard component={component} />
+                  <ComponentCard component={component} profitMargin={profitMargin} />
                 </div>
               ))}
             </div>
