@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { useCalculatorStore } from '@/store/calculatorStore';
-import { ComponentItem } from '@/types/calculator';
+import { useComponents, useAddComponent, useUpdateComponent, useDeleteComponent, DbComponent } from '@/hooks/useComponents';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit2, Trash2, Plus, Globe, FileText, Bot, ShoppingCart, Shield, Code, Image, BarChart3, Sparkles } from 'lucide-react';
+import { Edit2, Trash2, Plus, Globe, FileText, Bot, ShoppingCart, Shield, Code, Image, BarChart3, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const icons = [
@@ -24,30 +23,37 @@ const icons = [
 
 const categories = ['Website', 'AI Services', 'Features', 'Backend', 'Design', 'Integrations'];
 
-interface ComponentFormProps {
-  component?: ComponentItem;
-  onSave: (component: Omit<ComponentItem, 'id'> & { id?: string }) => void;
-  onClose: () => void;
+interface ComponentFormData {
+  name: string;
+  description: string;
+  category: string;
+  base_cost: number;
+  base_price: number;
+  is_base: boolean;
+  icon: string;
 }
 
-function ComponentForm({ component, onSave, onClose }: ComponentFormProps) {
-  const [formData, setFormData] = useState({
+interface ComponentFormProps {
+  component?: DbComponent;
+  onSave: (data: ComponentFormData, id?: string) => void;
+  onClose: () => void;
+  isLoading: boolean;
+}
+
+function ComponentForm({ component, onSave, onClose, isLoading }: ComponentFormProps) {
+  const [formData, setFormData] = useState<ComponentFormData>({
     name: component?.name || '',
     description: component?.description || '',
     category: component?.category || 'Website',
-    baseCost: component?.baseCost || 0,
-    basePrice: component?.basePrice || 0,
-    isBase: component?.isBase || false,
+    base_cost: component?.base_cost || 0,
+    base_price: component?.base_price || 0,
+    is_base: component?.is_base || false,
     icon: component?.icon || 'Sparkles',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      id: component?.id,
-    });
-    onClose();
+    onSave(formData, component?.id);
   };
 
   return (
@@ -118,24 +124,24 @@ function ComponentForm({ component, onSave, onClose }: ComponentFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="baseCost">Base Cost ($)</Label>
+          <Label htmlFor="base_cost">Base Cost ($)</Label>
           <Input
-            id="baseCost"
+            id="base_cost"
             type="number"
             min="0"
-            value={formData.baseCost}
-            onChange={(e) => setFormData({ ...formData, baseCost: Number(e.target.value) })}
+            value={formData.base_cost}
+            onChange={(e) => setFormData({ ...formData, base_cost: Number(e.target.value) })}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="basePrice">Base Price ($)</Label>
+          <Label htmlFor="base_price">Base Price ($)</Label>
           <Input
-            id="basePrice"
+            id="base_price"
             type="number"
             min="0"
-            value={formData.basePrice}
-            onChange={(e) => setFormData({ ...formData, basePrice: Number(e.target.value) })}
+            value={formData.base_price}
+            onChange={(e) => setFormData({ ...formData, base_price: Number(e.target.value) })}
           />
         </div>
       </div>
@@ -143,12 +149,12 @@ function ComponentForm({ component, onSave, onClose }: ComponentFormProps) {
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
-          id="isBase"
-          checked={formData.isBase}
-          onChange={(e) => setFormData({ ...formData, isBase: e.target.checked })}
+          id="is_base"
+          checked={formData.is_base}
+          onChange={(e) => setFormData({ ...formData, is_base: e.target.checked })}
           className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
         />
-        <Label htmlFor="isBase" className="text-sm text-muted-foreground">
+        <Label htmlFor="is_base" className="text-sm text-muted-foreground">
           Mark as base component (required in all quotes)
         </Label>
       </div>
@@ -157,7 +163,8 @@ function ComponentForm({ component, onSave, onClose }: ComponentFormProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit" variant="gradient">
+        <Button type="submit" variant="gradient" disabled={isLoading}>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           {component ? 'Update' : 'Create'} Component
         </Button>
       </div>
@@ -166,20 +173,33 @@ function ComponentForm({ component, onSave, onClose }: ComponentFormProps) {
 }
 
 export function ComponentEditor() {
-  const { components, addComponent, updateComponent, deleteComponent } = useCalculatorStore();
-  const [editingComponent, setEditingComponent] = useState<ComponentItem | null>(null);
+  const { data: components, isLoading: isLoadingComponents } = useComponents();
+  const addComponent = useAddComponent();
+  const updateComponent = useUpdateComponent();
+  const deleteComponent = useDeleteComponent();
+  
+  const [editingComponent, setEditingComponent] = useState<DbComponent | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleSave = (data: Omit<ComponentItem, 'id'> & { id?: string }) => {
-    if (data.id) {
-      updateComponent(data.id, data);
+  const handleSave = (data: ComponentFormData, id?: string) => {
+    if (id) {
+      updateComponent.mutate({ id, ...data }, {
+        onSuccess: () => setIsDialogOpen(false),
+      });
     } else {
-      addComponent({
-        ...data,
-        id: Date.now().toString(),
-      } as ComponentItem);
+      addComponent.mutate(data, {
+        onSuccess: () => setIsDialogOpen(false),
+      });
     }
   };
+
+  if (isLoadingComponents) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,13 +231,14 @@ export function ComponentEditor() {
               component={editingComponent || undefined}
               onSave={handleSave}
               onClose={() => setIsDialogOpen(false)}
+              isLoading={addComponent.isPending || updateComponent.isPending}
             />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="space-y-3">
-        {components.map((component) => {
+        {components?.map((component) => {
           const IconComponent = icons.find((i) => i.name === component.icon)?.Icon || Sparkles;
           return (
             <div
@@ -231,7 +252,7 @@ export function ComponentEditor() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-foreground">{component.name}</h3>
-                    {component.isBase && (
+                    {component.is_base && (
                       <span className="text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full">
                         Base
                       </span>
@@ -244,7 +265,7 @@ export function ComponentEditor() {
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Cost / Price</p>
                   <p className="font-medium text-foreground">
-                    ${component.baseCost.toLocaleString()} / ${component.basePrice.toLocaleString()}
+                    ${component.base_cost.toLocaleString()} / ${component.base_price.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -262,7 +283,8 @@ export function ComponentEditor() {
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => deleteComponent(component.id)}
+                    onClick={() => deleteComponent.mutate(component.id)}
+                    disabled={deleteComponent.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

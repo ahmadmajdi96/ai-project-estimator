@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ComponentItem } from '@/types/calculator';
+import { DbComponent } from '@/hooks/useComponents';
 import { useCalculatorStore } from '@/store/calculatorStore';
 import { Check, Minus, Plus, Globe, FileText, Bot, ShoppingCart, Shield, Code, Image, BarChart3, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,12 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 interface ComponentCardProps {
-  component: ComponentItem;
+  component: DbComponent;
+  profitMargin: number;
 }
 
-export function ComponentCard({ component }: ComponentCardProps) {
-  const { selectedComponents, toggleComponent, setComponentQuantity, profitMargin } = useCalculatorStore();
+export function ComponentCard({ component, profitMargin }: ComponentCardProps) {
+  const { selectedComponents, toggleComponent, setComponentQuantity } = useCalculatorStore();
   
   const selected = selectedComponents.find((sc) => sc.componentId === component.id);
   const isSelected = !!selected;
@@ -29,7 +30,7 @@ export function ComponentCard({ component }: ComponentCardProps) {
 
   const Icon = iconMap[component.icon || 'Sparkles'] || Sparkles;
   
-  const finalPrice = component.basePrice * (1 + profitMargin / 100);
+  const finalPrice = component.base_price * (1 + profitMargin / 100);
 
   return (
     <div
@@ -69,7 +70,7 @@ export function ComponentCard({ component }: ComponentCardProps) {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <h3 className="font-display font-semibold text-foreground">{component.name}</h3>
-          {component.isBase && (
+          {component.is_base && (
             <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-foreground">
               Base
             </span>
@@ -88,7 +89,7 @@ export function ComponentCard({ component }: ComponentCardProps) {
         </div>
 
         {/* Quantity controls */}
-        {isSelected && !component.isBase && (
+        {isSelected && !component.is_base && (
           <div
             className="flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}

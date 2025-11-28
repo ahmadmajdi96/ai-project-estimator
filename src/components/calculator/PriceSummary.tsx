@@ -1,10 +1,16 @@
 import { useCalculatorStore } from '@/store/calculatorStore';
+import { useComponents } from '@/hooks/useComponents';
+import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
-import { FileDown, RefreshCw, Sparkles } from 'lucide-react';
+import { FileDown, RefreshCw, Sparkles, Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
 
 export function PriceSummary() {
-  const { selectedComponents, components, profitMargin, clearSelection } = useCalculatorStore();
+  const { selectedComponents, clearSelection } = useCalculatorStore();
+  const { data: components, isLoading: isLoadingComponents } = useComponents();
+  const { data: settings, isLoading: isLoadingSettings } = useSettings();
+
+  const profitMargin = settings?.profit_margin || 25;
 
   const { subtotal, total, savings, itemCount } = useMemo(() => {
     let subtotal = 0;
@@ -13,7 +19,7 @@ export function PriceSummary() {
     selectedComponents.forEach((sc) => {
       const component = components.find((c) => c.id === sc.componentId);
       if (component) {
-        const price = component.basePrice * (1 + profitMargin / 100);
+const price = component.base_price * (1 + profitMargin / 100);
         subtotal += price * sc.quantity;
         itemCount += sc.quantity;
       }
@@ -29,7 +35,7 @@ export function PriceSummary() {
   const handleExport = () => {
     const selectedDetails = selectedComponents.map((sc) => {
       const component = components.find((c) => c.id === sc.componentId);
-      const price = component ? component.basePrice * (1 + profitMargin / 100) : 0;
+      const price = component ? component.base_price * (1 + profitMargin / 100) : 0;
       return {
         name: component?.name,
         quantity: sc.quantity,
@@ -73,7 +79,7 @@ export function PriceSummary() {
           {selectedComponents.map((sc) => {
             const component = components.find((c) => c.id === sc.componentId);
             if (!component) return null;
-            const price = component.basePrice * (1 + profitMargin / 100);
+            const price = component.base_price * (1 + profitMargin / 100);
             return (
               <div key={sc.componentId} className="flex items-center justify-between text-sm">
                 <span className="text-foreground">
