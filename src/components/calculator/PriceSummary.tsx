@@ -2,35 +2,36 @@ import { useCalculatorStore } from '@/store/calculatorStore';
 import { useComponents } from '@/hooks/useComponents';
 import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
-import { FileDown, RefreshCw, Sparkles, Loader2 } from 'lucide-react';
-import { useMemo } from 'react';
+import { Input } from '@/components/ui/input';
+import { FileDown, RefreshCw, Sparkles, Percent } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 export function PriceSummary() {
   const { selectedComponents, clearSelection } = useCalculatorStore();
-  const { data: components, isLoading: isLoadingComponents } = useComponents();
-  const { data: settings, isLoading: isLoadingSettings } = useSettings();
+  const { data: components } = useComponents();
+  const { data: settings } = useSettings();
+  const [discountPercent, setDiscountPercent] = useState(0);
 
   const profitMargin = settings?.profit_margin || 25;
 
-  const { subtotal, total, savings, itemCount } = useMemo(() => {
+  const { subtotal, total, discount, itemCount } = useMemo(() => {
     let subtotal = 0;
     let itemCount = 0;
 
     selectedComponents.forEach((sc) => {
       const component = components.find((c) => c.id === sc.componentId);
       if (component) {
-const price = component.base_price * (1 + profitMargin / 100);
+        const price = component.base_price * (1 + profitMargin / 100);
         subtotal += price * sc.quantity;
         itemCount += sc.quantity;
       }
     });
 
-    // Calculate potential savings (e.g., 10% bundle discount for 3+ items)
-    const savings = itemCount >= 3 ? subtotal * 0.1 : 0;
-    const total = subtotal - savings;
+    const discount = subtotal * (discountPercent / 100);
+    const total = subtotal - discount;
 
-    return { subtotal, total, savings, itemCount };
-  }, [selectedComponents, components, profitMargin]);
+    return { subtotal, total, discount, itemCount };
+  }, [selectedComponents, components, profitMargin, discountPercent]);
 
   const handleExport = () => {
     const selectedDetails = selectedComponents.map((sc) => {
@@ -48,7 +49,8 @@ const price = component.base_price * (1 + profitMargin / 100);
       date: new Date().toISOString(),
       items: selectedDetails,
       subtotal,
-      savings,
+      discountPercent,
+      discount,
       total,
     };
 
@@ -101,16 +103,35 @@ const price = component.base_price * (1 + profitMargin / 100);
 
       {selectedComponents.length > 0 && (
         <>
+          {/* Discount Input */}
+          <div className="border-t border-border pt-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Discount</span>
+              <div className="flex-1 flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
+                  className="h-8 w-20 text-right"
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+            </div>
+          </div>
+
           {/* Pricing breakdown */}
           <div className="border-t border-border pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="text-foreground">${subtotal.toLocaleString()}</span>
             </div>
-            {savings > 0 && (
+            {discount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-accent">Bundle Discount (10%)</span>
-                <span className="text-accent">-${savings.toLocaleString()}</span>
+                <span className="text-accent">Discount ({discountPercent}%)</span>
+                <span className="text-accent">-${discount.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between pt-2 border-t border-border">
