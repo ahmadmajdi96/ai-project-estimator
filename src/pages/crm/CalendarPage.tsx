@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
 import { useCalendarEvents, useAddCalendarEvent, useDeleteCalendarEvent, useUpdateCalendarEvent } from '@/hooks/useCalendarEvents';
 import { useClients } from '@/hooks/useClients';
@@ -14,8 +14,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { format, addDays, differenceInMinutes } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -27,7 +29,10 @@ import {
   MapPin,
   User,
   FileText,
-  Loader2
+  Loader2,
+  UserCheck,
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 
 const CALENDAR_THEMES = {
@@ -38,64 +43,26 @@ const CALENDAR_THEMES = {
       backgroundColor: 'hsl(var(--primary) / 0.1)',
       border: '1px solid hsl(var(--primary))',
     },
-    dayName: {
-      color: 'hsl(var(--muted-foreground))',
-    },
-    holiday: {
-      color: 'hsl(var(--destructive))',
-    },
-    saturday: {
-      color: 'hsl(var(--primary))',
-    },
-    today: {
-      color: 'hsl(var(--primary-foreground))',
-      backgroundColor: 'hsl(var(--primary))',
-    },
+    dayName: { color: 'hsl(var(--muted-foreground))' },
+    holiday: { color: 'hsl(var(--destructive))' },
+    saturday: { color: 'hsl(var(--primary))' },
+    today: { color: 'hsl(var(--primary-foreground))', backgroundColor: 'hsl(var(--primary))' },
   },
   month: {
-    dayExceptThisMonth: {
-      color: 'hsl(var(--muted-foreground) / 0.5)',
-    },
-    moreView: {
-      backgroundColor: 'hsl(var(--card))',
-      border: '1px solid hsl(var(--border))',
-      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-    },
-    moreViewTitle: {
-      backgroundColor: 'hsl(var(--muted))',
-    },
+    dayExceptThisMonth: { color: 'hsl(var(--muted-foreground) / 0.5)' },
+    moreView: { backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' },
+    moreViewTitle: { backgroundColor: 'hsl(var(--muted))' },
   },
   week: {
-    dayName: {
-      borderLeft: '1px solid hsl(var(--border))',
-      borderTop: '1px solid hsl(var(--border))',
-      borderBottom: '1px solid hsl(var(--border))',
-      backgroundColor: 'hsl(var(--muted) / 0.3)',
-    },
-    timeGridLeft: {
-      backgroundColor: 'hsl(var(--muted) / 0.3)',
-    },
-    today: {
-      backgroundColor: 'hsl(var(--primary) / 0.05)',
-    },
-    pastTime: {
-      color: 'hsl(var(--muted-foreground) / 0.5)',
-    },
-    futureTime: {
-      color: 'hsl(var(--foreground))',
-    },
-    nowIndicatorLabel: {
-      color: 'hsl(var(--primary))',
-    },
-    nowIndicatorBullet: {
-      backgroundColor: 'hsl(var(--primary))',
-    },
-    nowIndicatorPast: {
-      border: '1px dashed hsl(var(--primary))',
-    },
-    nowIndicatorToday: {
-      border: '1px solid hsl(var(--primary))',
-    },
+    dayName: { borderLeft: '1px solid hsl(var(--border))', borderTop: '1px solid hsl(var(--border))', borderBottom: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--muted) / 0.3)' },
+    timeGridLeft: { backgroundColor: 'hsl(var(--muted) / 0.3)' },
+    today: { backgroundColor: 'hsl(var(--primary) / 0.05)' },
+    pastTime: { color: 'hsl(var(--muted-foreground) / 0.5)' },
+    futureTime: { color: 'hsl(var(--foreground))' },
+    nowIndicatorLabel: { color: 'hsl(var(--primary))' },
+    nowIndicatorBullet: { backgroundColor: 'hsl(var(--primary))' },
+    nowIndicatorPast: { border: '1px dashed hsl(var(--primary))' },
+    nowIndicatorToday: { border: '1px solid hsl(var(--primary))' },
   },
 };
 
@@ -122,10 +89,12 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<ViewType>('month');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     client_id: '',
+    salesman_id: '',
     event_type: 'meeting' as EventType,
     location: '',
     notes: '',
@@ -144,9 +113,11 @@ export default function CalendarPage() {
       category: 'time',
       location: event.location || '',
       body: event.notes || '',
+      isAllday: false,
       raw: {
         client_id: event.client_id,
         event_type: event.event_type,
+        salesman_id: (event as any).salesman_id,
       },
     };
   });
@@ -191,16 +162,54 @@ export default function CalendarPage() {
       ...prev,
       start_time: startTime,
       end_time: endTime,
+      title: '',
+      client_id: '',
+      salesman_id: '',
+      event_type: 'meeting',
+      location: '',
+      notes: '',
     }));
+    setEditingEvent(null);
     setDialogOpen(true);
   }, []);
 
   const handleClickEvent = useCallback((info: any) => {
-    const clientId = info.event.raw?.client_id;
-    if (clientId) {
-      navigate(`/crm/clients/${clientId}`);
+    const event = info.event;
+    setEditingEvent(event);
+    setSelectedDate(new Date(event.start));
+    setFormData({
+      title: event.title,
+      client_id: event.raw?.client_id || '',
+      salesman_id: event.raw?.salesman_id || '',
+      event_type: event.raw?.event_type || 'meeting',
+      location: event.location || '',
+      notes: event.body || '',
+      start_time: format(new Date(event.start), 'HH:mm'),
+      end_time: format(new Date(event.end), 'HH:mm'),
+    });
+    setDialogOpen(true);
+  }, []);
+
+  // Handle drag and drop for rescheduling
+  const handleBeforeUpdateEvent = useCallback(async (info: any) => {
+    const { event, changes } = info;
+    
+    if (changes.start || changes.end) {
+      const newStart = changes.start ? new Date(changes.start) : new Date(event.start);
+      const newEnd = changes.end ? new Date(changes.end) : new Date(event.end);
+      
+      try {
+        await updateEvent.mutateAsync({
+          id: event.id,
+          start_datetime: newStart.toISOString(),
+          end_datetime: newEnd.toISOString(),
+        });
+        toast.success('Event rescheduled');
+      } catch (error) {
+        toast.error('Failed to reschedule event');
+      }
     }
-  }, [navigate]);
+  }, [updateEvent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,32 +223,54 @@ export default function CalendarPage() {
     const [endHour, endMin] = formData.end_time.split(':');
     endDateTime.setHours(parseInt(endHour), parseInt(endMin));
 
-    await addEvent.mutateAsync({
+    const eventData = {
       title: formData.title,
       client_id: formData.client_id || null,
+      salesman_id: formData.salesman_id || null,
       event_type: formData.event_type,
       location: formData.location || null,
       notes: formData.notes || null,
       start_datetime: startDateTime.toISOString(),
       end_datetime: endDateTime.toISOString(),
-    });
+    };
+
+    if (editingEvent) {
+      await updateEvent.mutateAsync({ id: editingEvent.id, ...eventData });
+    } else {
+      await addEvent.mutateAsync(eventData);
+    }
 
     setDialogOpen(false);
+    resetForm();
+  };
+
+  const handleDelete = async () => {
+    if (editingEvent && confirm('Delete this event?')) {
+      await deleteEvent.mutateAsync(editingEvent.id);
+      setDialogOpen(false);
+      resetForm();
+    }
+  };
+
+  const resetForm = () => {
     setFormData({
       title: '',
       client_id: '',
+      salesman_id: '',
       event_type: 'meeting',
       location: '',
       notes: '',
       start_time: '09:00',
       end_time: '10:00',
     });
+    setEditingEvent(null);
+    setSelectedDate(null);
   };
 
-  // Stats for sidebar
+  // Stats
   const thisMonthEvents = events.filter(e => {
     const eventDate = new Date(e.start_datetime);
-    return eventDate >= startOfMonth(currentDate) && eventDate <= endOfMonth(currentDate);
+    return eventDate.getMonth() === currentDate.getMonth() && eventDate.getFullYear() === currentDate.getFullYear();
   });
 
   const upcomingEvents = events
@@ -275,60 +306,46 @@ export default function CalendarPage() {
                   </Button>
                 </div>
                 <Button variant="outline" onClick={handleToday}>Today</Button>
-                <h2 className="text-xl font-semibold">
-                  {format(currentDate, 'MMMM yyyy')}
-                </h2>
+                <h2 className="text-xl font-semibold">{format(currentDate, 'MMMM yyyy')}</h2>
               </div>
               
               <div className="flex items-center gap-2">
                 <div className="flex rounded-lg border border-border overflow-hidden">
-                  <Button 
-                    variant={currentView === 'month' ? 'default' : 'ghost'} 
-                    size="sm"
-                    className="rounded-none"
-                    onClick={() => handleViewChange('month')}
-                  >
-                    <Grid3X3 className="h-4 w-4 mr-1" />
-                    Month
+                  <Button variant={currentView === 'month' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => handleViewChange('month')}>
+                    <Grid3X3 className="h-4 w-4 mr-1" />Month
                   </Button>
-                  <Button 
-                    variant={currentView === 'week' ? 'default' : 'ghost'} 
-                    size="sm"
-                    className="rounded-none border-l border-border"
-                    onClick={() => handleViewChange('week')}
-                  >
-                    <List className="h-4 w-4 mr-1" />
-                    Week
+                  <Button variant={currentView === 'week' ? 'default' : 'ghost'} size="sm" className="rounded-none border-l border-border" onClick={() => handleViewChange('week')}>
+                    <List className="h-4 w-4 mr-1" />Week
                   </Button>
-                  <Button 
-                    variant={currentView === 'day' ? 'default' : 'ghost'} 
-                    size="sm"
-                    className="rounded-none border-l border-border"
-                    onClick={() => handleViewChange('day')}
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    Day
+                  <Button variant={currentView === 'day' ? 'default' : 'ghost'} size="sm" className="rounded-none border-l border-border" onClick={() => handleViewChange('day')}>
+                    <CalendarIcon className="h-4 w-4 mr-1" />Day
                   </Button>
                 </div>
                 <Button onClick={() => { setSelectedDate(new Date()); setDialogOpen(true); }} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  New Event
+                  <Plus className="h-4 w-4" />New Event
                 </Button>
               </div>
             </div>
           </Card>
+
+          {/* Drag hint */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-lg p-2">
+            <GripVertical className="h-4 w-4" />
+            <span>Drag events to reschedule • Click to edit • Select time range to create</span>
+          </div>
 
           {/* Calendar Component */}
           <Card className="bg-card/50 border-border/50 overflow-hidden">
             <div className="p-1">
               <Calendar
                 ref={calendarRef}
-                height="650px"
+                height="600px"
                 view={currentView}
                 calendars={CALENDARS}
                 events={calendarEvents}
                 onSelectDateTime={handleSelectDateTime}
                 onClickEvent={handleClickEvent}
+                onBeforeUpdateEvent={handleBeforeUpdateEvent}
                 useDetailPopup={false}
                 useFormPopup={false}
                 isReadOnly={false}
@@ -357,8 +374,7 @@ export default function CalendarPage() {
           {/* Event Types Legend */}
           <Card className="p-4 bg-card/50 border-border/50">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              Event Types
+              <CalendarIcon className="h-4 w-4 text-primary" />Event Types
             </h3>
             <div className="space-y-2">
               {EVENT_TYPES.map(type => {
@@ -366,10 +382,7 @@ export default function CalendarPage() {
                 return (
                   <div key={type.value} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: type.color }} 
-                      />
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: type.color }} />
                       <span className="text-sm">{type.label}</span>
                     </div>
                     <Badge variant="secondary" className="text-xs">{count}</Badge>
@@ -378,6 +391,33 @@ export default function CalendarPage() {
               })}
             </div>
           </Card>
+
+          {/* Assigned Salesmen */}
+          {salesmen.length > 0 && (
+            <Card className="p-4 bg-card/50 border-border/50">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary" />Team Schedule
+              </h3>
+              <div className="space-y-2">
+                {salesmen.slice(0, 5).map(salesman => {
+                  const salesmanEvents = events.filter(e => (e as any).salesman_id === salesman.id);
+                  return (
+                    <div key={salesman.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                            {salesman.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{salesman.name}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{salesmanEvents.length}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* Month Stats */}
           <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
@@ -399,19 +439,33 @@ export default function CalendarPage() {
           {/* Upcoming Events */}
           <Card className="p-4 bg-card/50 border-border/50">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              Upcoming
+              <Clock className="h-4 w-4 text-primary" />Upcoming
             </h3>
             <div className="space-y-3">
               {upcomingEvents.map(event => {
                 const eventType = EVENT_TYPES.find(t => t.value === event.event_type);
                 const client = clients.find(c => c.id === event.client_id);
+                const salesman = salesmen.find(s => s.id === (event as any).salesman_id);
                 return (
                   <div 
                     key={event.id} 
                     className="p-3 rounded-lg bg-muted/30 border-l-4 hover:bg-muted/50 transition-colors cursor-pointer"
                     style={{ borderColor: eventType?.color }}
-                    onClick={() => event.client_id && navigate(`/crm/clients/${event.client_id}`)}
+                    onClick={() => {
+                      setEditingEvent({ id: event.id, title: event.title, start: event.start_datetime, end: event.end_datetime, location: event.location, body: event.notes, raw: { client_id: event.client_id, event_type: event.event_type, salesman_id: (event as any).salesman_id } });
+                      setSelectedDate(new Date(event.start_datetime));
+                      setFormData({
+                        title: event.title,
+                        client_id: event.client_id || '',
+                        salesman_id: (event as any).salesman_id || '',
+                        event_type: event.event_type,
+                        location: event.location || '',
+                        notes: event.notes || '',
+                        start_time: format(new Date(event.start_datetime), 'HH:mm'),
+                        end_time: format(new Date(event.end_datetime), 'HH:mm'),
+                      });
+                      setDialogOpen(true);
+                    }}
                   >
                     <p className="font-medium text-sm">{event.title}</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -419,39 +473,38 @@ export default function CalendarPage() {
                     </p>
                     {client && (
                       <p className="text-xs text-primary mt-1 flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {client.client_name}
+                        <User className="h-3 w-3" />{client.client_name}
+                      </p>
+                    )}
+                    {salesman && (
+                      <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" />{salesman.name}
                       </p>
                     )}
                   </div>
                 );
               })}
               {upcomingEvents.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No upcoming events
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">No upcoming events</p>
               )}
             </div>
           </Card>
         </div>
       </div>
 
-      {/* Add Event Dialog */}
+      {/* Add/Edit Event Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-primary" />
-              {selectedDate && format(selectedDate, 'MMM d, yyyy')}
+              {editingEvent ? 'Edit Event' : 'New Event'} {selectedDate && `- ${format(selectedDate, 'MMM d, yyyy')}`}
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Title *
-              </Label>
+              <Label className="flex items-center gap-2"><FileText className="h-4 w-4" />Title *</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -462,35 +515,19 @@ export default function CalendarPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Start Time
-                </Label>
-                <Input
-                  type="time"
-                  value={formData.start_time}
-                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                />
+                <Label className="flex items-center gap-2"><Clock className="h-4 w-4" />Start</Label>
+                <Input type="time" value={formData.start_time} onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>End Time</Label>
-                <Input
-                  type="time"
-                  value={formData.end_time}
-                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                />
+                <Label>End</Label>
+                <Input type="time" value={formData.end_time} onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Event Type</Label>
-              <Select
-                value={formData.event_type}
-                onValueChange={(v) => setFormData({ ...formData, event_type: v as EventType })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={formData.event_type} onValueChange={(v) => setFormData({ ...formData, event_type: v as EventType })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {EVENT_TYPES.map(t => (
                     <SelectItem key={t.value} value={t.value}>
@@ -504,57 +541,51 @@ export default function CalendarPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Client (Optional)
-              </Label>
-              <Select
-                value={formData.client_id || "none"}
-                onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No client</SelectItem>
-                  {clients.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.client_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><User className="h-4 w-4" />Client</Label>
+                <Select value={formData.client_id || "none"} onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No client</SelectItem>
+                    {clients.map(c => (<SelectItem key={c.id} value={c.id}>{c.client_name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2"><UserCheck className="h-4 w-4" />Assigned To</Label>
+                <Select value={formData.salesman_id || "none"} onValueChange={(v) => setFormData({ ...formData, salesman_id: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Select salesman" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Unassigned</SelectItem>
+                    {salesmen.map(s => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Location
-              </Label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Meeting location or link"
-              />
+              <Label className="flex items-center gap-2"><MapPin className="h-4 w-4" />Location</Label>
+              <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="Meeting location or link" />
             </div>
 
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes..."
-                rows={3}
-              />
+              <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Additional notes..." rows={3} />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={addEvent.isPending} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Event
-              </Button>
+            <div className="flex justify-between pt-2">
+              {editingEvent && (
+                <Button type="button" variant="destructive" size="sm" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4 mr-1" />Delete
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancel</Button>
+                <Button type="submit" disabled={addEvent.isPending || updateEvent.isPending} className="gap-2">
+                  {editingEvent ? 'Update' : <><Plus className="h-4 w-4" />Add Event</>}
+                </Button>
+              </div>
             </div>
           </form>
         </DialogContent>
