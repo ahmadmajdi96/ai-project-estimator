@@ -110,6 +110,7 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
+          salesman_id: string | null
           start_datetime: string
           title: string
           updated_at: string
@@ -122,6 +123,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          salesman_id?: string | null
           start_datetime: string
           title: string
           updated_at?: string
@@ -134,6 +136,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          salesman_id?: string | null
           start_datetime?: string
           title?: string
           updated_at?: string
@@ -144,6 +147,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
             referencedColumns: ["id"]
           },
         ]
@@ -247,6 +257,7 @@ export type Database = {
           phone: string | null
           revenue_to_date: number | null
           sales_stage: Database["public"]["Enums"]["sales_stage"]
+          salesman_id: string | null
           status: Database["public"]["Enums"]["client_status"]
           updated_at: string
           website: string | null
@@ -270,6 +281,7 @@ export type Database = {
           phone?: string | null
           revenue_to_date?: number | null
           sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          salesman_id?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
           website?: string | null
@@ -293,11 +305,20 @@ export type Database = {
           phone?: string | null
           revenue_to_date?: number | null
           sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          salesman_id?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       components: {
         Row: {
@@ -735,6 +756,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sales_performance: {
+        Row: {
+          conversion_rate: number | null
+          created_at: string
+          deals_closed: number | null
+          id: string
+          leads_contacted: number | null
+          meetings_held: number | null
+          notes: string | null
+          period_end: string
+          period_start: string
+          proposals_sent: number | null
+          revenue_generated: number | null
+          salesman_id: string
+        }
+        Insert: {
+          conversion_rate?: number | null
+          created_at?: string
+          deals_closed?: number | null
+          id?: string
+          leads_contacted?: number | null
+          meetings_held?: number | null
+          notes?: string | null
+          period_end: string
+          period_start: string
+          proposals_sent?: number | null
+          revenue_generated?: number | null
+          salesman_id: string
+        }
+        Update: {
+          conversion_rate?: number | null
+          created_at?: string
+          deals_closed?: number | null
+          id?: string
+          leads_contacted?: number | null
+          meetings_held?: number | null
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          proposals_sent?: number | null
+          revenue_generated?: number | null
+          salesman_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_performance_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salesmen: {
+        Row: {
+          avatar_url: string | null
+          commission_rate: number | null
+          created_at: string
+          email: string | null
+          hire_date: string | null
+          id: string
+          name: string
+          phone: string | null
+          status: string | null
+          target_annual: number | null
+          target_monthly: number | null
+          target_quarterly: number | null
+          territory: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          email?: string | null
+          hire_date?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          status?: string | null
+          target_annual?: number | null
+          target_monthly?: number | null
+          target_quarterly?: number | null
+          territory?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          email?: string | null
+          hire_date?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: string | null
+          target_annual?: number | null
+          target_monthly?: number | null
+          target_quarterly?: number | null
+          territory?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       task_comments: {
         Row: {

@@ -20,6 +20,7 @@ import KPIsPage from "./pages/crm/KPIsPage";
 import AIInsightsPage from "./pages/crm/AIInsightsPage";
 import AIChatPage from "./pages/crm/AIChatPage";
 import ConfigPage from "./pages/crm/ConfigPage";
+import SalesmenPage from "./pages/crm/SalesmenPage";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/clients" element={<ClientsPage />} />
           <Route path="/crm/clients/:id" element={<ClientProfile />} />
+          <Route path="/crm/salesmen" element={<SalesmenPage />} />
           <Route path="/crm/pipeline" element={<SalesPipeline />} />
           <Route path="/crm/status" element={<StatusBoard />} />
           <Route path="/crm/calendar" element={<CalendarPage />} />

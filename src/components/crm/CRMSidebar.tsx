@@ -15,7 +15,8 @@ import {
   BarChart3,
   Bot,
   MessageSquare,
-  LogOut
+  LogOut,
+  BadgeDollarSign
 } from 'lucide-react';
 import {
   Sidebar,
@@ -36,6 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 const crmItems = [
   { title: 'Dashboard', url: '/crm', icon: LayoutDashboard },
   { title: 'Clients', url: '/crm/clients', icon: Users },
+  { title: 'Salesmen', url: '/crm/salesmen', icon: BadgeDollarSign },
   { title: 'Sales Pipeline', url: '/crm/pipeline', icon: TrendingUp },
   { title: 'Status Board', url: '/crm/status', icon: Kanban },
   { title: 'Calendar', url: '/crm/calendar', icon: Calendar },
