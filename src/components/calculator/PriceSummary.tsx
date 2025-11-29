@@ -3,20 +3,23 @@ import { useComponents } from '@/hooks/useComponents';
 import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileDown, RefreshCw, Sparkles, Percent } from 'lucide-react';
+import { FileDown, RefreshCw, Sparkles, Percent, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { SaveQuoteDialog } from '@/components/crm/SaveQuoteDialog';
 
 export function PriceSummary() {
   const { selectedComponents, clearSelection } = useCalculatorStore();
   const { data: components } = useComponents();
   const { data: settings } = useSettings();
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   const profitMargin = settings?.profit_margin || 25;
 
-  const { subtotal, total, discount, itemCount } = useMemo(() => {
+  const { subtotal, total, discount, itemCount, itemDetails } = useMemo(() => {
     let subtotal = 0;
     let itemCount = 0;
+    const itemDetails: { name: string; quantity: number; unitPrice: number; total: number }[] = [];
 
     selectedComponents.forEach((sc) => {
       const component = components.find((c) => c.id === sc.componentId);
@@ -24,30 +27,25 @@ export function PriceSummary() {
         const price = component.base_price * (1 + profitMargin / 100);
         subtotal += price * sc.quantity;
         itemCount += sc.quantity;
+        itemDetails.push({
+          name: component.name,
+          quantity: sc.quantity,
+          unitPrice: price,
+          total: price * sc.quantity,
+        });
       }
     });
 
     const discount = subtotal * (discountPercent / 100);
     const total = subtotal - discount;
 
-    return { subtotal, total, discount, itemCount };
+    return { subtotal, total, discount, itemCount, itemDetails };
   }, [selectedComponents, components, profitMargin, discountPercent]);
 
   const handleExport = () => {
-    const selectedDetails = selectedComponents.map((sc) => {
-      const component = components.find((c) => c.id === sc.componentId);
-      const price = component ? component.base_price * (1 + profitMargin / 100) : 0;
-      return {
-        name: component?.name,
-        quantity: sc.quantity,
-        unitPrice: price,
-        total: price * sc.quantity,
-      };
-    });
-
     const quote = {
       date: new Date().toISOString(),
-      items: selectedDetails,
+      items: itemDetails,
       subtotal,
       discountPercent,
       discount,
@@ -61,6 +59,15 @@ export function PriceSummary() {
     a.download = `quote-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const quoteData = {
+    items: itemDetails,
+    subtotal,
+    discountPercent,
+    discount,
+    total,
+    profitMargin,
   };
 
   return (
@@ -144,17 +151,28 @@ export function PriceSummary() {
 
           {/* Actions */}
           <div className="mt-6 space-y-2">
-            <Button variant="gradient" className="w-full" onClick={handleExport}>
-              <FileDown className="h-4 w-4" />
-              Export Quote
+            <Button variant="gradient" className="w-full" onClick={() => setSaveDialogOpen(true)}>
+              <Save className="h-4 w-4" />
+              Save to CRM
             </Button>
-            <Button variant="outline" className="w-full" onClick={clearSelection}>
+            <Button variant="outline" className="w-full" onClick={handleExport}>
+              <FileDown className="h-4 w-4" />
+              Export JSON
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={clearSelection}>
               <RefreshCw className="h-4 w-4" />
               Clear Selection
             </Button>
           </div>
         </>
       )}
+
+      <SaveQuoteDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        quoteData={quoteData}
+        onSuccess={clearSelection}
+      />
     </div>
   );
 }
