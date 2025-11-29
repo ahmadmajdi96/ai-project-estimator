@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { CRMLayout } from '@/components/crm/CRMLayout';
-import { useClient, useUpdateClient, useDeleteClient } from '@/hooks/useClients';
+import { useClient, useDeleteClient } from '@/hooks/useClients';
 import { useClientQuotes } from '@/hooks/useQuotes';
-import { useCallLogs, useAddCallLog } from '@/hooks/useCallLogs';
+import { useCallLogs } from '@/hooks/useCallLogs';
 import { useClientNotes, useAddClientNote, useDeleteClientNote } from '@/hooks/useClientNotes';
 import { useClientCalendarEvents } from '@/hooks/useCalendarEvents';
 import { Card } from '@/components/ui/card';
@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CLIENT_STATUSES, SALES_STAGES, QUOTE_STATUSES } from '@/types/crm';
-import { ArrowLeft, Building2, Mail, Phone, Globe, Calendar, DollarSign, FileText, MessageSquare, PhoneCall, Trash2 } from 'lucide-react';
+import { ArrowLeft, Building2, Mail, Phone, Globe, Calendar, DollarSign, FileText, PhoneCall, Trash2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { CallLogForm } from '@/components/crm/CallLogForm';
 
 export default function ClientProfile() {
   const { id } = useParams();
@@ -27,6 +28,7 @@ export default function ClientProfile() {
   const deleteNote = useDeleteClientNote();
   const deleteClient = useDeleteClient();
   const [newNote, setNewNote] = useState('');
+  const [callLogOpen, setCallLogOpen] = useState(false);
 
   if (isLoading || !client) {
     return <CRMLayout title="Loading..." />;
@@ -130,7 +132,7 @@ export default function ClientProfile() {
           <TabsList>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
-            <TabsTrigger value="calls">Call Logs ({callLogs.length})</TabsTrigger>
+            <TabsTrigger value="calls">Calls ({callLogs.length})</TabsTrigger>
             <TabsTrigger value="events">Events ({events.length})</TabsTrigger>
           </TabsList>
 
@@ -171,15 +173,31 @@ export default function ClientProfile() {
             {quotes.length === 0 && <p className="text-muted-foreground text-center py-8">No quotes</p>}
           </TabsContent>
 
-          <TabsContent value="calls">
+          <TabsContent value="calls" className="space-y-4">
+            <Button onClick={() => setCallLogOpen(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Log Call
+            </Button>
             {callLogs.map(log => (
               <Card key={log.id} className="p-4 bg-card/50 border-border/50">
                 <div className="flex items-start gap-3">
                   <PhoneCall className="h-4 w-4 text-primary mt-1" />
-                  <div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        {log.call_type}
+                      </Badge>
+                      {log.call_duration && (
+                        <span className="text-xs text-muted-foreground">{log.call_duration} min</span>
+                      )}
+                    </div>
                     <p className="text-sm">{log.summary || 'No summary'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(log.call_date), 'MMM d, yyyy h:mm a')} • {log.call_duration} min • {log.call_type}
+                    {log.follow_up_action && (
+                      <p className="text-xs text-accent mt-1">Follow-up: {log.follow_up_action}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {format(new Date(log.call_date), 'MMM d, yyyy h:mm a')}
+                      {log.assigned_to && ` • ${log.assigned_to}`}
                     </p>
                   </div>
                 </div>
@@ -199,6 +217,13 @@ export default function ClientProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <CallLogForm
+        open={callLogOpen}
+        onOpenChange={setCallLogOpen}
+        clientId={client.id}
+        clientName={client.client_name}
+      />
     </CRMLayout>
   );
 }
