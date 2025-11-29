@@ -2,7 +2,9 @@ import { CRMLayout } from '@/components/crm/CRMLayout';
 import { ProfitMarginControl } from '@/components/config/ProfitMarginControl';
 import { CsvUploader } from '@/components/config/CsvUploader';
 import { ComponentEditor } from '@/components/config/ComponentEditor';
+import { CategoryEditor } from '@/components/config/CategoryEditor';
 import { Settings } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 export default function ConfigPage() {
   return (
@@ -24,6 +26,9 @@ export default function ConfigPage() {
           </div>
           <div className="space-y-6">
             <ProfitMarginControl />
+            <Card className="p-5 bg-card/50 border-border/50">
+              <CategoryEditor />
+            </Card>
             <CsvUploader />
           </div>
         </div>

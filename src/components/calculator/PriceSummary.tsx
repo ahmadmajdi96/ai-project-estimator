@@ -3,10 +3,10 @@ import { useComponents } from '@/hooks/useComponents';
 import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FileDown, RefreshCw, Sparkles, Percent, Save } from 'lucide-react';
+import { FileDown, RefreshCw, Sparkles, Percent, Save, FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SaveQuoteDialog } from '@/components/crm/SaveQuoteDialog';
-
+import { generateQuotePDF } from '@/utils/pdfGenerator';
 export function PriceSummary() {
   const { selectedComponents, clearSelection } = useCalculatorStore();
   const { data: components = [] } = useComponents();
@@ -154,6 +154,10 @@ export function PriceSummary() {
             <Button variant="gradient" className="w-full" onClick={() => setSaveDialogOpen(true)}>
               <Save className="h-4 w-4" />
               Save to CRM
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => generateQuotePDF(quoteData)}>
+              <FileText className="h-4 w-4" />
+              Download PDF
             </Button>
             <Button variant="outline" className="w-full" onClick={handleExport}>
               <FileDown className="h-4 w-4" />

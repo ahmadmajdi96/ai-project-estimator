@@ -15,6 +15,11 @@ export interface Salesman {
   target_quarterly: number;
   target_annual: number;
   commission_rate: number;
+  social_number: string | null;
+  contract_type: 'fulltime' | 'parttime' | 'contractor' | null;
+  employee_id: string | null;
+  approval_status: 'pending' | 'approved' | 'rejected' | null;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 }

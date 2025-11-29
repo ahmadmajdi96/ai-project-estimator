@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
 import { useSalesmen, useSalesPerformance, useAddSalesman, useUpdateSalesman, useDeleteSalesman, Salesman } from '@/hooks/useSalesmen';
+import { SalesmanProfileDialog } from '@/components/crm/SalesmanProfileDialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,15 +27,25 @@ import {
   MoreHorizontal,
   Trash2,
   Edit,
-  Loader2
+  Loader2,
+  Eye,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
 
 const SALESMAN_STATUSES = [
   { value: 'active', label: 'Active', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   { value: 'inactive', label: 'Inactive', color: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
   { value: 'on_leave', label: 'On Leave', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+];
+
+const CONTRACT_TYPES = [
+  { value: 'fulltime', label: 'Full-time' },
+  { value: 'parttime', label: 'Part-time' },
+  { value: 'contractor', label: 'Contractor' },
 ];
 
 export default function SalesmenPage() {
@@ -45,7 +56,11 @@ export default function SalesmenPage() {
   const deleteSalesman = useDeleteSalesman();
   
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedSalesman, setSelectedSalesman] = useState<Salesman | null>(null);
   const [editingSalesman, setEditingSalesman] = useState<Salesman | null>(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [formData, setFormData] = useState<{
     name: string;
     email: string;
@@ -56,6 +71,8 @@ export default function SalesmenPage() {
     target_annual: number;
     commission_rate: number;
     status: 'active' | 'inactive' | 'on_leave';
+    social_number: string;
+    contract_type: 'fulltime' | 'parttime' | 'contractor';
   }>({
     name: '',
     email: '',
@@ -66,6 +83,8 @@ export default function SalesmenPage() {
     target_annual: 0,
     commission_rate: 5,
     status: 'active',
+    social_number: '',
+    contract_type: 'fulltime',
   });
 
   const resetForm = () => {
@@ -78,7 +97,9 @@ export default function SalesmenPage() {
       target_quarterly: 0,
       target_annual: 0,
       commission_rate: 5,
-      status: 'active' as 'active' | 'inactive' | 'on_leave',
+      status: 'active',
+      social_number: '',
+      contract_type: 'fulltime',
     });
     setEditingSalesman(null);
   };
@@ -95,8 +116,32 @@ export default function SalesmenPage() {
       target_annual: salesman.target_annual,
       commission_rate: salesman.commission_rate,
       status: salesman.status,
+      social_number: salesman.social_number || '',
+      contract_type: salesman.contract_type || 'fulltime',
     });
     setDialogOpen(true);
+  };
+
+  const handleApprove = async (id: string) => {
+    await updateSalesman.mutateAsync({ id, approval_status: 'approved' });
+  };
+
+  const handleReject = async () => {
+    if (selectedSalesman && rejectionReason) {
+      await updateSalesman.mutateAsync({ 
+        id: selectedSalesman.id, 
+        approval_status: 'rejected',
+        rejection_reason: rejectionReason 
+      });
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+      setSelectedSalesman(null);
+    }
+  };
+
+  const handleViewProfile = (salesman: Salesman) => {
+    setSelectedSalesman(salesman);
+    setProfileOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -503,6 +548,37 @@ export default function SalesmenPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Profile Dialog */}
+      <SalesmanProfileDialog
+        salesman={selectedSalesman}
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+      />
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Salesman</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label>Rejection Reason</Label>
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter the reason for rejection..."
+              rows={3}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleReject} disabled={!rejectionReason}>
+                Reject
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </CRMLayout>
   );
 }
