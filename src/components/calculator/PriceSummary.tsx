@@ -9,7 +9,7 @@ import { SaveQuoteDialog } from '@/components/crm/SaveQuoteDialog';
 
 export function PriceSummary() {
   const { selectedComponents, clearSelection } = useCalculatorStore();
-  const { data: components } = useComponents();
+  const { data: components = [] } = useComponents();
   const { data: settings } = useSettings();
   const [discountPercent, setDiscountPercent] = useState(0);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
