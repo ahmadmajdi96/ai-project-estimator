@@ -320,6 +320,36 @@ export type Database = {
           },
         ]
       }
+      component_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       components: {
         Row: {
           base_cost: number
@@ -810,16 +840,62 @@ export type Database = {
           },
         ]
       }
+      salesman_documents: {
+        Row: {
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          name: string
+          salesman_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name: string
+          salesman_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          name?: string
+          salesman_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesman_documents_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salesmen: {
         Row: {
+          approval_status: string | null
           avatar_url: string | null
           commission_rate: number | null
+          contract_type: string | null
           created_at: string
           email: string | null
+          employee_id: string | null
           hire_date: string | null
           id: string
           name: string
           phone: string | null
+          rejection_reason: string | null
+          social_number: string | null
           status: string | null
           target_annual: number | null
           target_monthly: number | null
@@ -828,14 +904,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_status?: string | null
           avatar_url?: string | null
           commission_rate?: number | null
+          contract_type?: string | null
           created_at?: string
           email?: string | null
+          employee_id?: string | null
           hire_date?: string | null
           id?: string
           name: string
           phone?: string | null
+          rejection_reason?: string | null
+          social_number?: string | null
           status?: string | null
           target_annual?: number | null
           target_monthly?: number | null
@@ -844,14 +925,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_status?: string | null
           avatar_url?: string | null
           commission_rate?: number | null
+          contract_type?: string | null
           created_at?: string
           email?: string | null
+          employee_id?: string | null
           hire_date?: string | null
           id?: string
           name?: string
           phone?: string | null
+          rejection_reason?: string | null
+          social_number?: string | null
           status?: string | null
           target_annual?: number | null
           target_monthly?: number | null
@@ -859,7 +945,15 @@ export type Database = {
           territory?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "salesmen_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_comments: {
         Row: {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useComponents, useAddComponent, useUpdateComponent, useDeleteComponent, DbComponent } from '@/hooks/useComponents';
+import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,8 +22,6 @@ const icons = [
   { name: 'Sparkles', Icon: Sparkles },
 ];
 
-const categories = ['Website', 'AI Services', 'Features', 'Backend', 'Design', 'Integrations'];
-
 interface ComponentFormData {
   name: string;
   description: string;
@@ -38,13 +37,14 @@ interface ComponentFormProps {
   onSave: (data: ComponentFormData, id?: string) => void;
   onClose: () => void;
   isLoading: boolean;
+  categories: string[];
 }
 
-function ComponentForm({ component, onSave, onClose, isLoading }: ComponentFormProps) {
+function ComponentForm({ component, onSave, onClose, isLoading, categories }: ComponentFormProps) {
   const [formData, setFormData] = useState<ComponentFormData>({
     name: component?.name || '',
     description: component?.description || '',
-    category: component?.category || 'Website',
+    category: component?.category || (categories[0] || 'Website'),
     base_cost: component?.base_cost || 0,
     base_price: component?.base_price || 0,
     is_base: component?.is_base || false,
@@ -174,12 +174,15 @@ function ComponentForm({ component, onSave, onClose, isLoading }: ComponentFormP
 
 export function ComponentEditor() {
   const { data: components, isLoading: isLoadingComponents } = useComponents();
+  const { data: categoriesData = [] } = useCategories();
   const addComponent = useAddComponent();
   const updateComponent = useUpdateComponent();
   const deleteComponent = useDeleteComponent();
   
   const [editingComponent, setEditingComponent] = useState<DbComponent | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const categories = categoriesData.map(c => c.name);
 
   const handleSave = (data: ComponentFormData, id?: string) => {
     if (id) {
@@ -232,6 +235,7 @@ export function ComponentEditor() {
               onSave={handleSave}
               onClose={() => setIsDialogOpen(false)}
               isLoading={addComponent.isPending || updateComponent.isPending}
+              categories={categories.length > 0 ? categories : ['Website', 'AI Services', 'Features', 'Backend', 'Design', 'Integrations']}
             />
           </DialogContent>
         </Dialog>
