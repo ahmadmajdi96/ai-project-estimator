@@ -10,6 +10,7 @@ export function Header() {
 
   const navItems = [
     { href: '/', label: 'Calculator', icon: Calculator },
+    { href: '/crm', label: 'CRM', icon: Calculator },
     { href: '/config', label: 'Configuration', icon: Settings },
   ];
 
