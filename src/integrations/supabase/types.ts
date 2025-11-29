@@ -35,6 +35,204 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          end_datetime: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          location: string | null
+          notes: string | null
+          start_datetime: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          end_datetime: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_datetime: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          end_datetime?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          location?: string | null
+          notes?: string | null
+          start_datetime?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_logs: {
+        Row: {
+          assigned_to: string | null
+          call_date: string
+          call_duration: number | null
+          call_type: Database["public"]["Enums"]["call_type"]
+          client_id: string
+          created_at: string
+          follow_up_action: string | null
+          id: string
+          summary: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          call_date?: string
+          call_duration?: number | null
+          call_type?: Database["public"]["Enums"]["call_type"]
+          client_id: string
+          created_at?: string
+          follow_up_action?: string | null
+          id?: string
+          summary?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          call_date?: string
+          call_duration?: number | null
+          call_type?: Database["public"]["Enums"]["call_type"]
+          client_id?: string
+          created_at?: string
+          follow_up_action?: string | null
+          id?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note_text: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_text: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note_text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          client_name: string
+          contact_person: string | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          contract_value: number | null
+          created_at: string
+          email: string | null
+          first_contact_date: string | null
+          follow_up_needed: boolean | null
+          id: string
+          industry: string | null
+          last_contact: string | null
+          last_meeting_date: string | null
+          meeting_notes: string | null
+          notes: string | null
+          phone: string | null
+          revenue_to_date: number | null
+          sales_stage: Database["public"]["Enums"]["sales_stage"]
+          status: Database["public"]["Enums"]["client_status"]
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          client_name: string
+          contact_person?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          contract_value?: number | null
+          created_at?: string
+          email?: string | null
+          first_contact_date?: string | null
+          follow_up_needed?: boolean | null
+          id?: string
+          industry?: string | null
+          last_contact?: string | null
+          last_meeting_date?: string | null
+          meeting_notes?: string | null
+          notes?: string | null
+          phone?: string | null
+          revenue_to_date?: number | null
+          sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          status?: Database["public"]["Enums"]["client_status"]
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          client_name?: string
+          contact_person?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          contract_value?: number | null
+          created_at?: string
+          email?: string | null
+          first_contact_date?: string | null
+          follow_up_needed?: boolean | null
+          id?: string
+          industry?: string | null
+          last_contact?: string | null
+          last_meeting_date?: string | null
+          meeting_notes?: string | null
+          notes?: string | null
+          phone?: string | null
+          revenue_to_date?: number | null
+          sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          status?: Database["public"]["Enums"]["client_status"]
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       components: {
         Row: {
           base_cost: number
@@ -95,6 +293,65 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          client_id: string | null
+          components: Json
+          created_at: string
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          notes: string | null
+          profit_margin: number | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          title: string
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          components?: Json
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          notes?: string | null
+          profit_margin?: number | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          title: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          components?: Json
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          notes?: string | null
+          profit_margin?: number | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          title?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -103,7 +360,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      call_type: "incoming" | "outgoing"
+      client_status: "prospect" | "active" | "inactive" | "former"
+      event_type: "meeting" | "call" | "follow_up" | "task"
+      quote_status: "draft" | "sent" | "accepted" | "rejected"
+      sales_stage:
+        | "pre_sales"
+        | "negotiation"
+        | "closing"
+        | "post_sales"
+        | "support"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -230,6 +496,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      call_type: ["incoming", "outgoing"],
+      client_status: ["prospect", "active", "inactive", "former"],
+      event_type: ["meeting", "call", "follow_up", "task"],
+      quote_status: ["draft", "sent", "accepted", "rejected"],
+      sales_stage: [
+        "pre_sales",
+        "negotiation",
+        "closing",
+        "post_sales",
+        "support",
+      ],
+    },
   },
 } as const
