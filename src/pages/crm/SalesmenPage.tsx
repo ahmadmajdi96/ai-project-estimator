@@ -282,6 +282,33 @@ export default function SalesmenPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Social Number</Label>
+                    <Input
+                      value={formData.social_number}
+                      onChange={(e) => setFormData({ ...formData, social_number: e.target.value })}
+                      placeholder="Social security number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contract Type</Label>
+                    <Select
+                      value={formData.contract_type}
+                      onValueChange={(v) => setFormData({ ...formData, contract_type: v as any })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTRACT_TYPES.map(c => (
+                          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Monthly Target</Label>
@@ -399,9 +426,13 @@ export default function SalesmenPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewProfile(salesman)}>
+                          <Eye className="mr-2 h-4 w-4" /> View Profile
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEdit(salesman)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(salesman.id)}>
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
