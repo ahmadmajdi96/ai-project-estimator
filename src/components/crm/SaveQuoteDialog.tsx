@@ -167,12 +167,12 @@ export function SaveQuoteDialog({ open, onOpenChange, quoteData, onSuccess }: Sa
             <TabsContent value="existing" className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label>Select Client</Label>
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                <Select value={selectedClientId || "none"} onValueChange={(v) => setSelectedClientId(v === "none" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a client (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No client (standalone quote)</SelectItem>
+                    <SelectItem value="none">No client (standalone quote)</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.client_name}

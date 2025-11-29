@@ -180,14 +180,14 @@ export default function CalendarPage() {
             <div className="space-y-2">
               <Label>Client (Optional)</Label>
               <Select
-                value={formData.client_id}
-                onValueChange={(v) => setFormData({ ...formData, client_id: v })}
+                value={formData.client_id || "none"}
+                onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No client</SelectItem>
+                  <SelectItem value="none">No client</SelectItem>
                   {clients.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.client_name}</SelectItem>
                   ))}
