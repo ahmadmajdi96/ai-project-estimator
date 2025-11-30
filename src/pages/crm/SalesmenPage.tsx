@@ -148,14 +148,18 @@ export default function SalesmenPage() {
     setProfileOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
 
     if (editingSalesman) {
       await updateSalesman.mutateAsync({ id: editingSalesman.id, ...formData });
     } else {
-      await addSalesman.mutateAsync(formData);
+      // Add salesman with position - employee record is created automatically
+      await addSalesman.mutateAsync({
+        ...formData,
+        position: formData.contract_type === 'fulltime' ? 'salesman' : 'junior_salesman',
+      });
     }
     
     setDialogOpen(false);

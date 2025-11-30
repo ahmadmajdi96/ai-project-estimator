@@ -96,10 +96,35 @@ export function useAddSalesman() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (salesman: { name: string; email?: string; phone?: string; territory?: string; target_monthly?: number; target_quarterly?: number; target_annual?: number; commission_rate?: number; status?: string }) => {
+    mutationFn: async (salesman: { 
+      name: string; 
+      email?: string; 
+      phone?: string; 
+      territory?: string; 
+      target_monthly?: number; 
+      target_quarterly?: number; 
+      target_annual?: number; 
+      commission_rate?: number; 
+      status?: string;
+      position?: string;
+    }) => {
+      // First create employee record
+      const { data: employee, error: empError } = await supabase
+        .from('employees')
+        .insert([{ 
+          position: salesman.position || 'salesman',
+          status: 'active',
+        }])
+        .select()
+        .single();
+      
+      if (empError) throw empError;
+      
+      // Then create salesman linked to employee
+      const { position, ...salesmanData } = salesman;
       const { data, error } = await supabase
         .from('salesmen')
-        .insert([salesman])
+        .insert([{ ...salesmanData, employee_id: employee.id }])
         .select()
         .single();
       
@@ -108,6 +133,8 @@ export function useAddSalesman() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salesmen'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['salesmen_with_roles'] });
       toast.success('Salesman added successfully');
     },
     onError: (error) => {

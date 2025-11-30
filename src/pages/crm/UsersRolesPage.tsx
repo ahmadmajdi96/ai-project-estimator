@@ -1,9 +1,16 @@
-import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
-import { UserManagement } from '@/components/crm/UserManagement';
+import { SalesTeamManagement } from '@/components/crm/SalesTeamManagement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Shield, UserPlus, Settings } from 'lucide-react';
+import { Users, Shield, Briefcase } from 'lucide-react';
+
+const SALES_POSITIONS_INFO = [
+  { position: 'Sales Director', role: 'Department Head', color: 'orange' },
+  { position: 'Sales Manager', role: 'Team Lead', color: 'blue' },
+  { position: 'Senior Salesman', role: 'Team Lead', color: 'blue' },
+  { position: 'Salesman', role: 'Employee', color: 'green' },
+  { position: 'Junior Salesman', role: 'Employee', color: 'green' },
+];
 
 export default function UsersRolesPage() {
   return (
@@ -11,23 +18,27 @@ export default function UsersRolesPage() {
       <div className="space-y-6">
         <div>
           <h2 className="font-display text-2xl font-bold">Users & Roles Management</h2>
-          <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
+          <p className="text-muted-foreground">Manage sales team roles and permissions based on position</p>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="team" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="users" className="gap-2">
+            <TabsTrigger value="team" className="gap-2">
               <Users className="h-4 w-4" />
-              Users
+              Sales Team
             </TabsTrigger>
             <TabsTrigger value="roles" className="gap-2">
               <Shield className="h-4 w-4" />
               Roles Info
             </TabsTrigger>
+            <TabsTrigger value="positions" className="gap-2">
+              <Briefcase className="h-4 w-4" />
+              Position Mapping
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users">
-            <UserManagement />
+          <TabsContent value="team">
+            <SalesTeamManagement />
           </TabsContent>
 
           <TabsContent value="roles" className="space-y-6">
@@ -73,12 +84,12 @@ export default function UsersRolesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Department-level management capabilities
+                    Sales Director level - department management
                   </p>
                   <ul className="text-sm space-y-1">
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                      Manage department members
+                      Manage team members
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -86,7 +97,7 @@ export default function UsersRolesPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                      View department reports
+                      View all reports
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
@@ -105,7 +116,7 @@ export default function UsersRolesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Team coordination and task management
+                    Sales Manager / Senior Salesman level
                   </p>
                   <ul className="text-sm space-y-1">
                     <li className="flex items-center gap-2">
@@ -137,7 +148,7 @@ export default function UsersRolesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Basic access for daily operations
+                    Salesman / Junior Salesman level
                   </p>
                   <ul className="text-sm space-y-1">
                     <li className="flex items-center gap-2">
@@ -207,6 +218,91 @@ export default function UsersRolesPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="positions" className="space-y-6">
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  Position to Role Mapping
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-6">
+                  Roles are automatically assigned based on the sales team member's position. 
+                  This ensures consistent access control without manual role assignment.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4">Position</th>
+                        <th className="text-left py-3 px-4">Assigned Role</th>
+                        <th className="text-left py-3 px-4">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SALES_POSITIONS_INFO.map((item) => (
+                        <tr key={item.position} className="border-b border-border/50">
+                          <td className="py-3 px-4 font-medium">{item.position}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-${item.color}-500/20 text-${item.color}-400`}>
+                              <Shield className="h-3 w-3" />
+                              {item.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-muted-foreground">
+                            {item.position === 'Sales Director' && 'Manages entire sales department, full reporting access'}
+                            {item.position === 'Sales Manager' && 'Leads sales teams, manages quotas and targets'}
+                            {item.position === 'Senior Salesman' && 'Experienced salesperson, mentors juniors'}
+                            {item.position === 'Salesman' && 'Standard sales role, handles clients and deals'}
+                            {item.position === 'Junior Salesman' && 'Entry-level, learning the sales process'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-primary">How It Works</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mb-3">
+                      <span className="text-primary font-bold">1</span>
+                    </div>
+                    <h4 className="font-medium mb-2">Add Team Member</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Add a new salesman with their position. An employee record is automatically created.
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mb-3">
+                      <span className="text-primary font-bold">2</span>
+                    </div>
+                    <h4 className="font-medium mb-2">Role Auto-Assigned</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Based on their position, the appropriate CRM role is automatically assigned.
+                    </p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mb-3">
+                      <span className="text-primary font-bold">3</span>
+                    </div>
+                    <h4 className="font-medium mb-2">Customize Access</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Fine-tune page permissions for individual users as needed.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
