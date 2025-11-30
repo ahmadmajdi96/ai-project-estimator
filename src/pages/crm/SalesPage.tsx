@@ -1,334 +1,478 @@
 import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
+import { useQuotes, useAddQuote, useUpdateQuote, useDeleteQuote } from '@/hooks/useQuotes';
 import { useClients } from '@/hooks/useClients';
-import { useQuotes } from '@/hooks/useQuotes';
-import { useSalesmen } from '@/hooks/useSalesmen';
-import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, Users, FileText, DollarSign, Target, Calendar,
-  ArrowUpRight, ArrowDownRight, BarChart3, PieChart, Activity
-} from 'lucide-react';
-import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart as RechartsPie, Pie, Cell
-} from 'recharts';
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
+} from '@/components/ui/dialog';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { Plus, Pencil, Trash2, Eye, Search, FileText, DollarSign } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--muted))', '#10b981', '#f59e0b'];
+type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
+
+interface QuoteForm {
+  title: string;
+  client_id: string;
+  status: QuoteStatus;
+  subtotal: number;
+  discount_percent: number;
+  total: number;
+  notes: string;
+  valid_until: string;
+}
+
+const initialForm: QuoteForm = {
+  title: '',
+  client_id: '',
+  status: 'draft',
+  subtotal: 0,
+  discount_percent: 0,
+  total: 0,
+  notes: '',
+  valid_until: '',
+};
 
 export default function SalesPage() {
+  const { data: quotes = [], isLoading } = useQuotes();
   const { data: clients = [] } = useClients();
-  const { data: quotes = [] } = useQuotes();
-  const { data: salesmen = [] } = useSalesmen();
-  const { data: events = [] } = useCalendarEvents();
-  const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
+  const addQuote = useAddQuote();
+  const updateQuote = useUpdateQuote();
+  const deleteQuote = useDeleteQuote();
 
-  // Calculate metrics
-  const activeClients = clients.filter(c => c.status === 'active').length;
-  const prospectClients = clients.filter(c => c.status === 'prospect').length;
-  const totalRevenue = clients.reduce((sum, c) => sum + (c.revenue_to_date || 0), 0);
-  const totalContractValue = clients.reduce((sum, c) => sum + (c.contract_value || 0), 0);
-  
-  const acceptedQuotes = quotes.filter(q => q.status === 'accepted');
-  const pendingQuotes = quotes.filter(q => q.status === 'sent' || q.status === 'draft');
-  const quotesTotal = quotes.reduce((sum, q) => sum + q.total, 0);
-  const conversionRate = quotes.length > 0 ? (acceptedQuotes.length / quotes.length) * 100 : 0;
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [editingQuote, setEditingQuote] = useState<any>(null);
+  const [viewingQuote, setViewingQuote] = useState<any>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [form, setForm] = useState<QuoteForm>(initialForm);
 
-  // Sales by stage
-  const salesByStage = [
-    { name: 'Pre-Sales', value: clients.filter(c => c.sales_stage === 'pre_sales').length },
-    { name: 'Negotiation', value: clients.filter(c => c.sales_stage === 'negotiation').length },
-    { name: 'Closing', value: clients.filter(c => c.sales_stage === 'closing').length },
-    { name: 'Post-Sales', value: clients.filter(c => c.sales_stage === 'post_sales').length },
-    { name: 'Support', value: clients.filter(c => c.sales_stage === 'support').length },
-  ];
-
-  // Monthly data for chart
-  const monthlyData = Array.from({ length: 6 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (5 - i));
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    
-    const monthClients = clients.filter(c => {
-      const created = new Date(c.created_at);
-      return isWithinInterval(created, { start: monthStart, end: monthEnd });
-    });
-    
-    const monthQuotes = quotes.filter(q => {
-      const created = new Date(q.created_at);
-      return isWithinInterval(created, { start: monthStart, end: monthEnd });
-    });
-
-    return {
-      month: format(date, 'MMM'),
-      clients: monthClients.length,
-      quotes: monthQuotes.length,
-      revenue: monthClients.reduce((sum, c) => sum + (c.contract_value || 0), 0),
-    };
+  const filteredQuotes = quotes.filter(q => {
+    const matchesSearch = q.title.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
-  // Top salesmen
-  const salesmenWithStats = salesmen.map(s => ({
-    ...s,
-    clientCount: clients.filter((c: any) => c.salesman_id === s.id).length,
-    revenue: clients.filter((c: any) => c.salesman_id === s.id).reduce((sum, c: any) => sum + (c.revenue_to_date || 0), 0),
-  })).sort((a, b) => b.revenue - a.revenue);
+  const handleOpenNew = () => {
+    setEditingQuote(null);
+    setForm(initialForm);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (quote: any) => {
+    setEditingQuote(quote);
+    setForm({
+      title: quote.title,
+      client_id: quote.client_id || '',
+      status: quote.status,
+      subtotal: quote.subtotal,
+      discount_percent: quote.discount_percent || 0,
+      total: quote.total,
+      notes: quote.notes || '',
+      valid_until: quote.valid_until || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleView = (quote: any) => {
+    setViewingQuote(quote);
+    setIsViewOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deletingId) {
+      await deleteQuote.mutateAsync(deletingId);
+      setIsDeleteOpen(false);
+      setDeletingId(null);
+    }
+  };
+
+  const calculateTotal = (subtotal: number, discountPercent: number) => {
+    return subtotal - (subtotal * discountPercent / 100);
+  };
+
+  const handleSubtotalChange = (value: number) => {
+    const newTotal = calculateTotal(value, form.discount_percent);
+    setForm({ ...form, subtotal: value, total: newTotal });
+  };
+
+  const handleDiscountChange = (value: number) => {
+    const newTotal = calculateTotal(form.subtotal, value);
+    setForm({ ...form, discount_percent: value, total: newTotal });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title) {
+      toast.error('Please enter a title');
+      return;
+    }
+
+    const data = {
+      title: form.title,
+      client_id: form.client_id || null,
+      status: form.status,
+      subtotal: form.subtotal,
+      discount_percent: form.discount_percent,
+      total: form.total,
+      notes: form.notes || null,
+      valid_until: form.valid_until || null,
+    };
+
+    if (editingQuote) {
+      await updateQuote.mutateAsync({ id: editingQuote.id, ...data });
+    } else {
+      await addQuote.mutateAsync(data);
+    }
+    setIsDialogOpen(false);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      draft: 'bg-muted text-muted-foreground',
+      sent: 'bg-blue-500/10 text-blue-500',
+      accepted: 'bg-green-500/10 text-green-500',
+      rejected: 'bg-red-500/10 text-red-500',
+    };
+    return <Badge variant="secondary" className={styles[status] || ''}>{status}</Badge>;
+  };
+
+  const getClientName = (clientId: string | null) => {
+    if (!clientId) return 'N/A';
+    const client = clients.find(c => c.id === clientId);
+    return client?.client_name || 'Unknown';
+  };
+
+  // Stats
+  const totalValue = quotes.reduce((sum, q) => sum + q.total, 0);
+  const acceptedValue = quotes.filter(q => q.status === 'accepted').reduce((sum, q) => sum + q.total, 0);
 
   return (
     <CRMLayout title="Sales">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display text-2xl font-bold">Sales Overview</h2>
-            <p className="text-muted-foreground">Comprehensive view of all sales activities</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/crm/clients">View Clients</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/crm/quotes">View Quotes</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/crm/pipeline">Pipeline</Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* KPI Cards */}
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex items-center gap-1 mt-2 text-sm text-green-500">
-                <ArrowUpRight className="h-3 w-3" />
-                <span>12% vs last month</span>
+              <div>
+                <p className="text-2xl font-bold">{quotes.length}</p>
+                <p className="text-xs text-muted-foreground">Total Quotes</p>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Clients</p>
-                  <p className="text-2xl font-bold">{activeClients}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-accent" />
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">{prospectClients} prospects</p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending Quotes</p>
-                  <p className="text-2xl font-bold">{pendingQuotes.length}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-yellow-500" />
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">${quotesTotal.toLocaleString()} total</p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                  <p className="text-2xl font-bold">{conversionRate.toFixed(1)}%</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <Target className="h-5 w-5 text-green-500" />
-                </div>
-              </div>
-              <Progress value={conversionRate} className="mt-2 h-1.5" />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 glass-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Sales Trend
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }} 
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="hsl(var(--primary))" 
-                    fill="hsl(var(--primary))" 
-                    fillOpacity={0.2} 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChart className="h-5 w-5" />
-                Pipeline Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <RechartsPie>
-                  <Pie
-                    data={salesByStage.filter(s => s.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {salesByStage.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Salesmen Performance */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Top Performers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {salesmenWithStats.slice(0, 5).map((salesman, index) => (
-                <div key={salesman.id} className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <Link to={`/crm/salesmen`} className="font-medium hover:underline">
-                        {salesman.name}
-                      </Link>
-                      <span className="font-semibold">${salesman.revenue.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{salesman.clientCount} clients</span>
-                      <span>•</span>
-                      <span>{salesman.territory || 'No territory'}</span>
-                    </div>
-                  </div>
-                  <Progress value={(salesman.revenue / (salesmenWithStats[0]?.revenue || 1)) * 100} className="w-24 h-2" />
-                </div>
-              ))}
             </div>
-          </CardContent>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <DollarSign className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">${(totalValue / 1000).toFixed(0)}k</p>
+                <p className="text-xs text-muted-foreground">Total Value</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <FileText className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{quotes.filter(q => q.status === 'accepted').length}</p>
+                <p className="text-xs text-muted-foreground">Accepted</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10">
+                <DollarSign className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">${(acceptedValue / 1000).toFixed(0)}k</p>
+                <p className="text-xs text-muted-foreground">Accepted Value</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Filters & Actions */}
+        <Card className="p-4">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="flex gap-3 flex-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search quotes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="accepted">Accepted</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleOpenNew} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Quote
+            </Button>
+          </div>
         </Card>
 
-        {/* Recent Activity */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Recent Quotes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {quotes.slice(0, 5).map((quote) => (
-                  <div key={quote.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <div>
-                      <p className="font-medium">{quote.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(quote.created_at), 'MMM d, yyyy')}
-                      </p>
+        {/* Table */}
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead className="text-right">Discount</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Valid Until</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredQuotes.map((quote) => (
+                <TableRow key={quote.id}>
+                  <TableCell className="font-medium">{quote.title}</TableCell>
+                  <TableCell>{getClientName(quote.client_id)}</TableCell>
+                  <TableCell>{getStatusBadge(quote.status)}</TableCell>
+                  <TableCell className="text-right">${quote.subtotal.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{quote.discount_percent || 0}%</TableCell>
+                  <TableCell className="text-right font-semibold">${quote.total.toLocaleString()}</TableCell>
+                  <TableCell>
+                    {quote.valid_until ? format(new Date(quote.valid_until), 'MMM d, yyyy') : '-'}
+                  </TableCell>
+                  <TableCell>{format(new Date(quote.created_at), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex gap-1 justify-end">
+                      <Button variant="ghost" size="icon" onClick={() => handleView(quote)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(quote)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(quote.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${quote.total.toLocaleString()}</p>
-                      <Badge variant="secondary" className={
-                        quote.status === 'accepted' ? 'bg-green-500/10 text-green-500' :
-                        quote.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                        quote.status === 'sent' ? 'bg-blue-500/10 text-blue-500' :
-                        'bg-gray-500/10 text-gray-500'
-                      }>
-                        {quote.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {events.filter(e => new Date(e.start_datetime) > new Date()).slice(0, 5).map((event) => (
-                  <div key={event.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(event.start_datetime), 'MMM d, h:mm a')}
-                      </p>
-                    </div>
-                    <Badge variant="secondary">{event.event_type}</Badge>
-                  </div>
-                ))}
-                {events.filter(e => new Date(e.start_datetime) > new Date()).length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">No upcoming events</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredQuotes.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {isLoading ? 'Loading...' : 'No quotes found'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingQuote ? 'Edit Quote' : 'New Quote'}</DialogTitle>
+            <DialogDescription>
+              {editingQuote ? 'Update the quote details below' : 'Create a new quote for a client'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Title *</Label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Quote title"
+              />
+            </div>
+            <div>
+              <Label>Client</Label>
+              <Select value={form.client_id || 'none'} onValueChange={(v) => setForm({ ...form, client_id: v === 'none' ? '' : v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Client</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>{client.client_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v: QuoteStatus) => setForm({ ...form, status: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="accepted">Accepted</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Subtotal ($)</Label>
+                <Input
+                  type="number"
+                  value={form.subtotal}
+                  onChange={(e) => handleSubtotalChange(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <Label>Discount (%)</Label>
+                <Input
+                  type="number"
+                  value={form.discount_percent}
+                  onChange={(e) => handleDiscountChange(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Total</Label>
+              <Input value={`$${form.total.toLocaleString()}`} disabled className="bg-muted" />
+            </div>
+            <div>
+              <Label>Valid Until</Label>
+              <Input
+                type="date"
+                value={form.valid_until}
+                onChange={(e) => setForm({ ...form, valid_until: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Additional notes..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={addQuote.isPending || updateQuote.isPending}>
+              {editingQuote ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quote Details</DialogTitle>
+          </DialogHeader>
+          {viewingQuote && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Title</p>
+                  <p className="font-medium">{viewingQuote.title}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Client</p>
+                  <p className="font-medium">{getClientName(viewingQuote.client_id)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  {getStatusBadge(viewingQuote.status)}
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="font-medium">{format(new Date(viewingQuote.created_at), 'MMM d, yyyy')}</p>
+                </div>
+              </div>
+              <div className="border-t pt-4">
+                <div className="flex justify-between py-2">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>${viewingQuote.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span>{viewingQuote.discount_percent || 0}%</span>
+                </div>
+                <div className="flex justify-between py-2 border-t font-semibold">
+                  <span>Total</span>
+                  <span>${viewingQuote.total.toLocaleString()}</span>
+                </div>
+              </div>
+              {viewingQuote.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Notes</p>
+                  <p className="text-sm mt-1">{viewingQuote.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quote</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quote? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CRMLayout>
   );
 }
