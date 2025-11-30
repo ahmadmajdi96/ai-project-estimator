@@ -11,14 +11,9 @@ import { CLIENT_STATUSES, INDUSTRIES } from '@/types/crm';
 import { 
   Loader2, 
   Search, 
-  Users,
-  UserCheck,
-  UserX,
-  Clock,
   LayoutGrid,
   List,
-  Filter,
-  TrendingUp
+  Filter
 } from 'lucide-react';
 
 export default function StatusBoard() {
@@ -34,12 +29,6 @@ export default function StatusBoard() {
     return matchesSearch && matchesIndustry;
   });
 
-  // Calculate stats
-  const activeClients = filteredClients.filter(c => c.status === 'active').length;
-  const prospectClients = filteredClients.filter(c => c.status === 'prospect').length;
-  const inactiveClients = filteredClients.filter(c => c.status === 'inactive').length;
-  const totalRevenue = filteredClients.reduce((sum, c) => sum + (c.revenue_to_date || 0), 0);
-
   if (isLoading) {
     return (
       <CRMLayout title="Client Status Board">
@@ -53,54 +42,6 @@ export default function StatusBoard() {
   return (
     <CRMLayout title="Client Status Board">
       <div className="space-y-6">
-        {/* Header Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/20">
-                <UserCheck className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeClients}</p>
-                <p className="text-sm text-muted-foreground">Active Clients</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-500/20">
-                <Users className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{prospectClients}</p>
-                <p className="text-sm text-muted-foreground">Prospects</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-500/20">
-                <Clock className="h-5 w-5 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{inactiveClients}</p>
-                <p className="text-sm text-muted-foreground">Inactive</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-purple-500/20">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
         {/* Filters */}
         <Card className="p-4 bg-card/50 border-border/50">
           <div className="flex flex-wrap items-center gap-4">
@@ -149,19 +90,6 @@ export default function StatusBoard() {
             </div>
           </div>
         </Card>
-
-        {/* Status Legend */}
-        <div className="flex flex-wrap gap-2">
-          {CLIENT_STATUSES.map(status => {
-            const count = filteredClients.filter(c => c.status === status.value).length;
-            return (
-              <Badge key={status.value} className={`${status.color} gap-1`}>
-                {status.label}
-                <span className="bg-background/20 px-1.5 rounded-full text-xs">{count}</span>
-              </Badge>
-            );
-          })}
-        </div>
 
         {/* Status Board View */}
         {viewMode === 'kanban' ? (

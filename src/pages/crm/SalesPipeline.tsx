@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
 import { EnhancedKanbanBoard } from '@/components/crm/EnhancedKanbanBoard';
 import { useClients } from '@/hooks/useClients';
-import { useSalesmen } from '@/hooks/useSalesmen';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +11,6 @@ import { SALES_STAGES, INDUSTRIES } from '@/types/crm';
 import { 
   Loader2, 
   Search, 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
-  Target,
   LayoutGrid,
   List,
   Filter
@@ -23,7 +18,6 @@ import {
 
 export default function SalesPipeline() {
   const { data: clients = [], isLoading } = useClients();
-  const { data: salesmen = [] } = useSalesmen();
   const [searchQuery, setSearchQuery] = useState('');
   const [industryFilter, setIndustryFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -34,12 +28,6 @@ export default function SalesPipeline() {
     const matchesIndustry = industryFilter === 'all' || client.industry === industryFilter;
     return matchesSearch && matchesIndustry;
   });
-
-  // Calculate pipeline stats
-  const totalPipelineValue = filteredClients.reduce((sum, c) => sum + (c.contract_value || 0), 0);
-  const avgDealSize = filteredClients.length > 0 ? totalPipelineValue / filteredClients.length : 0;
-  const closingClients = filteredClients.filter(c => c.sales_stage === 'closing');
-  const closingValue = closingClients.reduce((sum, c) => sum + (c.contract_value || 0), 0);
 
   if (isLoading) {
     return (
@@ -54,54 +42,6 @@ export default function SalesPipeline() {
   return (
     <CRMLayout title="Sales Pipeline">
       <div className="space-y-6">
-        {/* Header Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/20">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${totalPipelineValue.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Pipeline Value</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/20">
-                <Target className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${closingValue.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Closing Stage</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-purple-500/20">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${avgDealSize.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Avg Deal Size</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-500/20">
-                <Users className="h-5 w-5 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{filteredClients.length}</p>
-                <p className="text-sm text-muted-foreground">Active Deals</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
         {/* Filters */}
         <Card className="p-4 bg-card/50 border-border/50">
           <div className="flex flex-wrap items-center gap-4">
@@ -150,19 +90,6 @@ export default function SalesPipeline() {
             </div>
           </div>
         </Card>
-
-        {/* Stage Legend */}
-        <div className="flex flex-wrap gap-2">
-          {SALES_STAGES.map(stage => {
-            const count = filteredClients.filter(c => c.sales_stage === stage.value).length;
-            return (
-              <Badge key={stage.value} className={`${stage.color} gap-1`}>
-                {stage.label}
-                <span className="bg-background/20 px-1.5 rounded-full text-xs">{count}</span>
-              </Badge>
-            );
-          })}
-        </div>
 
         {/* Pipeline View */}
         {viewMode === 'kanban' ? (

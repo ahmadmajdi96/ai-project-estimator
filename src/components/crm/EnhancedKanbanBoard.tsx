@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -108,30 +107,33 @@ export function EnhancedKanbanBoard({ clients, type }: EnhancedKanbanBoardProps)
 
   return (
     <div className="space-y-4">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {columns.map(col => {
-          const stats = columnStats[col.value];
-          const percentage = totalValue > 0 ? (stats.value / totalValue) * 100 : 0;
-          
-          return (
-            <Card 
-              key={col.value} 
-              className={cn(
-                "p-3 border-l-4 bg-card/50 transition-all hover:shadow-md",
-                col.color.replace('bg-', 'border-l-').split(' ')[0]
-              )}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">{col.label}</span>
-                <Badge variant="secondary" className="text-xs">{stats.count}</Badge>
-              </div>
-              <p className="text-lg font-bold">${stats.value.toLocaleString()}</p>
-              <Progress value={percentage} className="h-1 mt-2" />
-            </Card>
-          );
-        })}
-      </div>
+      {/* Pipeline Header with Total Value */}
+      <Card className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/20">
+              <DollarSign className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {type === 'status' ? 'Total Revenue' : 'Pipeline Value'}
+              </p>
+              <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {columns.map(col => {
+              const stats = columnStats[col.value];
+              return (
+                <Badge key={col.value} className={`${col.color} gap-1`}>
+                  {col.label}
+                  <span className="bg-background/20 px-1.5 rounded-full text-xs">{stats.count}</span>
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
 
       {/* Kanban Board */}
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
