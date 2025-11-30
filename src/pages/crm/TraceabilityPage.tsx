@@ -178,24 +178,24 @@ export default function TraceabilityPage() {
               
               {activeTable === 'clients' && (
                 <>
-                  <Select value={filters.status || ''} onValueChange={(v) => setFilters({...filters, status: v})}>
+                  <Select value={filters.status || 'all'} onValueChange={(v) => setFilters({...filters, status: v === 'all' ? '' : v})}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="prospect">Prospect</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
                       <SelectItem value="former">Former</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={filters.sales_stage || ''} onValueChange={(v) => setFilters({...filters, sales_stage: v})}>
+                  <Select value={filters.sales_stage || 'all'} onValueChange={(v) => setFilters({...filters, sales_stage: v === 'all' ? '' : v})}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="Stage" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Stages</SelectItem>
+                      <SelectItem value="all">All Stages</SelectItem>
                       <SelectItem value="pre_sales">Pre-Sales</SelectItem>
                       <SelectItem value="negotiation">Negotiation</SelectItem>
                       <SelectItem value="closing">Closing</SelectItem>
@@ -207,24 +207,24 @@ export default function TraceabilityPage() {
 
               {activeTable === 'tasks' && (
                 <>
-                  <Select value={filters.status || ''} onValueChange={(v) => setFilters({...filters, status: v})}>
+                  <Select value={filters.status || 'all'} onValueChange={(v) => setFilters({...filters, status: v === 'all' ? '' : v})}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       <SelectItem value="todo">To Do</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="review">Review</SelectItem>
                       <SelectItem value="done">Done</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={filters.priority || ''} onValueChange={(v) => setFilters({...filters, priority: v})}>
+                  <Select value={filters.priority || 'all'} onValueChange={(v) => setFilters({...filters, priority: v === 'all' ? '' : v})}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="Priority" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
