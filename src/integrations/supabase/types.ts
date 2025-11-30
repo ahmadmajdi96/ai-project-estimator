@@ -47,6 +47,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_decisions: {
+        Row: {
+          ai_analysis: Json | null
+          context: string | null
+          created_at: string | null
+          description: string
+          final_decision: string | null
+          id: string
+          options: Json | null
+          status: string
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          context?: string | null
+          created_at?: string | null
+          description: string
+          final_decision?: string | null
+          id?: string
+          options?: Json | null
+          status?: string
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_analysis?: Json | null
+          context?: string | null
+          created_at?: string | null
+          description?: string
+          final_decision?: string | null
+          id?: string
+          options?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_logs: {
         Row: {
           content: string
@@ -74,6 +116,42 @@ export type Database = {
           id?: string
           role?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_recommendations: {
+        Row: {
+          category: string
+          context: Json | null
+          created_at: string | null
+          description: string
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          context?: Json | null
+          created_at?: string | null
+          description: string
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          context?: Json | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -885,6 +963,7 @@ export type Database = {
           id: string
           notes: string | null
           profit_margin: number | null
+          salesman_id: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
           title: string
@@ -901,6 +980,7 @@ export type Database = {
           id?: string
           notes?: string | null
           profit_margin?: number | null
+          salesman_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title: string
@@ -917,6 +997,7 @@ export type Database = {
           id?: string
           notes?: string | null
           profit_margin?: number | null
+          salesman_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title?: string
@@ -930,6 +1011,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_salesman_id_fkey"
+            columns: ["salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
             referencedColumns: ["id"]
           },
         ]

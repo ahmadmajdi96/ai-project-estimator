@@ -13,11 +13,14 @@ export function useQuotes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('quotes')
-        .select('*')
+        .select(`
+          *,
+          salesmen:salesman_id (id, name)
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Quote[];
+      return data;
     },
   });
 }
