@@ -9,7 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Database, Network, FileJson, Table2, ArrowLeft, Workflow, Activity, RefreshCw, Radio, Bot, Play, Trash2, Send, Clock, CheckCircle, XCircle, AlertCircle, Zap, MessageSquare, Settings, Code2, ArrowRight, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Database, Network, FileJson, Table2, ArrowLeft, Workflow, Activity, RefreshCw, Radio, Bot, Play, Trash2, Send, Clock, CheckCircle, XCircle, AlertCircle, Zap, MessageSquare, Settings, Code2, ArrowRight, Loader2, Download, X, Eye, Copy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -290,6 +291,7 @@ function RequestMonitor() {
   const [requests, setRequests] = useState<RequestLog[]>([]);
   const [isRecording, setIsRecording] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [selectedRequest, setSelectedRequest] = useState<RequestLog | null>(null);
   const originalFetch = useRef<typeof fetch | null>(null);
 
   useEffect(() => {
@@ -333,7 +335,7 @@ function RequestMonitor() {
           status: response.status,
           duration,
           requestBody,
-          responseBody: Array.isArray(responseBody) ? `[${responseBody.length} items]` : responseBody
+          responseBody
         }, ...prev.slice(0, 99)]);
 
         return response;
@@ -383,78 +385,192 @@ function RequestMonitor() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
+  };
+
+  const downloadRequests = () => {
+    const data = JSON.stringify(requests, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `request-logs-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Request logs downloaded');
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className={`h-5 w-5 ${isRecording ? 'text-red-500 animate-pulse' : 'text-muted-foreground'}`} />
-              Live Request Monitor
-            </CardTitle>
-            <CardDescription>Real-time tracking of all API requests</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="GET">GET</SelectItem>
-                <SelectItem value="POST">POST</SelectItem>
-                <SelectItem value="PATCH">PATCH</SelectItem>
-                <SelectItem value="DELETE">DELETE</SelectItem>
-                <SelectItem value="errors">Errors</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant={isRecording ? 'destructive' : 'default'} 
-              size="sm"
-              onClick={() => setIsRecording(!isRecording)}
-            >
-              {isRecording ? 'Stop' : 'Start'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setRequests([])}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[500px]">
-          {filteredRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Network className="h-12 w-12 text-muted-foreground/30" />
-              <p className="mt-4 text-muted-foreground">
-                {isRecording ? 'Waiting for requests... Interact with the app to see them here.' : 'Recording paused'}
-              </p>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Radio className={`h-5 w-5 ${isRecording ? 'text-red-500 animate-pulse' : 'text-muted-foreground'}`} />
+                Live Request Monitor
+              </CardTitle>
+              <CardDescription>Click on a request to view full details</CardDescription>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredRequests.map((req) => (
-                <div key={req.id} className="rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <Badge className={getMethodColor(req.method)}>{req.method}</Badge>
-                    <code className="text-xs flex-1 truncate">{req.url}</code>
-                    <span className={`text-sm font-mono ${getStatusColor(req.status)}`}>
-                      {req.status || 'ERR'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{req.duration}ms</span>
-                    <span className="text-xs text-muted-foreground">
-                      {req.timestamp.toLocaleTimeString()}
-                    </span>
+            <div className="flex items-center gap-2">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                  <SelectItem value="errors">Errors</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                variant={isRecording ? 'destructive' : 'default'} 
+                size="sm"
+                onClick={() => setIsRecording(!isRecording)}
+              >
+                {isRecording ? 'Stop' : 'Start'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadRequests} disabled={requests.length === 0}>
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setRequests([])}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[500px]">
+            {filteredRequests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Network className="h-12 w-12 text-muted-foreground/30" />
+                <p className="mt-4 text-muted-foreground">
+                  {isRecording ? 'Waiting for requests... Interact with the app to see them here.' : 'Recording paused'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredRequests.map((req) => (
+                  <div 
+                    key={req.id} 
+                    className="rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedRequest(req)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Badge className={getMethodColor(req.method)}>{req.method}</Badge>
+                      <code className="text-xs flex-1 truncate">{req.url}</code>
+                      <span className={`text-sm font-mono ${getStatusColor(req.status)}`}>
+                        {req.status || 'ERR'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{req.duration}ms</span>
+                      <span className="text-xs text-muted-foreground">
+                        {req.timestamp.toLocaleTimeString()}
+                      </span>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    {req.error && (
+                      <div className="mt-2 text-xs text-red-500">{req.error}</div>
+                    )}
                   </div>
-                  {req.error && (
-                    <div className="mt-2 text-xs text-red-500">{req.error}</div>
-                  )}
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Request Details Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedRequest && (
+                <>
+                  <Badge className={getMethodColor(selectedRequest.method)}>{selectedRequest.method}</Badge>
+                  <span className={getStatusColor(selectedRequest.status)}>{selectedRequest.status || 'ERROR'}</span>
+                  <span className="text-muted-foreground text-sm ml-2">{selectedRequest.duration}ms</span>
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription className="font-mono text-xs break-all">
+              {selectedRequest?.url}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4 overflow-auto max-h-[60vh]">
+              <div className="text-xs text-muted-foreground">
+                {selectedRequest.timestamp.toLocaleString()}
+              </div>
+
+              {/* Request Body */}
+              {selectedRequest.requestBody && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-blue-500" />
+                      Request Body
+                    </h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => copyToClipboard(JSON.stringify(selectedRequest.requestBody, null, 2))}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  <pre className="p-3 rounded-lg bg-muted text-xs overflow-auto max-h-[200px] whitespace-pre-wrap">
+                    {typeof selectedRequest.requestBody === 'string' 
+                      ? selectedRequest.requestBody 
+                      : JSON.stringify(selectedRequest.requestBody, null, 2)}
+                  </pre>
                 </div>
-              ))}
+              )}
+
+              {/* Response Body */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <ArrowLeft className="h-4 w-4 text-green-500" />
+                    Response Body
+                  </h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => copyToClipboard(
+                      selectedRequest.error || 
+                      (typeof selectedRequest.responseBody === 'string' 
+                        ? selectedRequest.responseBody 
+                        : JSON.stringify(selectedRequest.responseBody, null, 2))
+                    )}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                {selectedRequest.error ? (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-500">
+                    {selectedRequest.error}
+                  </div>
+                ) : (
+                  <pre className="p-3 rounded-lg bg-muted text-xs overflow-auto max-h-[300px] whitespace-pre-wrap">
+                    {typeof selectedRequest.responseBody === 'string' 
+                      ? selectedRequest.responseBody 
+                      : JSON.stringify(selectedRequest.responseBody, null, 2)}
+                  </pre>
+                )}
+              </div>
             </div>
           )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -858,6 +974,148 @@ function EnhancedSwagger() {
   );
 }
 
+// Database Export Component
+function DatabaseExport({ tableCounts }: { tableCounts?: Record<string, number> }) {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<{ table: string; progress: number } | null>(null);
+  const [selectedTables, setSelectedTables] = useState<string[]>(Object.keys(databaseSchema));
+
+  const allTables = Object.keys(databaseSchema);
+
+  const toggleTable = (table: string) => {
+    setSelectedTables(prev => 
+      prev.includes(table) 
+        ? prev.filter(t => t !== table)
+        : [...prev, table]
+    );
+  };
+
+  const selectAll = () => setSelectedTables(allTables);
+  const deselectAll = () => setSelectedTables([]);
+
+  const exportDatabase = async () => {
+    if (selectedTables.length === 0) {
+      toast.error('Please select at least one table to export');
+      return;
+    }
+
+    setIsExporting(true);
+    const exportData: Record<string, any[]> = {};
+    const exportMeta = {
+      exportedAt: new Date().toISOString(),
+      tables: selectedTables.length,
+      totalRecords: 0
+    };
+
+    try {
+      for (let i = 0; i < selectedTables.length; i++) {
+        const table = selectedTables[i];
+        setExportProgress({ table, progress: ((i + 1) / selectedTables.length) * 100 });
+        
+        const { data, error } = await supabase.from(table as any).select('*');
+        if (error) {
+          console.error(`Error fetching ${table}:`, error);
+          exportData[table] = [];
+        } else {
+          exportData[table] = data || [];
+          exportMeta.totalRecords += (data?.length || 0);
+        }
+      }
+
+      const fullExport = {
+        _meta: exportMeta,
+        _schema: databaseSchema,
+        data: exportData
+      };
+
+      const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `database-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${exportMeta.totalRecords} records from ${selectedTables.length} tables`);
+    } catch (error) {
+      toast.error('Export failed');
+      console.error(error);
+    } finally {
+      setIsExporting(false);
+      setExportProgress(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Database Export
+            </CardTitle>
+            <CardDescription>
+              Download all database content as JSON
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
+            <Button variant="outline" size="sm" onClick={deselectAll}>Deselect All</Button>
+            <Button onClick={exportDatabase} disabled={isExporting || selectedTables.length === 0}>
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export ({selectedTables.length} tables)
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {exportProgress && (
+          <div className="mb-4 p-3 rounded-lg bg-muted">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span>Exporting: {exportProgress.table}</span>
+              <span>{Math.round(exportProgress.progress)}%</span>
+            </div>
+            <div className="h-2 bg-background rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${exportProgress.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          {allTables.map((table) => (
+            <div 
+              key={table}
+              onClick={() => toggleTable(table)}
+              className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-colors ${
+                selectedTables.includes(table) 
+                  ? 'bg-primary/10 border-primary' 
+                  : 'hover:bg-muted'
+              }`}
+            >
+              <span className="font-mono text-xs truncate">{table}</span>
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {tableCounts?.[table] ?? '?'}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function DevToolsPage() {
   const [nodes, setNodes, onNodesChange] = useNodesState(generateNodes());
   const [edges, setEdges, onEdgesChange] = useEdgesState(generateEdges());
@@ -928,6 +1186,7 @@ export default function DevToolsPage() {
 
           {/* Schema Tab */}
           <TabsContent value="schema" className="space-y-6">
+            <DatabaseExport tableCounts={tableCounts} />
             <div className="grid gap-6 lg:grid-cols-4">
               <div className="lg:col-span-3">
                 <Card>
