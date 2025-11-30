@@ -22,7 +22,8 @@ import {
   Lightbulb,
   Scale,
   Workflow,
-  Bell
+  Bell,
+  Code2
 } from 'lucide-react';
 import {
   Sidebar,
@@ -76,6 +77,7 @@ const aiItems = [
 
 const toolItems = [
   { title: 'Configuration', url: '/crm/config', icon: Settings },
+  { title: 'Dev Tools', url: '/dev-tools', icon: Code2 },
 ];
 
 export function CRMSidebar() {

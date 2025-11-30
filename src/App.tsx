@@ -29,6 +29,7 @@ import WorkflowsPage from "./pages/crm/WorkflowsPage";
 import RemindersPage from "./pages/crm/RemindersPage";
 import DepartmentsPage from "./pages/crm/DepartmentsPage";
 import EmployeesPage from "./pages/crm/EmployeesPage";
+import DevToolsPage from "./pages/DevToolsPage";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/crm/config" element={<ConfigPage />} />
           <Route path="/crm/traceability" element={<TraceabilityPage />} />
           <Route path="/crm/reports" element={<ReportsPage />} />
+          <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
