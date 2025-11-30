@@ -388,6 +388,7 @@ export default function SalesmenPage() {
             </DialogContent>
           </Dialog>
         </div>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-4 gap-4">
