@@ -12,8 +12,6 @@ import SalesPipeline from "./pages/crm/SalesPipeline";
 import StatusBoard from "./pages/crm/StatusBoard";
 import CalendarPage from "./pages/crm/CalendarPage";
 import QuotesPage from "./pages/crm/QuotesPage";
-import DepartmentsPage from "./pages/crm/DepartmentsPage";
-import EmployeesPage from "./pages/crm/EmployeesPage";
 import TasksPage from "./pages/crm/TasksPage";
 import RoadmapsPage from "./pages/crm/RoadmapsPage";
 import KPIsPage from "./pages/crm/KPIsPage";
@@ -21,6 +19,9 @@ import AIInsightsPage from "./pages/crm/AIInsightsPage";
 import AIChatPage from "./pages/crm/AIChatPage";
 import ConfigPage from "./pages/crm/ConfigPage";
 import SalesmenPage from "./pages/crm/SalesmenPage";
+import SalesPage from "./pages/crm/SalesPage";
+import UsersRolesPage from "./pages/crm/UsersRolesPage";
+import TraceabilityPage from "./pages/crm/TraceabilityPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/" element={<Navigate to="/crm" replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/crm" element={<CRMDashboard />} />
+          <Route path="/crm/sales" element={<SalesPage />} />
           <Route path="/crm/clients" element={<ClientsPage />} />
           <Route path="/crm/clients/:id" element={<ClientProfile />} />
           <Route path="/crm/salesmen" element={<SalesmenPage />} />
@@ -41,14 +43,14 @@ const App = () => (
           <Route path="/crm/status" element={<StatusBoard />} />
           <Route path="/crm/calendar" element={<CalendarPage />} />
           <Route path="/crm/quotes" element={<QuotesPage />} />
-          <Route path="/crm/departments" element={<DepartmentsPage />} />
-          <Route path="/crm/employees" element={<EmployeesPage />} />
+          <Route path="/crm/users" element={<UsersRolesPage />} />
           <Route path="/crm/tasks" element={<TasksPage />} />
           <Route path="/crm/roadmaps" element={<RoadmapsPage />} />
           <Route path="/crm/kpis" element={<KPIsPage />} />
           <Route path="/crm/ai-insights" element={<AIInsightsPage />} />
           <Route path="/crm/ai-chat" element={<AIChatPage />} />
           <Route path="/crm/config" element={<ConfigPage />} />
+          <Route path="/crm/traceability" element={<TraceabilityPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
