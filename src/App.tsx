@@ -25,6 +25,8 @@ import SalesPage from "./pages/crm/SalesPage";
 import UsersRolesPage from "./pages/crm/UsersRolesPage";
 import TraceabilityPage from "./pages/crm/TraceabilityPage";
 import ReportsPage from "./pages/crm/ReportsPage";
+import WorkflowsPage from "./pages/crm/WorkflowsPage";
+import RemindersPage from "./pages/crm/RemindersPage";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/crm/tasks" element={<TasksPage />} />
           <Route path="/crm/roadmaps" element={<RoadmapsPage />} />
           <Route path="/crm/kpis" element={<KPIsPage />} />
+          <Route path="/crm/workflows" element={<WorkflowsPage />} />
+          <Route path="/crm/reminders" element={<RemindersPage />} />
           <Route path="/crm/ai-insights" element={<AIInsightsPage />} />
           <Route path="/crm/ai-chat" element={<AIChatPage />} />
           <Route path="/crm/ai-recommendations" element={<AIRecommendationsPage />} />

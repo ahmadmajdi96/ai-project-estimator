@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          description: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json | null
+          performed_by: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+        }
+        Relationships: []
+      }
       ai_agent_config: {
         Row: {
           created_at: string | null
@@ -1022,6 +1055,72 @@ export type Database = {
           },
         ]
       }
+      reminders: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string
+          id: string
+          is_completed: boolean | null
+          priority: string | null
+          related_client_id: string | null
+          related_salesman_id: string | null
+          reminder_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          related_client_id?: string | null
+          related_salesman_id?: string | null
+          reminder_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          related_client_id?: string | null
+          related_salesman_id?: string | null
+          reminder_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_related_client_id_fkey"
+            columns: ["related_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_related_salesman_id_fkey"
+            columns: ["related_salesman_id"]
+            isOneToOne: false
+            referencedRelation: "salesmen"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roadmaps: {
         Row: {
           created_at: string | null
@@ -1396,6 +1495,92 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_logs: {
+        Row: {
+          action_result: Json | null
+          action_taken: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          status: string | null
+          trigger_data: Json | null
+          trigger_event: string
+          workflow_rule_id: string | null
+        }
+        Insert: {
+          action_result?: Json | null
+          action_taken: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          trigger_data?: Json | null
+          trigger_event: string
+          workflow_rule_id?: string | null
+        }
+        Update: {
+          action_result?: Json | null
+          action_taken?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          status?: string | null
+          trigger_data?: Json | null
+          trigger_event?: string
+          workflow_rule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_logs_workflow_rule_id_fkey"
+            columns: ["workflow_rule_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_rules: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

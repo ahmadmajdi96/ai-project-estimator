@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Client, ClientStatus, SalesStage } from '@/types/crm';
 import type { Database } from '@/integrations/supabase/types';
+import { triggerStageChangeWorkflow, triggerStatusChangeWorkflow, triggerNewClientWorkflow } from '@/services/workflowEngine';
 
 type ClientInsert = Database['public']['Tables']['clients']['Insert'];
 type ClientUpdate = Database['public']['Tables']['clients']['Update'];
@@ -54,9 +55,13 @@ export function useAddClient() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       toast.success('Client added successfully');
+      // Trigger new client workflow
+      if (data) {
+        triggerNewClientWorkflow(data.id, data.client_name);
+      }
     },
     onError: (error) => {
       toast.error('Failed to add client: ' + error.message);
@@ -115,7 +120,7 @@ export function useUpdateClientStatus() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: ClientStatus }) => {
+    mutationFn: async ({ id, status, oldStatus, clientName }: { id: string; status: ClientStatus; oldStatus?: string; clientName?: string }) => {
       const { data, error } = await supabase
         .from('clients')
         .update({ status })
@@ -124,10 +129,14 @@ export function useUpdateClientStatus() {
         .single();
       
       if (error) throw error;
-      return data;
+      return { data, oldStatus, clientName };
     },
-    onSuccess: () => {
+    onSuccess: ({ data, oldStatus, clientName }) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      // Trigger workflow
+      if (data && oldStatus && clientName) {
+        triggerStatusChangeWorkflow(data.id, clientName, oldStatus, data.status);
+      }
     },
     onError: (error) => {
       toast.error('Failed to update status: ' + error.message);
@@ -139,7 +148,7 @@ export function useUpdateClientSalesStage() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, sales_stage }: { id: string; sales_stage: SalesStage }) => {
+    mutationFn: async ({ id, sales_stage, oldStage, clientName }: { id: string; sales_stage: SalesStage; oldStage?: string; clientName?: string }) => {
       const { data, error } = await supabase
         .from('clients')
         .update({ sales_stage })
@@ -148,10 +157,14 @@ export function useUpdateClientSalesStage() {
         .single();
       
       if (error) throw error;
-      return data;
+      return { data, oldStage, clientName };
     },
-    onSuccess: () => {
+    onSuccess: ({ data, oldStage, clientName }) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      // Trigger workflow
+      if (data && oldStage && clientName) {
+        triggerStageChangeWorkflow(data.id, clientName, oldStage, data.sales_stage);
+      }
     },
     onError: (error) => {
       toast.error('Failed to update sales stage: ' + error.message);

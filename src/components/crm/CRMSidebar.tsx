@@ -20,7 +20,9 @@ import {
   Shield,
   PieChart,
   Lightbulb,
-  Scale
+  Scale,
+  Workflow,
+  Bell
 } from 'lucide-react';
 import {
   Sidebar,
@@ -56,6 +58,11 @@ const managementItems = [
   { title: 'Roadmaps', url: '/crm/roadmaps', icon: Map },
   { title: 'KPIs', url: '/crm/kpis', icon: BarChart3 },
   { title: 'Reports', url: '/crm/reports', icon: PieChart },
+];
+
+const automationItems = [
+  { title: 'Workflows', url: '/crm/workflows', icon: Workflow },
+  { title: 'Reminders', url: '/crm/reminders', icon: Bell },
 ];
 
 const aiItems = [
@@ -118,6 +125,28 @@ export function CRMSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url}
+                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Automation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {automationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
