@@ -17,6 +17,8 @@ import RoadmapsPage from "./pages/crm/RoadmapsPage";
 import KPIsPage from "./pages/crm/KPIsPage";
 import AIInsightsPage from "./pages/crm/AIInsightsPage";
 import AIChatPage from "./pages/crm/AIChatPage";
+import AIRecommendationsPage from "./pages/crm/AIRecommendationsPage";
+import AIDecisionsPage from "./pages/crm/AIDecisionsPage";
 import ConfigPage from "./pages/crm/ConfigPage";
 import SalesmenPage from "./pages/crm/SalesmenPage";
 import SalesPage from "./pages/crm/SalesPage";
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/crm/kpis" element={<KPIsPage />} />
           <Route path="/crm/ai-insights" element={<AIInsightsPage />} />
           <Route path="/crm/ai-chat" element={<AIChatPage />} />
+          <Route path="/crm/ai-recommendations" element={<AIRecommendationsPage />} />
+          <Route path="/crm/ai-decisions" element={<AIDecisionsPage />} />
           <Route path="/crm/config" element={<ConfigPage />} />
           <Route path="/crm/traceability" element={<TraceabilityPage />} />
           <Route path="/crm/reports" element={<ReportsPage />} />

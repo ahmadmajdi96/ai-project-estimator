@@ -18,7 +18,9 @@ import {
   ShoppingCart,
   Database,
   Shield,
-  PieChart
+  PieChart,
+  Lightbulb,
+  Scale
 } from 'lucide-react';
 import {
   Sidebar,
@@ -59,6 +61,8 @@ const managementItems = [
 const aiItems = [
   { title: 'AI Insights', url: '/crm/ai-insights', icon: Bot },
   { title: 'AI Chat', url: '/crm/ai-chat', icon: MessageSquare },
+  { title: 'AI Recommendations', url: '/crm/ai-recommendations', icon: Lightbulb },
+  { title: 'AI Decisions', url: '/crm/ai-decisions', icon: Scale },
 ];
 
 const toolItems = [

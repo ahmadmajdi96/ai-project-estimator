@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
 import { useQuotes, useAddQuote, useUpdateQuote, useDeleteQuote } from '@/hooks/useQuotes';
 import { useClients } from '@/hooks/useClients';
+import { useSalesmen } from '@/hooks/useSalesmen';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected';
 interface QuoteForm {
   title: string;
   client_id: string;
+  salesman_id: string;
   status: QuoteStatus;
   subtotal: number;
   discount_percent: number;
@@ -41,6 +43,7 @@ interface QuoteForm {
 const initialForm: QuoteForm = {
   title: '',
   client_id: '',
+  salesman_id: '',
   status: 'draft',
   subtotal: 0,
   discount_percent: 0,
@@ -52,6 +55,7 @@ const initialForm: QuoteForm = {
 export default function SalesPage() {
   const { data: quotes = [], isLoading } = useQuotes();
   const { data: clients = [] } = useClients();
+  const { data: salesmen = [] } = useSalesmen();
   const addQuote = useAddQuote();
   const updateQuote = useUpdateQuote();
   const deleteQuote = useDeleteQuote();
@@ -83,6 +87,7 @@ export default function SalesPage() {
     setForm({
       title: quote.title,
       client_id: quote.client_id || '',
+      salesman_id: quote.salesman_id || '',
       status: quote.status,
       subtotal: quote.subtotal,
       discount_percent: quote.discount_percent || 0,
@@ -134,6 +139,7 @@ export default function SalesPage() {
     const data = {
       title: form.title,
       client_id: form.client_id || null,
+      salesman_id: form.salesman_id || null,
       status: form.status,
       subtotal: form.subtotal,
       discount_percent: form.discount_percent,
@@ -164,6 +170,12 @@ export default function SalesPage() {
     if (!clientId) return 'N/A';
     const client = clients.find(c => c.id === clientId);
     return client?.client_name || 'Unknown';
+  };
+
+  const getSalesmanName = (salesmanId: string | null) => {
+    if (!salesmanId) return 'N/A';
+    const salesman = salesmen.find(s => s.id === salesmanId);
+    return salesman?.name || 'Unknown';
   };
 
   // Stats
@@ -261,11 +273,9 @@ export default function SalesPage() {
               <TableRow>
                 <TableHead>Title</TableHead>
                 <TableHead>Client</TableHead>
+                <TableHead>Salesman</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Subtotal</TableHead>
-                <TableHead className="text-right">Discount</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead>Valid Until</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -275,13 +285,9 @@ export default function SalesPage() {
                 <TableRow key={quote.id}>
                   <TableCell className="font-medium">{quote.title}</TableCell>
                   <TableCell>{getClientName(quote.client_id)}</TableCell>
+                  <TableCell>{getSalesmanName((quote as any).salesman_id)}</TableCell>
                   <TableCell>{getStatusBadge(quote.status)}</TableCell>
-                  <TableCell className="text-right">${quote.subtotal.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">{quote.discount_percent || 0}%</TableCell>
                   <TableCell className="text-right font-semibold">${quote.total.toLocaleString()}</TableCell>
-                  <TableCell>
-                    {quote.valid_until ? format(new Date(quote.valid_until), 'MMM d, yyyy') : '-'}
-                  </TableCell>
                   <TableCell>{format(new Date(quote.created_at), 'MMM d, yyyy')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
@@ -300,7 +306,7 @@ export default function SalesPage() {
               ))}
               {filteredQuotes.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     {isLoading ? 'Loading...' : 'No quotes found'}
                   </TableCell>
                 </TableRow>
