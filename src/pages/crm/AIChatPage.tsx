@@ -9,7 +9,14 @@ import { useClients } from '@/hooks/useClients';
 import { useTasks } from '@/hooks/useTasks';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useSalesmen } from '@/hooks/useSalesmen';
-import { useKPIDefinitions } from '@/hooks/useKPIs';
+import { useKPIDefinitions, useKPIRecords } from '@/hooks/useKPIs';
+import { useQuotes } from '@/hooks/useQuotes';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import { useRoadmaps } from '@/hooks/useRoadmaps';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useAIConfigs } from '@/hooks/useAIConfig';
+import { useCompanyPolicies } from '@/hooks/useCompanyPolicies';
+import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 import { toast } from 'sonner';
 import { 
   Send, 
@@ -19,7 +26,9 @@ import {
   Sparkles,
   Database,
   RefreshCw,
-  Lightbulb
+  Lightbulb,
+  Brain,
+  FileText
 } from 'lucide-react';
 
 interface Message {
@@ -30,27 +39,38 @@ interface Message {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
 const SUGGESTED_PROMPTS = [
-  "What's the current status of our sales pipeline?",
-  "Which clients need follow-up this week?",
-  "Analyze our top performing salesmen",
-  "What tasks are overdue?",
-  "Give me insights on our KPIs",
+  "Give me a comprehensive analysis of our sales performance",
+  "Which clients need immediate attention and why?",
+  "Analyze our top performing salesmen with metrics",
+  "What tasks are overdue and who's responsible?",
+  "Summarize our KPIs and identify areas for improvement",
+  "What's the status of our active roadmaps?",
+  "Identify revenue opportunities in our pipeline",
 ];
 
 export default function AIChatPage() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hello! I\'m your AI CRM assistant. I have access to your clients, tasks, employees, salesmen, and KPIs data. How can I help you analyze your business today?' }
+    { role: 'assistant', content: 'Hello! I\'m your AI CRM assistant with full access to your organization\'s data including clients, tasks, employees, salesmen, quotes, KPIs, roadmaps, and company policies. How can I help you analyze your business today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load CRM data for context
+  // Load ALL CRM data for comprehensive context
   const { data: clients = [] } = useClients();
   const { data: tasks = [] } = useTasks();
   const { data: employees = [] } = useEmployees();
   const { data: salesmen = [] } = useSalesmen();
   const { data: kpis = [] } = useKPIDefinitions();
+  const { data: kpiRecords = [] } = useKPIRecords();
+  const { data: quotes = [] } = useQuotes();
+  const { data: events = [] } = useCalendarEvents();
+  const { data: roadmaps = [] } = useRoadmaps();
+  const { data: departments = [] } = useDepartments();
+  const { data: aiConfigs = [] } = useAIConfigs();
+  const { data: policies = [] } = useCompanyPolicies();
+
+  const activeConfig = aiConfigs.find(c => c.is_active);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -62,36 +82,85 @@ export default function AIChatPage() {
     summary: {
       totalClients: clients.length,
       activeClients: clients.filter(c => c.status === 'active').length,
+      prospectClients: clients.filter(c => c.status === 'prospect').length,
+      totalRevenue: clients.reduce((sum, c) => sum + (c.revenue_to_date || 0), 0),
+      totalContractValue: clients.reduce((sum, c) => sum + (c.contract_value || 0), 0),
       totalTasks: tasks.length,
       pendingTasks: tasks.filter(t => t.status !== 'done').length,
       overdueTasks: tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length,
       totalEmployees: employees.length,
       totalSalesmen: salesmen.length,
       activeSalesmen: salesmen.filter(s => s.status === 'active').length,
+      totalQuotes: quotes.length,
+      acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
+      pendingQuotes: quotes.filter(q => q.status === 'sent' || q.status === 'draft').length,
+      quotesValue: quotes.reduce((sum, q) => sum + q.total, 0),
+      totalDepartments: departments.length,
+      totalRoadmaps: roadmaps.length,
     },
-    clients: clients.slice(0, 20).map(c => ({
+    clients: clients.map(c => ({
       name: c.client_name,
       status: c.status,
       sales_stage: c.sales_stage,
       contract_value: c.contract_value,
+      revenue_to_date: c.revenue_to_date,
       industry: c.industry,
+      follow_up_needed: c.follow_up_needed,
+      last_contact: c.last_contact,
     })),
-    recentTasks: tasks.slice(0, 15).map(t => ({
+    tasks: tasks.map(t => ({
       title: t.title,
       status: t.status,
       priority: t.priority,
       due_date: t.due_date,
+      assigned_to: t.assigned_to,
     })),
     salesmen: salesmen.map(s => ({
+      id: s.id,
       name: s.name,
       status: s.status,
       territory: s.territory,
       target_monthly: s.target_monthly,
+      target_quarterly: s.target_quarterly,
+      target_annual: s.target_annual,
+      commission_rate: s.commission_rate,
     })),
-    kpiDefinitions: kpis.map(k => ({
+    quotes: quotes.map(q => ({
+      title: q.title,
+      status: q.status,
+      total: q.total,
+      client_id: q.client_id,
+      created_at: q.created_at,
+    })),
+    kpis: kpis.map(k => ({
       name: k.name,
       target: k.target_value,
       unit: k.unit,
+      description: k.description,
+    })),
+    roadmaps: roadmaps.map(r => ({
+      title: r.title,
+      status: r.status,
+      start_date: r.start_date,
+      end_date: r.end_date,
+    })),
+    departments: departments.map(d => ({
+      name: d.name,
+      budget: d.budget,
+    })),
+    upcomingEvents: events.filter(e => new Date(e.start_datetime) > new Date()).slice(0, 10).map(e => ({
+      title: e.title,
+      type: e.event_type,
+      date: e.start_datetime,
+    })),
+    aiConfig: activeConfig ? {
+      personality: activeConfig.personality,
+      rules: activeConfig.rules,
+    } : null,
+    companyPolicies: policies.filter(p => p.is_active).map(p => ({
+      title: p.title,
+      category: p.category,
+      content: p.content,
     })),
   });
 
@@ -121,6 +190,12 @@ export default function AIChatPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
+        if (response.status === 402) {
+          throw new Error('AI credits depleted. Please add credits to continue.');
+        }
         throw new Error(errorData.error || 'AI service error');
       }
 
@@ -130,7 +205,6 @@ export default function AIChatPage() {
       const decoder = new TextDecoder();
       let buffer = '';
 
-      // Add empty assistant message
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       while (true) {
@@ -180,7 +254,7 @@ export default function AIChatPage() {
 
   const handleReset = () => {
     setMessages([
-      { role: 'assistant', content: 'Hello! I\'m your AI CRM assistant. I have access to your clients, tasks, employees, salesmen, and KPIs data. How can I help you analyze your business today?' }
+      { role: 'assistant', content: 'Hello! I\'m your AI CRM assistant with full access to your organization\'s data including clients, tasks, employees, salesmen, quotes, KPIs, roadmaps, and company policies. How can I help you analyze your business today?' }
     ]);
   };
 
@@ -197,7 +271,9 @@ export default function AIChatPage() {
               </div>
               <div>
                 <h2 className="font-semibold">CRM AI Assistant</h2>
-                <p className="text-xs text-muted-foreground">Powered by Gemini • Full CRM context</p>
+                <p className="text-xs text-muted-foreground">
+                  Powered by Gemini • Full CRM + Policies context
+                </p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
@@ -208,7 +284,7 @@ export default function AIChatPage() {
 
           {/* Messages */}
           <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="space-y-4 max-w-4xl mx-auto">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                   {msg.role === 'assistant' && (
@@ -216,12 +292,16 @@ export default function AIChatPage() {
                       <Bot className="h-5 w-5 text-primary" />
                     </div>
                   )}
-                  <div className={`max-w-[80%] rounded-2xl p-4 ${
+                  <div className={`max-w-[85%] rounded-2xl p-4 ${
                     msg.role === 'user' 
                       ? 'bg-primary text-primary-foreground rounded-br-md' 
                       : 'bg-muted/50 rounded-bl-md border border-border/50'
                   }`}>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <MarkdownRenderer content={msg.content} />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    )}
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
@@ -236,7 +316,10 @@ export default function AIChatPage() {
                     <Bot className="h-5 w-5 text-primary" />
                   </div>
                   <div className="bg-muted/50 rounded-2xl rounded-bl-md p-4 border border-border/50">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Analyzing data...</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -245,12 +328,12 @@ export default function AIChatPage() {
 
           {/* Input */}
           <CardContent className="border-t border-border/50 p-4">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <div className="flex gap-3">
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about clients, tasks, salesmen, KPIs..."
+                  placeholder="Ask about clients, tasks, salesmen, KPIs, roadmaps, policies..."
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                   disabled={isLoading}
                   className="flex-1 bg-background/50"
@@ -270,6 +353,22 @@ export default function AIChatPage() {
 
         {/* Sidebar */}
         <div className="w-80 space-y-4">
+          {/* AI Config Info */}
+          {activeConfig && (
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">AI Personality</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">{activeConfig.personality || 'Default assistant'}</p>
+              {activeConfig.rules && Array.isArray(activeConfig.rules) && activeConfig.rules.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs font-medium">Rules: {(activeConfig.rules as string[]).length}</p>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Context Info */}
           <Card className="p-4 bg-card/50 border-border/50">
             <div className="flex items-center gap-2 mb-3">
@@ -286,18 +385,33 @@ export default function AIChatPage() {
                 <Badge variant="secondary">{tasks.length}</Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Salesmen</span>
-                <Badge variant="secondary">{salesmen.length}</Badge>
+                <span className="text-muted-foreground">Quotes</span>
+                <Badge variant="secondary">{quotes.length}</Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Employees</span>
-                <Badge variant="secondary">{employees.length}</Badge>
+                <span className="text-muted-foreground">Salesmen</span>
+                <Badge variant="secondary">{salesmen.length}</Badge>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">KPIs</span>
                 <Badge variant="secondary">{kpis.length}</Badge>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Roadmaps</span>
+                <Badge variant="secondary">{roadmaps.length}</Badge>
+              </div>
             </div>
+          </Card>
+
+          {/* Policies Info */}
+          <Card className="p-4 bg-card/50 border-border/50">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-4 w-4 text-amber-400" />
+              <h3 className="font-semibold text-sm">Active Policies</h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {policies.filter(p => p.is_active).length} policies loaded for context
+            </p>
           </Card>
 
           {/* Suggested Prompts */}

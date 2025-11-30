@@ -18,18 +18,62 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an intelligent CRM assistant with access to the organization's data. You help users analyze clients, tasks, employees, KPIs, salesmen performance, and provide actionable insights.
+    // Build dynamic system prompt with AI config and policies
+    let personalityInstructions = '';
+    let rulesInstructions = '';
+    let policiesContext = '';
 
-Current CRM Context:
-${JSON.stringify(context, null, 2)}
+    if (context?.aiConfig?.personality) {
+      personalityInstructions = `\n\nYour personality: ${context.aiConfig.personality}`;
+    }
 
-Guidelines:
-- Be concise and professional
-- Provide data-driven insights
+    if (context?.aiConfig?.rules && Array.isArray(context.aiConfig.rules) && context.aiConfig.rules.length > 0) {
+      rulesInstructions = `\n\nYou must follow these rules:
+${context.aiConfig.rules.map((rule: string, i: number) => `${i + 1}. ${rule}`).join('\n')}`;
+    }
+
+    if (context?.companyPolicies && context.companyPolicies.length > 0) {
+      policiesContext = `\n\nCompany Policies and Rules (reference these when relevant):
+${context.companyPolicies.map((p: any) => `- ${p.title} (${p.category}): ${p.content.substring(0, 200)}${p.content.length > 200 ? '...' : ''}`).join('\n')}`;
+    }
+
+    const systemPrompt = `You are an intelligent CRM assistant for an AI and software engineering company. You have full access to the organization's data and help users analyze business performance, identify opportunities, and make data-driven decisions.${personalityInstructions}${rulesInstructions}${policiesContext}
+
+Current CRM Data Summary:
+- Total Clients: ${context?.summary?.totalClients || 0} (${context?.summary?.activeClients || 0} active, ${context?.summary?.prospectClients || 0} prospects)
+- Total Revenue: $${(context?.summary?.totalRevenue || 0).toLocaleString()}
+- Total Contract Value: $${(context?.summary?.totalContractValue || 0).toLocaleString()}
+- Tasks: ${context?.summary?.totalTasks || 0} total, ${context?.summary?.pendingTasks || 0} pending, ${context?.summary?.overdueTasks || 0} overdue
+- Salesmen: ${context?.summary?.totalSalesmen || 0} total, ${context?.summary?.activeSalesmen || 0} active
+- Quotes: ${context?.summary?.totalQuotes || 0} total, ${context?.summary?.acceptedQuotes || 0} accepted, ${context?.summary?.pendingQuotes || 0} pending
+- Quotes Value: $${(context?.summary?.quotesValue || 0).toLocaleString()}
+- Departments: ${context?.summary?.totalDepartments || 0}
+- Roadmaps: ${context?.summary?.totalRoadmaps || 0}
+
+Detailed Data:
+${JSON.stringify({
+  clients: context?.clients || [],
+  tasks: context?.tasks || [],
+  salesmen: context?.salesmen || [],
+  quotes: context?.quotes || [],
+  kpis: context?.kpis || [],
+  roadmaps: context?.roadmaps || [],
+  departments: context?.departments || [],
+  upcomingEvents: context?.upcomingEvents || [],
+}, null, 2)}
+
+Response Guidelines:
+- Be professional yet friendly
+- Provide data-driven insights with specific numbers and percentages
+- Use markdown formatting for better readability:
+  - Use **bold** for important metrics and names
+  - Use bullet points (- item) for lists
+  - Use numbered lists (1. item) for steps or rankings
+  - Use headers (## Header) for sections when appropriate
 - Suggest actionable next steps
-- Format responses with bullet points when listing items
-- Use numbers and percentages when discussing performance
-- If asked about specific data not in context, explain what information would be helpful`;
+- Reference company policies when relevant to the discussion
+- If asked about data not available, clearly state what information would be helpful
+- Be concise but comprehensive`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
