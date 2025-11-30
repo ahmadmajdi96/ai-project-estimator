@@ -22,6 +22,7 @@ import SalesmenPage from "./pages/crm/SalesmenPage";
 import SalesPage from "./pages/crm/SalesPage";
 import UsersRolesPage from "./pages/crm/UsersRolesPage";
 import TraceabilityPage from "./pages/crm/TraceabilityPage";
+import ReportsPage from "./pages/crm/ReportsPage";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/crm/ai-chat" element={<AIChatPage />} />
           <Route path="/crm/config" element={<ConfigPage />} />
           <Route path="/crm/traceability" element={<TraceabilityPage />} />
+          <Route path="/crm/reports" element={<ReportsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

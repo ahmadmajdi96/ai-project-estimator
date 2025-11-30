@@ -17,7 +17,8 @@ import {
   BadgeDollarSign,
   ShoppingCart,
   Database,
-  Shield
+  Shield,
+  PieChart
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,6 +53,7 @@ const managementItems = [
   { title: 'Tasks', url: '/crm/tasks', icon: CheckSquare },
   { title: 'Roadmaps', url: '/crm/roadmaps', icon: Map },
   { title: 'KPIs', url: '/crm/kpis', icon: BarChart3 },
+  { title: 'Reports', url: '/crm/reports', icon: PieChart },
 ];
 
 const aiItems = [
