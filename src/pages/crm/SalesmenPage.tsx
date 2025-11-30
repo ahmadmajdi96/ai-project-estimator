@@ -30,7 +30,9 @@ import {
   Loader2,
   Eye,
   CheckCircle,
-  XCircle
+  XCircle,
+  Search,
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -55,6 +57,8 @@ export default function SalesmenPage() {
   const updateSalesman = useUpdateSalesman();
   const deleteSalesman = useDeleteSalesman();
   
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedSalesman, setSelectedSalesman] = useState<Salesman | null>(null);
@@ -177,6 +181,14 @@ export default function SalesmenPage() {
   };
 
   // Stats
+  const filteredSalesmen = salesmen.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.territory?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+  
   const activeSalesmen = salesmen.filter(s => s.status === 'active').length;
   const totalRevenue = allPerformance.reduce((sum, p) => sum + Number(p.revenue_generated), 0);
   const totalDeals = allPerformance.reduce((sum, p) => sum + p.deals_closed, 0);
@@ -197,21 +209,49 @@ export default function SalesmenPage() {
   return (
     <CRMLayout title="Salesmen Management">
       <Tabs defaultValue="overview" className="space-y-6">
-        <div className="flex items-center justify-between">
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="overview" className="gap-2">
-              <Users className="h-4 w-4" />
-              Team Overview
-            </TabsTrigger>
-            <TabsTrigger value="performance" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Performance
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard" className="gap-2">
-              <Award className="h-4 w-4" />
-              Leaderboard
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col gap-4">
+          {/* Search and Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, territory..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {SALESMAN_STATUSES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-muted/50">
+              <TabsTrigger value="overview" className="gap-2">
+                <Users className="h-4 w-4" />
+                Team Overview
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Performance
+              </TabsTrigger>
+              <TabsTrigger value="leaderboard" className="gap-2">
+                <Award className="h-4 w-4" />
+                Leaderboard
+              </TabsTrigger>
+            </TabsList>
 
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
