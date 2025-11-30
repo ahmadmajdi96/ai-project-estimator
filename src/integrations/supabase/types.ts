@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_agent_config: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          personality: string | null
+          rules: Json | null
+          system_prompt: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          personality?: string | null
+          rules?: Json | null
+          system_prompt?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          personality?: string | null
+          rules?: Json | null
+          system_prompt?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_logs: {
         Row: {
           content: string
@@ -50,6 +83,7 @@ export type Database = {
           created_at: string | null
           id: string
           ip_address: string | null
+          metadata: Json | null
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
@@ -61,6 +95,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           ip_address?: string | null
+          metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -72,6 +107,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           ip_address?: string | null
+          metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -387,6 +423,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      company_policies: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          effective_date: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          effective_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       component_categories: {
         Row: {

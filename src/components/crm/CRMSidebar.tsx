@@ -6,9 +6,7 @@ import {
   Calendar, 
   FileText, 
   Settings,
-  Calculator,
   TrendingUp,
-  Building2,
   UserCheck,
   CheckSquare,
   Map,
@@ -16,7 +14,10 @@ import {
   Bot,
   MessageSquare,
   LogOut,
-  BadgeDollarSign
+  BadgeDollarSign,
+  ShoppingCart,
+  Database,
+  Shield
 } from 'lucide-react';
 import {
   Sidebar,
@@ -36,17 +37,18 @@ import { useAuth } from '@/hooks/useAuth';
 
 const crmItems = [
   { title: 'Dashboard', url: '/crm', icon: LayoutDashboard },
+  { title: 'Sales', url: '/crm/sales', icon: ShoppingCart },
   { title: 'Clients', url: '/crm/clients', icon: Users },
   { title: 'Salesmen', url: '/crm/salesmen', icon: BadgeDollarSign },
   { title: 'Sales Pipeline', url: '/crm/pipeline', icon: TrendingUp },
   { title: 'Status Board', url: '/crm/status', icon: Kanban },
   { title: 'Calendar', url: '/crm/calendar', icon: Calendar },
   { title: 'Quotes & Estimator', url: '/crm/quotes', icon: FileText },
+  { title: 'Traceability', url: '/crm/traceability', icon: Database },
 ];
 
 const managementItems = [
-  { title: 'Departments', url: '/crm/departments', icon: Building2 },
-  { title: 'Employees', url: '/crm/employees', icon: UserCheck },
+  { title: 'Users & Roles', url: '/crm/users', icon: Shield },
   { title: 'Tasks', url: '/crm/tasks', icon: CheckSquare },
   { title: 'Roadmaps', url: '/crm/roadmaps', icon: Map },
   { title: 'KPIs', url: '/crm/kpis', icon: BarChart3 },
