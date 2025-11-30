@@ -974,6 +974,414 @@ function EnhancedSwagger() {
   );
 }
 
+// Generate comprehensive API documentation
+function generateAPIDocumentation() {
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+  const tables = Object.keys(databaseSchema);
+  
+  const documentation = {
+    info: {
+      title: 'CRM System API Documentation',
+      version: '1.0.0',
+      description: 'Complete REST API documentation for all database endpoints',
+      generatedAt: new Date().toISOString(),
+      baseUrl: `${baseUrl}/rest/v1`
+    },
+    authentication: {
+      type: 'Bearer Token',
+      header: 'Authorization',
+      description: 'All requests require a valid JWT token in the Authorization header',
+      example: 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      additionalHeaders: {
+        'apikey': {
+          description: 'Supabase anon/service key',
+          required: true,
+          example: 'apikey: your-anon-key'
+        },
+        'Content-Type': {
+          description: 'Content type for request body',
+          required: true,
+          value: 'application/json'
+        },
+        'Prefer': {
+          description: 'Response preference',
+          optional: true,
+          values: ['return=representation', 'return=minimal', 'count=exact']
+        }
+      }
+    },
+    endpoints: tables.map(table => {
+      const schema = databaseSchema[table as keyof typeof databaseSchema];
+      const columns = schema.columns;
+      const relations = schema.relations;
+      
+      // Generate sample body based on columns
+      const sampleBody: Record<string, any> = {};
+      columns.forEach(col => {
+        if (col === 'id') return;
+        if (col.endsWith('_id')) {
+          sampleBody[col] = 'uuid-reference';
+        } else if (col.includes('date') || col.includes('_at')) {
+          sampleBody[col] = new Date().toISOString();
+        } else if (col.includes('email')) {
+          sampleBody[col] = 'example@email.com';
+        } else if (col.includes('phone')) {
+          sampleBody[col] = '+1 555 123 4567';
+        } else if (col.includes('value') || col.includes('amount') || col.includes('rate')) {
+          sampleBody[col] = 0;
+        } else if (col === 'status') {
+          sampleBody[col] = 'active';
+        } else {
+          sampleBody[col] = 'string';
+        }
+      });
+
+      return {
+        resource: table,
+        description: `CRUD operations for ${table} table`,
+        columns: columns,
+        relations: relations,
+        operations: [
+          {
+            method: 'GET',
+            path: `/${table}`,
+            description: `Retrieve ${table} records`,
+            headers: {
+              'Authorization': 'Bearer <token>',
+              'apikey': '<your-anon-key>'
+            },
+            queryParameters: [
+              { name: 'select', type: 'string', description: 'Columns to return (e.g., "id,name" or "*")', example: 'select=*' },
+              { name: 'limit', type: 'integer', description: 'Max records to return', example: 'limit=10' },
+              { name: 'offset', type: 'integer', description: 'Skip N records', example: 'offset=0' },
+              { name: 'order', type: 'string', description: 'Sort order', example: 'order=created_at.desc' },
+              ...columns.map(col => ({
+                name: col,
+                type: 'filter',
+                description: `Filter by ${col}`,
+                operators: ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'is', 'in'],
+                example: `${col}=eq.value`
+              }))
+            ],
+            responses: {
+              '200': { description: 'Array of records', example: [sampleBody] },
+              '401': { description: 'Unauthorized - Invalid or missing token' },
+              '404': { description: 'Resource not found' }
+            }
+          },
+          {
+            method: 'POST',
+            path: `/${table}`,
+            description: `Create new ${table} record`,
+            headers: {
+              'Authorization': 'Bearer <token>',
+              'apikey': '<your-anon-key>',
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: {
+              type: 'application/json',
+              required: columns.filter(c => c !== 'id' && !c.includes('created_at') && !c.includes('updated_at')),
+              schema: sampleBody,
+              example: JSON.stringify(sampleBody, null, 2)
+            },
+            responses: {
+              '201': { description: 'Created record', example: { id: 'uuid', ...sampleBody } },
+              '400': { description: 'Bad request - Invalid data' },
+              '401': { description: 'Unauthorized' },
+              '409': { description: 'Conflict - Duplicate record' }
+            }
+          },
+          {
+            method: 'PATCH',
+            path: `/${table}?id=eq.{id}`,
+            description: `Update existing ${table} record`,
+            headers: {
+              'Authorization': 'Bearer <token>',
+              'apikey': '<your-anon-key>',
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            pathParameters: [
+              { name: 'id', type: 'uuid', required: true, description: 'Record ID to update' }
+            ],
+            body: {
+              type: 'application/json',
+              description: 'Partial update - only include fields to change',
+              schema: sampleBody,
+              example: JSON.stringify({ [columns[1] || 'field']: 'updated_value' }, null, 2)
+            },
+            responses: {
+              '200': { description: 'Updated record' },
+              '400': { description: 'Bad request' },
+              '401': { description: 'Unauthorized' },
+              '404': { description: 'Record not found' }
+            }
+          },
+          {
+            method: 'DELETE',
+            path: `/${table}?id=eq.{id}`,
+            description: `Delete ${table} record`,
+            headers: {
+              'Authorization': 'Bearer <token>',
+              'apikey': '<your-anon-key>'
+            },
+            pathParameters: [
+              { name: 'id', type: 'uuid', required: true, description: 'Record ID to delete' }
+            ],
+            responses: {
+              '204': { description: 'Successfully deleted' },
+              '401': { description: 'Unauthorized' },
+              '404': { description: 'Record not found' }
+            }
+          }
+        ]
+      };
+    }),
+    edgeFunctions: [
+      {
+        name: 'ai-chat',
+        path: '/functions/v1/ai-chat',
+        method: 'POST',
+        description: 'AI-powered chat for CRM assistance',
+        headers: {
+          'Authorization': 'Bearer <token>',
+          'Content-Type': 'application/json'
+        },
+        body: {
+          messages: [{ role: 'user', content: 'Your question here' }],
+          context: { summary: {} }
+        },
+        responses: {
+          '200': { description: 'AI response stream' },
+          '401': { description: 'Unauthorized' }
+        }
+      }
+    ]
+  };
+
+  return documentation;
+}
+
+// Endpoints Documentation Component
+function EndpointsDocumentation() {
+  const [downloadFormat, setDownloadFormat] = useState<'json' | 'markdown'>('json');
+
+  const downloadDocumentation = () => {
+    const docs = generateAPIDocumentation();
+    let content: string;
+    let filename: string;
+    let mimeType: string;
+
+    if (downloadFormat === 'markdown') {
+      content = generateMarkdownDocs(docs);
+      filename = `api-documentation-${new Date().toISOString().slice(0, 10)}.md`;
+      mimeType = 'text/markdown';
+    } else {
+      content = JSON.stringify(docs, null, 2);
+      filename = `api-documentation-${new Date().toISOString().slice(0, 10)}.json`;
+      mimeType = 'application/json';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`API documentation downloaded as ${downloadFormat.toUpperCase()}`);
+  };
+
+  const generateMarkdownDocs = (docs: ReturnType<typeof generateAPIDocumentation>) => {
+    let md = `# ${docs.info.title}\n\n`;
+    md += `**Version:** ${docs.info.version}\n`;
+    md += `**Generated:** ${docs.info.generatedAt}\n`;
+    md += `**Base URL:** ${docs.info.baseUrl}\n\n`;
+    md += `---\n\n`;
+
+    // Authentication
+    md += `## Authentication\n\n`;
+    md += `**Type:** ${docs.authentication.type}\n`;
+    md += `**Header:** ${docs.authentication.header}\n\n`;
+    md += `${docs.authentication.description}\n\n`;
+    md += `### Required Headers\n\n`;
+    md += `| Header | Description | Required | Example |\n`;
+    md += `|--------|-------------|----------|--------|\n`;
+    Object.entries(docs.authentication.additionalHeaders).forEach(([key, val]: [string, any]) => {
+      md += `| ${key} | ${val.description} | ${val.required ? 'Yes' : 'No'} | ${val.example || val.value || '-'} |\n`;
+    });
+    md += `\n---\n\n`;
+
+    // Endpoints
+    md += `## Endpoints\n\n`;
+    docs.endpoints.forEach(endpoint => {
+      md += `### ${endpoint.resource}\n\n`;
+      md += `${endpoint.description}\n\n`;
+      md += `**Columns:** ${endpoint.columns.join(', ')}\n\n`;
+      if (endpoint.relations.length > 0) {
+        md += `**Relations:** ${endpoint.relations.map(r => `${r.column} → ${r.to}`).join(', ')}\n\n`;
+      }
+
+      endpoint.operations.forEach(op => {
+        md += `#### ${op.method} ${op.path}\n\n`;
+        md += `${op.description}\n\n`;
+        
+        md += `**Headers:**\n\`\`\`\n`;
+        Object.entries(op.headers).forEach(([k, v]) => {
+          md += `${k}: ${v}\n`;
+        });
+        md += `\`\`\`\n\n`;
+
+        if ('queryParameters' in op && op.queryParameters) {
+          md += `**Query Parameters:**\n\n`;
+          md += `| Parameter | Type | Description | Example |\n`;
+          md += `|-----------|------|-------------|--------|\n`;
+          op.queryParameters.slice(0, 10).forEach((p: any) => {
+            md += `| ${p.name} | ${p.type} | ${p.description} | ${p.example} |\n`;
+          });
+          if (op.queryParameters.length > 10) {
+            md += `| ... | ... | ${op.queryParameters.length - 10} more column filters | ... |\n`;
+          }
+          md += `\n`;
+        }
+
+        if ('pathParameters' in op && op.pathParameters) {
+          md += `**Path Parameters:**\n\n`;
+          md += `| Parameter | Type | Required | Description |\n`;
+          md += `|-----------|------|----------|-------------|\n`;
+          op.pathParameters.forEach((p: any) => {
+            md += `| ${p.name} | ${p.type} | ${p.required ? 'Yes' : 'No'} | ${p.description} |\n`;
+          });
+          md += `\n`;
+        }
+
+        if ('body' in op && op.body) {
+          md += `**Request Body:**\n\`\`\`json\n${op.body.example}\n\`\`\`\n\n`;
+        }
+
+        md += `**Responses:**\n\n`;
+        Object.entries(op.responses).forEach(([code, resp]: [string, any]) => {
+          md += `- **${code}:** ${resp.description}\n`;
+        });
+        md += `\n`;
+      });
+      md += `---\n\n`;
+    });
+
+    // Edge Functions
+    md += `## Edge Functions\n\n`;
+    docs.edgeFunctions.forEach(fn => {
+      md += `### ${fn.name}\n\n`;
+      md += `**Path:** ${fn.path}\n`;
+      md += `**Method:** ${fn.method}\n\n`;
+      md += `${fn.description}\n\n`;
+      md += `**Request Body:**\n\`\`\`json\n${JSON.stringify(fn.body, null, 2)}\n\`\`\`\n\n`;
+    });
+
+    return md;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Download Documentation Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileJson className="h-5 w-5" />
+                API Documentation
+              </CardTitle>
+              <CardDescription>
+                Download comprehensive documentation for all {Object.keys(databaseSchema).length} endpoints with headers, parameters, and request bodies
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={downloadFormat} onValueChange={(v: 'json' | 'markdown') => setDownloadFormat(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="markdown">Markdown</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={downloadDocumentation}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Docs
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="p-3 rounded-lg bg-muted">
+              <div className="text-2xl font-bold text-primary">{Object.keys(databaseSchema).length}</div>
+              <div className="text-muted-foreground">Resources</div>
+            </div>
+            <div className="p-3 rounded-lg bg-muted">
+              <div className="text-2xl font-bold text-green-500">{Object.keys(databaseSchema).length * 4}</div>
+              <div className="text-muted-foreground">Total Endpoints</div>
+            </div>
+            <div className="p-3 rounded-lg bg-muted">
+              <div className="text-2xl font-bold text-blue-500">4</div>
+              <div className="text-muted-foreground">HTTP Methods</div>
+            </div>
+            <div className="p-3 rounded-lg bg-muted">
+              <div className="text-2xl font-bold text-purple-500">1</div>
+              <div className="text-muted-foreground">Edge Functions</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Endpoints Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {Object.keys(databaseSchema).map((table) => {
+          const schema = databaseSchema[table as keyof typeof databaseSchema];
+          return (
+            <Card key={table}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Table2 className="h-4 w-4 text-primary" />
+                  {table}
+                  <Badge variant="outline" className="ml-auto text-xs">
+                    {schema.columns.length} cols
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-green-500/20 text-green-500">GET</Badge>
+                  <code className="text-xs text-muted-foreground">/{table}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-blue-500/20 text-blue-500">POST</Badge>
+                  <code className="text-xs text-muted-foreground">/{table}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-yellow-500/20 text-yellow-500">PATCH</Badge>
+                  <code className="text-xs text-muted-foreground">/{table}?id=eq.&#123;id&#125;</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-red-500/20 text-red-500">DELETE</Badge>
+                  <code className="text-xs text-muted-foreground">/{table}?id=eq.&#123;id&#125;</code>
+                </div>
+                {schema.relations.length > 0 && (
+                  <div className="pt-2 border-t text-xs text-muted-foreground">
+                    Relations: {schema.relations.map(r => r.to).join(', ')}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Database Export Component
 function DatabaseExport({ tableCounts }: { tableCounts?: Record<string, number> }) {
   const [isExporting, setIsExporting] = useState(false);
@@ -1270,36 +1678,7 @@ export default function DevToolsPage() {
 
           {/* Endpoints Tab */}
           <TabsContent value="endpoints" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {Object.keys(databaseSchema).map((table) => (
-                <Card key={table}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                      <Table2 className="h-4 w-4 text-primary" />
-                      {table}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-green-500/20 text-green-500">GET</Badge>
-                      <code className="text-xs text-muted-foreground">/{table}</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-blue-500/20 text-blue-500">POST</Badge>
-                      <code className="text-xs text-muted-foreground">/{table}</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-yellow-500/20 text-yellow-500">PATCH</Badge>
-                      <code className="text-xs text-muted-foreground">/{table}?id=eq.&#123;id&#125;</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-red-500/20 text-red-500">DELETE</Badge>
-                      <code className="text-xs text-muted-foreground">/{table}?id=eq.&#123;id&#125;</code>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <EndpointsDocumentation />
           </TabsContent>
 
           {/* Activity Tab */}
