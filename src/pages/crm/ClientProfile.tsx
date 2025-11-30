@@ -5,16 +5,43 @@ import { useClientQuotes } from '@/hooks/useQuotes';
 import { useCallLogs } from '@/hooks/useCallLogs';
 import { useClientNotes, useAddClientNote, useDeleteClientNote } from '@/hooks/useClientNotes';
 import { useClientCalendarEvents } from '@/hooks/useCalendarEvents';
+import { ClientDocuments } from '@/components/crm/ClientDocuments';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CLIENT_STATUSES, SALES_STAGES, QUOTE_STATUSES } from '@/types/crm';
-import { ArrowLeft, Building2, Mail, Phone, Globe, Calendar, DollarSign, FileText, PhoneCall, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Building2, Mail, Phone, Globe, Calendar, DollarSign, FileText, PhoneCall, Trash2, Plus, Eye, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { CallLogForm } from '@/components/crm/CallLogForm';
+
+interface QuoteComponent {
+  id: string;
+  name: string;
+  category: string;
+  basePrice: number;
+  baseCost: number;
+  quantity: number;
+}
+
+interface Quote {
+  id: string;
+  title: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  profit_margin: number | null;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  notes: string | null;
+  valid_until: string | null;
+  components: QuoteComponent[];
+  created_at: string;
+}
 
 export default function ClientProfile() {
   const { id } = useParams();
@@ -29,6 +56,7 @@ export default function ClientProfile() {
   const deleteClient = useDeleteClient();
   const [newNote, setNewNote] = useState('');
   const [callLogOpen, setCallLogOpen] = useState(false);
+  const [viewQuote, setViewQuote] = useState<Quote | null>(null);
 
   if (isLoading || !client) {
     return <CRMLayout title="Loading..." />;
@@ -132,6 +160,10 @@ export default function ClientProfile() {
           <TabsList>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="quotes">Quotes ({quotes.length})</TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1">
+              <FolderOpen className="h-4 w-4" />
+              Documents
+            </TabsTrigger>
             <TabsTrigger value="calls">Calls ({callLogs.length})</TabsTrigger>
             <TabsTrigger value="events">Events ({events.length})</TabsTrigger>
           </TabsList>
@@ -154,7 +186,7 @@ export default function ClientProfile() {
             ))}
           </TabsContent>
 
-          <TabsContent value="quotes">
+          <TabsContent value="quotes" className="space-y-3">
             {quotes.map(quote => {
               const qStatus = QUOTE_STATUSES.find(s => s.value === quote.status);
               return (
@@ -166,11 +198,23 @@ export default function ClientProfile() {
                   <div className="flex items-center gap-4">
                     {qStatus && <Badge className={qStatus.color}>{qStatus.label}</Badge>}
                     <span className="font-bold text-primary">${quote.total.toLocaleString()}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setViewQuote(quote as Quote)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
                   </div>
                 </Card>
               );
             })}
             {quotes.length === 0 && <p className="text-muted-foreground text-center py-8">No quotes</p>}
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <ClientDocuments clientId={client.id} />
           </TabsContent>
 
           <TabsContent value="calls" className="space-y-4">
@@ -224,6 +268,99 @@ export default function ClientProfile() {
         clientId={client.id}
         clientName={client.client_name}
       />
+
+      {/* View Quote Dialog */}
+      <Dialog open={!!viewQuote} onOpenChange={() => setViewQuote(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewQuote?.title}</DialogTitle>
+          </DialogHeader>
+          {viewQuote && (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4">
+                {/* Quote Status & Date */}
+                <div className="flex items-center justify-between">
+                  <Badge className={QUOTE_STATUSES.find(s => s.value === viewQuote.status)?.color}>
+                    {QUOTE_STATUSES.find(s => s.value === viewQuote.status)?.label}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Created {format(new Date(viewQuote.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+
+                {viewQuote.valid_until && (
+                  <p className="text-sm text-muted-foreground">
+                    Valid until: {format(new Date(viewQuote.valid_until), 'MMM d, yyyy')}
+                  </p>
+                )}
+
+                {/* Components */}
+                <div>
+                  <h4 className="font-semibold mb-2">Components</h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left p-2">Item</th>
+                          <th className="text-left p-2">Category</th>
+                          <th className="text-right p-2">Qty</th>
+                          <th className="text-right p-2">Price</th>
+                          <th className="text-right p-2">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(viewQuote.components as QuoteComponent[])?.map((comp, i) => (
+                          <tr key={i} className="border-t border-border/50">
+                            <td className="p-2">{comp.name}</td>
+                            <td className="p-2 text-muted-foreground">{comp.category}</td>
+                            <td className="p-2 text-right">{comp.quantity}</td>
+                            <td className="p-2 text-right">${comp.basePrice?.toLocaleString()}</td>
+                            <td className="p-2 text-right font-medium">
+                              ${((comp.basePrice || 0) * (comp.quantity || 1)).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>${viewQuote.subtotal?.toLocaleString()}</span>
+                  </div>
+                  {viewQuote.discount_percent && viewQuote.discount_percent > 0 && (
+                    <div className="flex justify-between text-emerald-500">
+                      <span>Discount ({viewQuote.discount_percent}%)</span>
+                      <span>-${viewQuote.discount_amount?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {viewQuote.profit_margin && (
+                    <div className="flex justify-between text-muted-foreground text-sm">
+                      <span>Profit Margin</span>
+                      <span>{viewQuote.profit_margin}%</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                    <span>Total</span>
+                    <span className="text-primary">${viewQuote.total?.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {viewQuote.notes && (
+                  <div>
+                    <h4 className="font-semibold mb-1">Notes</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{viewQuote.notes}</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </CRMLayout>
   );
 }
