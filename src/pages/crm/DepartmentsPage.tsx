@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
 import { useDepartments, useAddDepartment, useDeleteDepartment } from '@/hooks/useDepartments';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -12,9 +13,14 @@ import { toast } from 'sonner';
 
 export default function DepartmentsPage() {
   const { data: departments = [], isLoading } = useDepartments();
+  const { data: employees = [] } = useEmployees();
   const addDepartment = useAddDepartment();
   const deleteDepartment = useDeleteDepartment();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const getEmployeeCount = (deptId: string) => {
+    return employees.filter(emp => emp.department_id === deptId).length;
+  };
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -165,7 +171,7 @@ export default function DepartmentsPage() {
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1 text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>0 employees</span>
+                      <span>{getEmployeeCount(dept.id)} employees</span>
                     </div>
                     <div className="flex items-center gap-1 text-muted-foreground">
                       <DollarSign className="h-4 w-4" />

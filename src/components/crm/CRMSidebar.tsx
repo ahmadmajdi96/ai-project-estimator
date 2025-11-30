@@ -54,6 +54,8 @@ const crmItems = [
 
 const managementItems = [
   { title: 'Users & Roles', url: '/crm/users', icon: Shield },
+  { title: 'Departments', url: '/crm/departments', icon: LayoutDashboard },
+  { title: 'Employees', url: '/crm/employees', icon: UserCheck },
   { title: 'Tasks', url: '/crm/tasks', icon: CheckSquare },
   { title: 'Roadmaps', url: '/crm/roadmaps', icon: Map },
   { title: 'KPIs', url: '/crm/kpis', icon: BarChart3 },
