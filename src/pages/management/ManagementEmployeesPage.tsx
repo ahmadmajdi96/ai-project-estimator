@@ -120,14 +120,14 @@ export default function ManagementEmployeesPage() {
       <div>
         <Label>Department</Label>
         <Select 
-          value={formData.department_id} 
-          onValueChange={(v) => setFormData(prev => ({ ...prev, department_id: v }))}
+          value={formData.department_id || "__none__"} 
+          onValueChange={(v) => setFormData(prev => ({ ...prev, department_id: v === "__none__" ? "" : v }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select department" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No Department</SelectItem>
+            <SelectItem value="__none__">No Department</SelectItem>
             {departments?.map(dept => (
               <SelectItem key={dept.id} value={dept.id}>
                 {dept.name}
