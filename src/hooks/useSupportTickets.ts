@@ -12,6 +12,8 @@ export interface SupportTicket {
   status: 'open' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed';
   category: string | null;
   assigned_to: string | null;
+  support_agent_id: string | null;
+  support_stage: string;
   resolution: string | null;
   resolution_time_hours: number | null;
   satisfaction_rating: number | null;
@@ -80,7 +82,7 @@ export function useUpdateSupportTicket() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<SupportTicket> & { id: string }) => {
-      const { data, error } = await supabase.from('support_tickets').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('support_tickets').update(updates as any).eq('id', id).select().single();
       if (error) throw error;
       return data;
     },

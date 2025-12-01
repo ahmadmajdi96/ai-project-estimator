@@ -36,6 +36,8 @@ import ProductsPage from "./pages/crm/ProductsPage";
 import InvoicesPage from "./pages/crm/InvoicesPage";
 import CompetitorsPage from "./pages/crm/CompetitorsPage";
 import MarketingPage from "./pages/crm/MarketingPage";
+import SupportAgentsPage from "./pages/crm/SupportAgentsPage";
+import SupportPipelinePage from "./pages/crm/SupportPipelinePage";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +76,8 @@ const App = () => (
           <Route path="/crm/reports" element={<ReportsPage />} />
           <Route path="/crm/opportunities" element={<OpportunitiesPage />} />
           <Route path="/crm/support-tickets" element={<SupportTicketsPage />} />
+          <Route path="/crm/support-agents" element={<SupportAgentsPage />} />
+          <Route path="/crm/support-pipeline" element={<SupportPipelinePage />} />
           <Route path="/crm/products" element={<ProductsPage />} />
           <Route path="/crm/invoices" element={<InvoicesPage />} />
           <Route path="/crm/competitors" element={<CompetitorsPage />} />

@@ -29,7 +29,10 @@ import {
   Package,
   Receipt,
   Building,
-  Megaphone
+  Megaphone,
+  Headphones,
+  UserCog,
+  Wrench
 } from 'lucide-react';
 import {
   Sidebar,
@@ -55,10 +58,12 @@ const crmItems = [
   { title: 'Opportunities', url: '/crm/opportunities', icon: Target },
   { title: 'Sales Pipeline', url: '/crm/pipeline', icon: TrendingUp },
   { title: 'Status Board', url: '/crm/status', icon: Kanban },
+];
+
+const supportItems = [
+  { title: 'Support Pipeline', url: '/crm/support-pipeline', icon: Headphones },
   { title: 'Support Tickets', url: '/crm/support-tickets', icon: Ticket },
-  { title: 'Calendar', url: '/crm/calendar', icon: Calendar },
-  { title: 'Quotes & Estimator', url: '/crm/quotes', icon: FileText },
-  { title: 'Traceability', url: '/crm/traceability', icon: Database },
+  { title: 'Support Agents', url: '/crm/support-agents', icon: UserCog },
 ];
 
 const financeItems = [
@@ -95,6 +100,9 @@ const aiItems = [
 
 const toolItems = [
   { title: 'Configuration', url: '/crm/config', icon: Settings },
+  { title: 'Calendar', url: '/crm/calendar', icon: Calendar },
+  { title: 'Quotes & Estimator', url: '/crm/quotes', icon: FileText },
+  { title: 'Traceability', url: '/crm/traceability', icon: Database },
   { title: 'Dev Tools', url: '/dev-tools', icon: Code2 },
 ];
 
@@ -106,6 +114,26 @@ export function CRMSidebar() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const renderMenuItems = (items: typeof crmItems) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild>
+            <NavLink 
+              to={item.url} 
+              end={item.url === '/crm'}
+              className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
+              activeClassName="bg-primary/10 text-primary font-medium"
+            >
+              <item.icon className="h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -121,157 +149,42 @@ export function CRMSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>CRM</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {crmItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === '/crm'}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(crmItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(supportItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Finance</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {financeItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(financeItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Intelligence</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {intelligenceItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(intelligenceItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {managementItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(managementItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Automation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {automationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(automationItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>AI Assistant</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {aiItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Tools</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {toolItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <SidebarGroupContent>{renderMenuItems(toolItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 

@@ -1621,6 +1621,33 @@ export type Database = {
           },
         ]
       }
+      opportunity_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          value: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          value: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          value?: string
+        }
+        Relationships: []
+      }
       opportunity_stages_history: {
         Row: {
           duration_hours: number | null
@@ -2495,6 +2522,84 @@ export type Database = {
           },
         ]
       }
+      support_agents: {
+        Row: {
+          avatar_url: string | null
+          avg_resolution_time: number | null
+          created_at: string | null
+          current_tickets: number | null
+          email: string | null
+          id: string
+          max_tickets: number | null
+          name: string
+          performance_score: number | null
+          phone: string | null
+          specialization: string | null
+          status: string | null
+          total_resolved: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          avg_resolution_time?: number | null
+          created_at?: string | null
+          current_tickets?: number | null
+          email?: string | null
+          id?: string
+          max_tickets?: number | null
+          name: string
+          performance_score?: number | null
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          total_resolved?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          avg_resolution_time?: number | null
+          created_at?: string | null
+          current_tickets?: number | null
+          email?: string | null
+          id?: string
+          max_tickets?: number | null
+          name?: string
+          performance_score?: number | null
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          total_resolved?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      support_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          value: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          value: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          value?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           assigned_to: string | null
@@ -2511,6 +2616,8 @@ export type Database = {
           satisfaction_feedback: string | null
           satisfaction_rating: number | null
           status: string | null
+          support_agent_id: string | null
+          support_stage: string | null
           ticket_number: string | null
           title: string
           updated_at: string | null
@@ -2530,6 +2637,8 @@ export type Database = {
           satisfaction_feedback?: string | null
           satisfaction_rating?: number | null
           status?: string | null
+          support_agent_id?: string | null
+          support_stage?: string | null
           ticket_number?: string | null
           title: string
           updated_at?: string | null
@@ -2549,6 +2658,8 @@ export type Database = {
           satisfaction_feedback?: string | null
           satisfaction_rating?: number | null
           status?: string | null
+          support_agent_id?: string | null
+          support_stage?: string | null
           ticket_number?: string | null
           title?: string
           updated_at?: string | null
@@ -2566,6 +2677,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_support_agent_id_fkey"
+            columns: ["support_agent_id"]
+            isOneToOne: false
+            referencedRelation: "support_agents"
             referencedColumns: ["id"]
           },
         ]
@@ -2601,6 +2719,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      task_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          value: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          value: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          value?: string
+        }
+        Relationships: []
       }
       tasks: {
         Row: {

@@ -4,7 +4,7 @@ import { ProfitMarginControl } from '@/components/config/ProfitMarginControl';
 import { CsvUploader } from '@/components/config/CsvUploader';
 import { ComponentEditor } from '@/components/config/ComponentEditor';
 import { CategoryEditor } from '@/components/config/CategoryEditor';
-import { PipelineConfigEditor } from '@/components/crm/PipelineConfigEditor';
+import { AllPipelinesConfigEditor } from '@/components/crm/AllPipelinesConfigEditor';
 import { useAIConfigs, useAddAIConfig, useUpdateAIConfig, useDeleteAIConfig } from '@/hooks/useAIConfig';
 import { useCompanyPolicies, useAddCompanyPolicy, useUpdateCompanyPolicy, useDeleteCompanyPolicy } from '@/hooks/useCompanyPolicies';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +167,7 @@ export default function ConfigPage() {
           </TabsList>
 
           <TabsContent value="crm" className="space-y-6">
-            <PipelineConfigEditor />
+            <AllPipelinesConfigEditor />
           </TabsContent>
 
           <TabsContent value="calculator" className="space-y-6">
