@@ -11,6 +11,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from '@/components/ui/dialog';
 import { useAIDecisions, useAddAIDecision, useUpdateAIDecision, useDeleteAIDecision } from '@/hooks/useAIDecisions';
+import { useClients } from '@/hooks/useClients';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useDebitCases } from '@/hooks/useDebitCases';
+import { useOpportunities } from '@/hooks/useOpportunities';
 import { 
   Scale, Plus, Trash2, Loader2, AlertTriangle, CheckCircle, 
   XCircle, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown
@@ -39,10 +44,27 @@ export default function AIDecisionsPage() {
   const updateDecision = useUpdateAIDecision();
   const deleteDecision = useDeleteAIDecision();
 
+  // Load CRM data for context
+  const { data: clients = [] } = useClients();
+  const { data: invoices = [] } = useInvoices();
+  const { data: supportTickets = [] } = useSupportTickets();
+  const { data: debitCases = [] } = useDebitCases();
+  const { data: opportunities = [] } = useOpportunities();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState<DecisionForm>(initialForm);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedDecision, setSelectedDecision] = useState<any>(null);
+
+  // Build CRM context for AI analysis
+  const buildCRMContext = () => ({
+    activeClients: clients.filter(c => c.status === 'active').length,
+    totalRevenue: clients.reduce((s, c) => s + (c.revenue_to_date || 0), 0),
+    pipelineValue: opportunities.filter(o => o.status === 'open').reduce((s, o) => s + (o.value || 0), 0),
+    overdueInvoices: invoices.filter(i => i.status === 'overdue').length,
+    openTickets: supportTickets.filter(t => t.status === 'open').length,
+    activeDebitCases: debitCases.filter(d => d.status !== 'closed').length,
+  });
 
   const handleAddOption = () => {
     if (form.options.length < 5) {
@@ -86,9 +108,21 @@ export default function AIDecisionsPage() {
 
       if (saveError) throw saveError;
 
-      // Call AI to analyze the decision
-      const analysisPrompt = `Analyze this business decision for a software/AI company CRM:
+      // Build CRM context
+      const crmContext = buildCRMContext();
 
+      // Call AI to analyze the decision
+      const analysisPrompt = `Analyze this business decision for a software/AI company CRM.
+
+Current Business Context:
+- Active Clients: ${crmContext.activeClients}
+- Total Revenue: $${crmContext.totalRevenue.toLocaleString()}
+- Pipeline Value: $${crmContext.pipelineValue.toLocaleString()}
+- Overdue Invoices: ${crmContext.overdueInvoices}
+- Open Support Tickets: ${crmContext.openTickets}
+- Active Debt Cases: ${crmContext.activeDebitCases}
+
+Decision Details:
 Title: ${form.title}
 Description: ${form.description}
 Context: ${form.context || 'None provided'}

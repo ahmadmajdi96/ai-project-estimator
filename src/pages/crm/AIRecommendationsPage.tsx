@@ -5,9 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAIRecommendations, useUpdateAIRecommendation } from '@/hooks/useAIRecommendations';
+import { useClients } from '@/hooks/useClients';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useDebitCases } from '@/hooks/useDebitCases';
+import { useOpportunities } from '@/hooks/useOpportunities';
+import { useTasks } from '@/hooks/useTasks';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   Lightbulb, TrendingUp, Users, DollarSign, Shield, 
-  CheckCircle, Clock, AlertTriangle, RefreshCw
+  CheckCircle, Clock, AlertTriangle, RefreshCw, Sparkles, Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -37,6 +45,117 @@ export default function AIRecommendationsPage() {
   const { data: recommendations = [], isLoading, refetch } = useAIRecommendations();
   const updateRecommendation = useUpdateAIRecommendation();
   const [activeTab, setActiveTab] = useState('all');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Load CRM data for context
+  const { data: clients = [] } = useClients();
+  const { data: invoices = [] } = useInvoices();
+  const { data: supportTickets = [] } = useSupportTickets();
+  const { data: debitCases = [] } = useDebitCases();
+  const { data: opportunities = [] } = useOpportunities();
+  const { data: tasks = [] } = useTasks();
+
+  const generateRecommendations = async () => {
+    setIsGenerating(true);
+    try {
+      const context = {
+        clients: {
+          total: clients.length,
+          active: clients.filter(c => c.status === 'active').length,
+          needFollowUp: clients.filter(c => c.follow_up_needed).length,
+          byStage: {
+            preSales: clients.filter(c => c.sales_stage === 'pre_sales').length,
+            negotiation: clients.filter(c => c.sales_stage === 'negotiation').length,
+            closing: clients.filter(c => c.sales_stage === 'closing').length,
+          }
+        },
+        invoices: {
+          total: invoices.length,
+          overdue: invoices.filter(i => i.status === 'overdue').length,
+          overdueAmount: invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + (i.total_amount || 0), 0),
+        },
+        support: {
+          open: supportTickets.filter(t => t.status === 'open').length,
+          urgent: supportTickets.filter(t => t.priority === 'urgent').length,
+        },
+        debit: {
+          active: debitCases.filter(d => d.status !== 'closed').length,
+          outstanding: debitCases.reduce((s, d) => s + (d.current_amount || 0), 0),
+        },
+        opportunities: {
+          open: opportunities.filter(o => o.status === 'open').length,
+          pipelineValue: opportunities.filter(o => o.status === 'open').reduce((s, o) => s + (o.value || 0), 0),
+        },
+        tasks: {
+          overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length,
+        }
+      };
+
+      const prompt = `Analyze this CRM data and generate 3-5 actionable business recommendations in JSON format.
+
+Data Summary:
+- ${context.clients.total} clients (${context.clients.active} active, ${context.clients.needFollowUp} need follow-up)
+- Sales Pipeline: ${context.clients.byStage.preSales} pre-sales, ${context.clients.byStage.negotiation} negotiation, ${context.clients.byStage.closing} closing
+- ${context.invoices.overdue} overdue invoices ($${context.invoices.overdueAmount.toLocaleString()})
+- ${context.support.open} open support tickets (${context.support.urgent} urgent)
+- ${context.debit.active} active debit cases ($${context.debit.outstanding.toLocaleString()} outstanding)
+- ${context.opportunities.open} open opportunities ($${context.opportunities.pipelineValue.toLocaleString()} pipeline)
+- ${context.tasks.overdue} overdue tasks
+
+Return ONLY valid JSON array with recommendations:
+[{"title": "...", "description": "...", "category": "sales|clients|revenue|retention|team|process", "priority": "high|medium|low"}]`;
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], context: {} }),
+      });
+
+      if (!response.ok) throw new Error('AI generation failed');
+
+      const reader = response.body?.getReader();
+      let text = '';
+      if (reader) {
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          for (const line of chunk.split('\n')) {
+            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+              try {
+                const json = JSON.parse(line.slice(6));
+                text += json.choices?.[0]?.delta?.content || '';
+              } catch {}
+            }
+          }
+        }
+      }
+
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const recs = JSON.parse(jsonMatch[0]);
+        for (const rec of recs) {
+          await supabase.from('ai_recommendations').insert({
+            title: rec.title,
+            description: rec.description,
+            category: rec.category || 'process',
+            priority: rec.priority || 'medium',
+            status: 'pending',
+          });
+        }
+        toast.success(`Generated ${recs.length} new recommendations`);
+        refetch();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate recommendations');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const filteredRecs = recommendations.filter(r => {
     if (activeTab === 'all') return true;
@@ -63,10 +182,19 @@ export default function AIRecommendationsPage() {
             <h2 className="font-display text-2xl font-bold">AI Recommendations</h2>
             <p className="text-muted-foreground">AI-generated insights and action items based on your CRM data</p>
           </div>
-          <Button onClick={() => refetch()} variant="outline" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={generateRecommendations} disabled={isGenerating} className="gap-2">
+              {isGenerating ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Generating...</>
+              ) : (
+                <><Sparkles className="h-4 w-4" />Generate New</>
+              )}
+            </Button>
+            <Button onClick={() => refetch()} variant="outline" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
