@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, GitBranch, Target, CheckSquare, Ticket, Users, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, GitBranch, Target, CheckSquare, Ticket, Users, Loader2, Wallet } from 'lucide-react';
 
 import { usePipelineStages, useAddPipelineStage, useUpdatePipelineStage, useDeletePipelineStage } from '@/hooks/usePipelineStages';
 import { useStatusConfigs, useAddStatusConfig, useUpdateStatusConfig, useDeleteStatusConfig } from '@/hooks/useStatusConfigs';
 import { useOpportunityStages, useAddOpportunityStage, useUpdateOpportunityStage, useDeleteOpportunityStage } from '@/hooks/useOpportunityStages';
 import { useTaskStages, useAddTaskStage, useUpdateTaskStage, useDeleteTaskStage } from '@/hooks/useTaskStages';
 import { useSupportStages, useAddSupportStage, useUpdateSupportStage, useDeleteSupportStage } from '@/hooks/useSupportStages';
+import { useDebitPipelineStages, useAddDebitPipelineStage, useUpdateDebitPipelineStage, useDeleteDebitPipelineStage } from '@/hooks/useDebitPipelineStages';
 
 interface StageItem {
   id: string;
@@ -145,15 +146,22 @@ export function AllPipelinesConfigEditor() {
   const updateSupportStage = useUpdateSupportStage();
   const deleteSupportStage = useDeleteSupportStage();
 
+  // Debit Pipeline Stages
+  const { data: debitStages = [], isLoading: loadingDebit } = useDebitPipelineStages();
+  const addDebitStage = useAddDebitPipelineStage();
+  const updateDebitStage = useUpdateDebitPipelineStage();
+  const deleteDebitStage = useDeleteDebitPipelineStage();
+
   return (
     <Card className="p-5 bg-card/50 border-border/50">
       <Tabs defaultValue="sales" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="sales" className="gap-2"><GitBranch className="h-4 w-4" />Sales</TabsTrigger>
           <TabsTrigger value="status" className="gap-2"><Users className="h-4 w-4" />Status</TabsTrigger>
           <TabsTrigger value="opportunity" className="gap-2"><Target className="h-4 w-4" />Opportunity</TabsTrigger>
           <TabsTrigger value="task" className="gap-2"><CheckSquare className="h-4 w-4" />Task</TabsTrigger>
           <TabsTrigger value="support" className="gap-2"><Ticket className="h-4 w-4" />Support</TabsTrigger>
+          <TabsTrigger value="debit" className="gap-2"><Wallet className="h-4 w-4" />Debit</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
@@ -213,6 +221,18 @@ export function AllPipelinesConfigEditor() {
             onUpdate={updateSupportStage.mutateAsync}
             onDelete={(id) => deleteSupportStage.mutate(id)}
             isPending={addSupportStage.isPending || updateSupportStage.isPending}
+          />
+        </TabsContent>
+
+        <TabsContent value="debit">
+          <StageEditor
+            title="Debit Pipeline Stages"
+            stages={debitStages}
+            isLoading={loadingDebit}
+            onAdd={addDebitStage.mutateAsync}
+            onUpdate={updateDebitStage.mutateAsync}
+            onDelete={(id) => deleteDebitStage.mutate(id)}
+            isPending={addDebitStage.isPending || updateDebitStage.isPending}
           />
         </TabsContent>
       </Tabs>

@@ -38,6 +38,10 @@ import CompetitorsPage from "./pages/crm/CompetitorsPage";
 import MarketingPage from "./pages/crm/MarketingPage";
 import SupportAgentsPage from "./pages/crm/SupportAgentsPage";
 import SupportPipelinePage from "./pages/crm/SupportPipelinePage";
+import DebitDashboardPage from "./pages/crm/DebitDashboardPage";
+import DebitCollectorsPage from "./pages/crm/DebitCollectorsPage";
+import DebitCasesPage from "./pages/crm/DebitCasesPage";
+import DebitPipelinePage from "./pages/crm/DebitPipelinePage";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +86,10 @@ const App = () => (
           <Route path="/crm/invoices" element={<InvoicesPage />} />
           <Route path="/crm/competitors" element={<CompetitorsPage />} />
           <Route path="/crm/marketing" element={<MarketingPage />} />
+          <Route path="/crm/debit" element={<DebitDashboardPage />} />
+          <Route path="/crm/debit-collectors" element={<DebitCollectorsPage />} />
+          <Route path="/crm/debit-cases" element={<DebitCasesPage />} />
+          <Route path="/crm/debit-pipeline" element={<DebitPipelinePage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
