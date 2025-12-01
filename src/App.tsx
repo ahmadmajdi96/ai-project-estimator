@@ -12,6 +12,11 @@ import ManagementUsersPage from "./pages/management/ManagementUsersPage";
 import ManagementEmployeesPage from "./pages/management/ManagementEmployeesPage";
 import ManagementDepartmentsPage from "./pages/management/ManagementDepartmentsPage";
 import OrgTreePage from "./pages/management/OrgTreePage";
+import ManagementTasksPage from "./pages/management/ManagementTasksPage";
+import ManagementRoadmapsPage from "./pages/management/ManagementRoadmapsPage";
+import ManagementKPIsPage from "./pages/management/ManagementKPIsPage";
+import ManagementReportsPage from "./pages/management/ManagementReportsPage";
+import ManagementDocumentsPage from "./pages/management/ManagementDocumentsPage";
 import ClientsPage from "./pages/crm/ClientsPage";
 import ClientProfile from "./pages/crm/ClientProfile";
 import SalesPipeline from "./pages/crm/SalesPipeline";
@@ -101,6 +106,11 @@ const App = () => (
           <Route path="/management/employees" element={<ManagementEmployeesPage />} />
           <Route path="/management/departments" element={<ManagementDepartmentsPage />} />
           <Route path="/management/org-tree" element={<OrgTreePage />} />
+          <Route path="/management/tasks" element={<ManagementTasksPage />} />
+          <Route path="/management/roadmaps" element={<ManagementRoadmapsPage />} />
+          <Route path="/management/kpis" element={<ManagementKPIsPage />} />
+          <Route path="/management/reports" element={<ManagementReportsPage />} />
+          <Route path="/management/documents" element={<ManagementDocumentsPage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
