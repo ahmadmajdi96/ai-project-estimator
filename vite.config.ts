@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: ['crm.cortanexai.com', 'localhost'],
+  },
+  preview: {
+    host: "::",
+    port: 5173,
+    allowedHosts: ['crm.cortanexai.com', 'localhost'],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
