@@ -1092,6 +1092,797 @@ export type Database = {
         }
         Relationships: []
       }
+      cxo_ai_jobs: {
+        Row: {
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string | null
+          error: string | null
+          id: string
+          input_reference: Json | null
+          job_type: Database["public"]["Enums"]["cxo_ai_job_type"]
+          output: Json | null
+          status: Database["public"]["Enums"]["cxo_ai_job_status"] | null
+          tenant_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          input_reference?: Json | null
+          job_type: Database["public"]["Enums"]["cxo_ai_job_type"]
+          output?: Json | null
+          status?: Database["public"]["Enums"]["cxo_ai_job_status"] | null
+          tenant_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error?: string | null
+          id?: string
+          input_reference?: Json | null
+          job_type?: Database["public"]["Enums"]["cxo_ai_job_type"]
+          output?: Json | null
+          status?: Database["public"]["Enums"]["cxo_ai_job_status"] | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_ai_jobs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_ai_jobs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_audit_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_connectors: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          display_name: string
+          health_status: Database["public"]["Enums"]["cxo_health_status"] | null
+          id: string
+          is_enabled: boolean | null
+          last_health_check_at: string | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["cxo_connector_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          display_name: string
+          health_status?:
+            | Database["public"]["Enums"]["cxo_health_status"]
+            | null
+          id?: string
+          is_enabled?: boolean | null
+          last_health_check_at?: string | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["cxo_connector_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          display_name?: string
+          health_status?:
+            | Database["public"]["Enums"]["cxo_health_status"]
+            | null
+          id?: string
+          is_enabled?: boolean | null
+          last_health_check_at?: string | null
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["cxo_connector_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_connectors_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_contacts: {
+        Row: {
+          attributes: Json | null
+          channels: Json | null
+          created_at: string | null
+          external_id: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          primary_email: string | null
+          primary_phone: string | null
+          tags: string[] | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          channels?: Json | null
+          created_at?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          tags?: string[] | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          channels?: Json | null
+          created_at?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          primary_email?: string | null
+          primary_phone?: string | null
+          tags?: string[] | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_conversation_events: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          created_by_user_id: string | null
+          id: string
+          payload: Json | null
+          provider_event_id: string | null
+          provider_type:
+            | Database["public"]["Enums"]["cxo_connector_type"]
+            | null
+          tenant_id: string
+          timestamp: string | null
+          type: Database["public"]["Enums"]["cxo_event_type"]
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          payload?: Json | null
+          provider_event_id?: string | null
+          provider_type?:
+            | Database["public"]["Enums"]["cxo_connector_type"]
+            | null
+          tenant_id: string
+          timestamp?: string | null
+          type: Database["public"]["Enums"]["cxo_event_type"]
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          payload?: Json | null
+          provider_event_id?: string | null
+          provider_type?:
+            | Database["public"]["Enums"]["cxo_connector_type"]
+            | null
+          tenant_id?: string
+          timestamp?: string | null
+          type?: Database["public"]["Enums"]["cxo_event_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_conversation_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_conversation_events_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_conversation_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_conversations: {
+        Row: {
+          assigned_agent_id: string | null
+          assigned_queue_id: string | null
+          closed_at: string | null
+          contact_id: string | null
+          created_at: string | null
+          external_reference: string | null
+          id: string
+          metadata: Json | null
+          primary_channel:
+            | Database["public"]["Enums"]["cxo_channel_type"]
+            | null
+          priority: Database["public"]["Enums"]["cxo_priority"] | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["cxo_conversation_status"] | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_agent_id?: string | null
+          assigned_queue_id?: string | null
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          external_reference?: string | null
+          id?: string
+          metadata?: Json | null
+          primary_channel?:
+            | Database["public"]["Enums"]["cxo_channel_type"]
+            | null
+          priority?: Database["public"]["Enums"]["cxo_priority"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["cxo_conversation_status"] | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_agent_id?: string | null
+          assigned_queue_id?: string | null
+          closed_at?: string | null
+          contact_id?: string | null
+          created_at?: string | null
+          external_reference?: string | null
+          id?: string
+          metadata?: Json | null
+          primary_channel?:
+            | Database["public"]["Enums"]["cxo_channel_type"]
+            | null
+          priority?: Database["public"]["Enums"]["cxo_priority"] | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["cxo_conversation_status"] | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_conversations_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_conversations_assigned_queue_id_fkey"
+            columns: ["assigned_queue_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_queues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_conversations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_diagnostic_bundles: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          created_by_user_id: string | null
+          id: string
+          logs: Json | null
+          network_tests: Json | null
+          tenant_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          logs?: Json | null
+          network_tests?: Json | null
+          tenant_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          id?: string
+          logs?: Json | null
+          network_tests?: Json | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_diagnostic_bundles_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_diagnostic_bundles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_provider_health_checks: {
+        Row: {
+          checked_at: string | null
+          connector_id: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          status: Database["public"]["Enums"]["cxo_check_status"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["cxo_health_check_type"]
+        }
+        Insert: {
+          checked_at?: string | null
+          connector_id: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          status: Database["public"]["Enums"]["cxo_check_status"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["cxo_health_check_type"]
+        }
+        Update: {
+          checked_at?: string | null
+          connector_id?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          status?: Database["public"]["Enums"]["cxo_check_status"]
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["cxo_health_check_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_provider_health_checks_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_provider_health_checks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_queues: {
+        Row: {
+          channel_types:
+            | Database["public"]["Enums"]["cxo_channel_type"][]
+            | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          routing_strategy:
+            | Database["public"]["Enums"]["cxo_routing_strategy"]
+            | null
+          skills_required: string[] | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          channel_types?:
+            | Database["public"]["Enums"]["cxo_channel_type"][]
+            | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          routing_strategy?:
+            | Database["public"]["Enums"]["cxo_routing_strategy"]
+            | null
+          skills_required?: string[] | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          channel_types?:
+            | Database["public"]["Enums"]["cxo_channel_type"][]
+            | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          routing_strategy?:
+            | Database["public"]["Enums"]["cxo_routing_strategy"]
+            | null
+          skills_required?: string[] | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_queues_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_support_tickets: {
+        Row: {
+          created_at: string | null
+          created_by_user_id: string | null
+          description: string | null
+          diagnostic_bundle_id: string | null
+          id: string
+          related_connector_id: string | null
+          related_conversation_id: string | null
+          severity: Database["public"]["Enums"]["cxo_ticket_severity"] | null
+          status: Database["public"]["Enums"]["cxo_ticket_status"] | null
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["cxo_ticket_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          diagnostic_bundle_id?: string | null
+          id?: string
+          related_connector_id?: string | null
+          related_conversation_id?: string | null
+          severity?: Database["public"]["Enums"]["cxo_ticket_severity"] | null
+          status?: Database["public"]["Enums"]["cxo_ticket_status"] | null
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["cxo_ticket_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          description?: string | null
+          diagnostic_bundle_id?: string | null
+          id?: string
+          related_connector_id?: string | null
+          related_conversation_id?: string | null
+          severity?: Database["public"]["Enums"]["cxo_ticket_severity"] | null
+          status?: Database["public"]["Enums"]["cxo_ticket_status"] | null
+          tenant_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["cxo_ticket_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_support_tickets_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_support_tickets_related_connector_id_fkey"
+            columns: ["related_connector_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_support_tickets_related_conversation_id_fkey"
+            columns: ["related_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_tenants: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          plan: string | null
+          primary_region: string | null
+          settings: Json | null
+          slug: string
+          status: Database["public"]["Enums"]["cxo_tenant_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          plan?: string | null
+          primary_region?: string | null
+          settings?: Json | null
+          slug: string
+          status?: Database["public"]["Enums"]["cxo_tenant_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          plan?: string | null
+          primary_region?: string | null
+          settings?: Json | null
+          slug?: string
+          status?: Database["public"]["Enums"]["cxo_tenant_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cxo_users: {
+        Row: {
+          auth_user_id: string | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          language: string | null
+          last_login_at: string | null
+          role: Database["public"]["Enums"]["cxo_user_role"] | null
+          status: Database["public"]["Enums"]["cxo_user_status"] | null
+          tenant_id: string
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          language?: string | null
+          last_login_at?: string | null
+          role?: Database["public"]["Enums"]["cxo_user_role"] | null
+          status?: Database["public"]["Enums"]["cxo_user_status"] | null
+          tenant_id: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          language?: string | null
+          last_login_at?: string | null
+          role?: Database["public"]["Enums"]["cxo_user_role"] | null
+          status?: Database["public"]["Enums"]["cxo_user_status"] | null
+          tenant_id?: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_workflow_versions: {
+        Row: {
+          created_at: string | null
+          created_by_user_id: string | null
+          definition: Json | null
+          id: string
+          published_at: string | null
+          status: Database["public"]["Enums"]["cxo_workflow_status"] | null
+          tenant_id: string
+          version_number: number | null
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          definition?: Json | null
+          id?: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["cxo_workflow_status"] | null
+          tenant_id: string
+          version_number?: number | null
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by_user_id?: string | null
+          definition?: Json | null
+          id?: string
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["cxo_workflow_status"] | null
+          tenant_id?: string
+          version_number?: number | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_workflow_versions_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_workflow_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxo_workflow_versions_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cxo_workflows: {
+        Row: {
+          created_at: string | null
+          current_version_id: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          tenant_id: string
+          trigger_type: Database["public"]["Enums"]["cxo_workflow_trigger"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          tenant_id: string
+          trigger_type: Database["public"]["Enums"]["cxo_workflow_trigger"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          tenant_id?: string
+          trigger_type?: Database["public"]["Enums"]["cxo_workflow_trigger"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxo_workflows_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cxo_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboard_access: {
         Row: {
           created_at: string | null
@@ -3264,6 +4055,78 @@ export type Database = {
         | "sms"
         | "chat"
         | "letter"
+      cxo_ai_job_status: "pending" | "processing" | "completed" | "failed"
+      cxo_ai_job_type:
+        | "summary"
+        | "sentiment"
+        | "suggestion"
+        | "classification"
+        | "translation"
+      cxo_channel_type:
+        | "voice"
+        | "sms"
+        | "whatsapp"
+        | "email"
+        | "webchat"
+        | "other"
+      cxo_check_status: "success" | "failure"
+      cxo_connector_type:
+        | "ringcentral"
+        | "twilio"
+        | "zoom_phone"
+        | "ms_teams_phone"
+        | "generic_voice"
+        | "sms_provider"
+        | "whatsapp_provider"
+        | "email_provider"
+        | "webchat_provider"
+      cxo_conversation_status: "open" | "pending" | "resolved" | "closed"
+      cxo_event_type:
+        | "voice_call_started"
+        | "voice_call_ended"
+        | "voice_recording_available"
+        | "sms_inbound"
+        | "sms_outbound"
+        | "email_inbound"
+        | "email_outbound"
+        | "chat_message_inbound"
+        | "chat_message_outbound"
+        | "note_added"
+        | "status_changed"
+        | "tag_added"
+        | "ai_summary_ready"
+        | "ai_sentiment_analysis"
+      cxo_health_check_type:
+        | "api_ping"
+        | "test_sms"
+        | "test_call_metadata"
+        | "webhook_latency"
+      cxo_health_status: "healthy" | "degraded" | "down" | "unknown"
+      cxo_priority: "low" | "normal" | "high" | "urgent"
+      cxo_routing_strategy: "round_robin" | "least_busy" | "skill_based"
+      cxo_tenant_status: "active" | "suspended" | "closed"
+      cxo_ticket_severity: "low" | "medium" | "high" | "critical"
+      cxo_ticket_status:
+        | "open"
+        | "investigating"
+        | "waiting_for_customer"
+        | "resolved"
+        | "closed"
+      cxo_ticket_type:
+        | "bug"
+        | "incident"
+        | "billing_question"
+        | "feature_request"
+      cxo_user_role: "agent" | "supervisor" | "admin" | "billing_owner"
+      cxo_user_status: "active" | "invited" | "disabled"
+      cxo_workflow_status: "draft" | "published" | "archived"
+      cxo_workflow_trigger:
+        | "inbound_voice"
+        | "inbound_sms"
+        | "inbound_email"
+        | "inbound_webchat"
+        | "outbound_event"
+        | "scheduled"
       event_type: "meeting" | "call" | "follow_up" | "task"
       lead_source:
         | "marketing_campaign"
@@ -3428,6 +4291,86 @@ export const Constants = {
         "sms",
         "chat",
         "letter",
+      ],
+      cxo_ai_job_status: ["pending", "processing", "completed", "failed"],
+      cxo_ai_job_type: [
+        "summary",
+        "sentiment",
+        "suggestion",
+        "classification",
+        "translation",
+      ],
+      cxo_channel_type: [
+        "voice",
+        "sms",
+        "whatsapp",
+        "email",
+        "webchat",
+        "other",
+      ],
+      cxo_check_status: ["success", "failure"],
+      cxo_connector_type: [
+        "ringcentral",
+        "twilio",
+        "zoom_phone",
+        "ms_teams_phone",
+        "generic_voice",
+        "sms_provider",
+        "whatsapp_provider",
+        "email_provider",
+        "webchat_provider",
+      ],
+      cxo_conversation_status: ["open", "pending", "resolved", "closed"],
+      cxo_event_type: [
+        "voice_call_started",
+        "voice_call_ended",
+        "voice_recording_available",
+        "sms_inbound",
+        "sms_outbound",
+        "email_inbound",
+        "email_outbound",
+        "chat_message_inbound",
+        "chat_message_outbound",
+        "note_added",
+        "status_changed",
+        "tag_added",
+        "ai_summary_ready",
+        "ai_sentiment_analysis",
+      ],
+      cxo_health_check_type: [
+        "api_ping",
+        "test_sms",
+        "test_call_metadata",
+        "webhook_latency",
+      ],
+      cxo_health_status: ["healthy", "degraded", "down", "unknown"],
+      cxo_priority: ["low", "normal", "high", "urgent"],
+      cxo_routing_strategy: ["round_robin", "least_busy", "skill_based"],
+      cxo_tenant_status: ["active", "suspended", "closed"],
+      cxo_ticket_severity: ["low", "medium", "high", "critical"],
+      cxo_ticket_status: [
+        "open",
+        "investigating",
+        "waiting_for_customer",
+        "resolved",
+        "closed",
+      ],
+      cxo_ticket_type: [
+        "bug",
+        "incident",
+        "billing_question",
+        "feature_request",
+      ],
+      cxo_user_role: ["agent", "supervisor", "admin", "billing_owner"],
+      cxo_user_status: ["active", "invited", "disabled"],
+      cxo_workflow_status: ["draft", "published", "archived"],
+      cxo_workflow_trigger: [
+        "inbound_voice",
+        "inbound_sms",
+        "inbound_email",
+        "inbound_webchat",
+        "outbound_event",
+        "scheduled",
       ],
       event_type: ["meeting", "call", "follow_up", "task"],
       lead_source: [
