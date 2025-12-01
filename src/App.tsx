@@ -4,8 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Auth from "./pages/Auth";
+import Portal from "./pages/Portal";
 import NotFound from "./pages/NotFound";
 import CRMDashboard from "./pages/crm/CRMDashboard";
+import ManagementDashboard from "./pages/management/ManagementDashboard";
+import ManagementUsersPage from "./pages/management/ManagementUsersPage";
+import ManagementEmployeesPage from "./pages/management/ManagementEmployeesPage";
+import ManagementDepartmentsPage from "./pages/management/ManagementDepartmentsPage";
+import OrgTreePage from "./pages/management/OrgTreePage";
 import ClientsPage from "./pages/crm/ClientsPage";
 import ClientProfile from "./pages/crm/ClientProfile";
 import SalesPipeline from "./pages/crm/SalesPipeline";
@@ -52,7 +58,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/crm" replace />} />
+          <Route path="/" element={<Portal />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/sales" element={<SalesPage />} />
@@ -90,6 +96,11 @@ const App = () => (
           <Route path="/crm/debit-collectors" element={<DebitCollectorsPage />} />
           <Route path="/crm/debit-cases" element={<DebitCasesPage />} />
           <Route path="/crm/debit-pipeline" element={<DebitPipelinePage />} />
+          <Route path="/management" element={<ManagementDashboard />} />
+          <Route path="/management/users" element={<ManagementUsersPage />} />
+          <Route path="/management/employees" element={<ManagementEmployeesPage />} />
+          <Route path="/management/departments" element={<ManagementDepartmentsPage />} />
+          <Route path="/management/org-tree" element={<OrgTreePage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

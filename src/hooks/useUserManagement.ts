@@ -7,7 +7,7 @@ export interface UserWithRole {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: 'ceo' | 'department_head' | 'team_lead' | 'employee';
+  role: 'super_admin' | 'ceo' | 'department_head' | 'team_lead' | 'employee';
   created_at: string;
 }
 
@@ -22,7 +22,7 @@ export interface PagePermission {
 export interface UserInvitation {
   id: string;
   email: string;
-  role: 'ceo' | 'department_head' | 'team_lead' | 'employee';
+  role: 'super_admin' | 'ceo' | 'department_head' | 'team_lead' | 'employee';
   invited_by: string | null;
   accepted: boolean;
   created_at: string;
@@ -88,7 +88,7 @@ export function usePagePermissions(userId?: string) {
   });
 }
 
-type AppRole = 'ceo' | 'department_head' | 'team_lead' | 'employee';
+type AppRole = 'super_admin' | 'ceo' | 'department_head' | 'team_lead' | 'employee';
 
 export function useUpdateUserRole() {
   const queryClient = useQueryClient();
@@ -163,7 +163,7 @@ export function useInviteUser() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: AppRole }) => {
+    mutationFn: async ({ email, role, department_id }: { email: string; role: AppRole; department_id?: string }) => {
       const { data, error } = await supabase
         .from('user_invitations')
         .insert([{ email, role }])

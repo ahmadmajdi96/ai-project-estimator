@@ -1036,6 +1036,27 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_access: {
+        Row: {
+          created_at: string | null
+          dashboard_name: string
+          id: string
+          min_role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_name: string
+          id?: string
+          min_role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_name?: string
+          id?: string
+          min_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       debit_cases: {
         Row: {
           client_id: string | null
@@ -3151,6 +3172,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_role_level: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3158,9 +3183,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role_level: {
+        Args: {
+          _min_role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "ceo" | "department_head" | "team_lead" | "employee"
+      app_role:
+        | "super_admin"
+        | "ceo"
+        | "department_head"
+        | "team_lead"
+        | "employee"
       call_type: "incoming" | "outgoing"
       client_status: "prospect" | "active" | "inactive" | "former"
       communication_type:
@@ -3318,7 +3355,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["ceo", "department_head", "team_lead", "employee"],
+      app_role: [
+        "super_admin",
+        "ceo",
+        "department_head",
+        "team_lead",
+        "employee",
+      ],
       call_type: ["incoming", "outgoing"],
       client_status: ["prospect", "active", "inactive", "former"],
       communication_type: [
