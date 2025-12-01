@@ -24,6 +24,13 @@ import ManagementAIDecisionsPage from "./pages/management/ManagementAIDecisionsP
 import ManagementCalendarPage from "./pages/management/ManagementCalendarPage";
 import ManagementConfigPage from "./pages/management/ManagementConfigPage";
 import ManagementTraceabilityPage from "./pages/management/ManagementTraceabilityPage";
+import CortaCentralDashboard from "./pages/cortacentral/CortaCentralDashboard";
+import CXOConversationsPage from "./pages/cortacentral/CXOConversationsPage";
+import CXOConnectorsPage from "./pages/cortacentral/CXOConnectorsPage";
+import CXOWorkflowsPage from "./pages/cortacentral/CXOWorkflowsPage";
+import CXOAnalyticsPage from "./pages/cortacentral/CXOAnalyticsPage";
+import CXOSupportPage from "./pages/cortacentral/CXOSupportPage";
+import CXOSettingsPage from "./pages/cortacentral/CXOSettingsPage";
 import ClientsPage from "./pages/crm/ClientsPage";
 import ClientProfile from "./pages/crm/ClientProfile";
 import SalesPipeline from "./pages/crm/SalesPipeline";
@@ -126,6 +133,13 @@ const App = () => (
           <Route path="/management/config" element={<ManagementConfigPage />} />
           <Route path="/management/traceability" element={<ManagementTraceabilityPage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
+          <Route path="/cortacentral" element={<CortaCentralDashboard />} />
+          <Route path="/cortacentral/conversations" element={<CXOConversationsPage />} />
+          <Route path="/cortacentral/connectors" element={<CXOConnectorsPage />} />
+          <Route path="/cortacentral/workflows" element={<CXOWorkflowsPage />} />
+          <Route path="/cortacentral/analytics" element={<CXOAnalyticsPage />} />
+          <Route path="/cortacentral/support" element={<CXOSupportPage />} />
+          <Route path="/cortacentral/settings" element={<CXOSettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
