@@ -751,6 +751,62 @@ export type Database = {
           },
         ]
       }
+      company_documents: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_active: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_documents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_policies: {
         Row: {
           category: string

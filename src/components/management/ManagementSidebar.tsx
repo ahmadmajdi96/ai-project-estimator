@@ -6,7 +6,15 @@ import {
   Building,
   LogOut,
   Home,
-  Network
+  Network,
+  CheckSquare,
+  Map,
+  BarChart3,
+  FileBarChart,
+  FileText,
+  Bot,
+  MessageSquare,
+  Lightbulb
 } from 'lucide-react';
 import {
   Sidebar,
@@ -37,6 +45,17 @@ const managementItems = [
 
 const operationItems = [
   { title: 'Organization Tree', url: '/management/org-tree', icon: Network },
+  { title: 'Tasks', url: '/management/tasks', icon: CheckSquare },
+  { title: 'Roadmaps', url: '/management/roadmaps', icon: Map },
+  { title: 'KPIs', url: '/management/kpis', icon: BarChart3 },
+  { title: 'Reports', url: '/management/reports', icon: FileBarChart },
+  { title: 'Documents', url: '/management/documents', icon: FileText },
+];
+
+const aiItems = [
+  { title: 'AI Chat', url: '/crm/ai-chat', icon: MessageSquare },
+  { title: 'AI Insights', url: '/crm/ai-insights', icon: Lightbulb },
+  { title: 'AI Recommendations', url: '/crm/ai-recommendations', icon: Bot },
 ];
 
 export function ManagementSidebar() {
@@ -98,6 +117,11 @@ export function ManagementSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Operation</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(operationItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>AI Tools</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
