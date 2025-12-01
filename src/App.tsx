@@ -17,6 +17,13 @@ import ManagementRoadmapsPage from "./pages/management/ManagementRoadmapsPage";
 import ManagementKPIsPage from "./pages/management/ManagementKPIsPage";
 import ManagementReportsPage from "./pages/management/ManagementReportsPage";
 import ManagementDocumentsPage from "./pages/management/ManagementDocumentsPage";
+import ManagementAIChatPage from "./pages/management/ManagementAIChatPage";
+import ManagementAIInsightsPage from "./pages/management/ManagementAIInsightsPage";
+import ManagementAIRecommendationsPage from "./pages/management/ManagementAIRecommendationsPage";
+import ManagementAIDecisionsPage from "./pages/management/ManagementAIDecisionsPage";
+import ManagementCalendarPage from "./pages/management/ManagementCalendarPage";
+import ManagementConfigPage from "./pages/management/ManagementConfigPage";
+import ManagementTraceabilityPage from "./pages/management/ManagementTraceabilityPage";
 import ClientsPage from "./pages/crm/ClientsPage";
 import ClientProfile from "./pages/crm/ClientProfile";
 import SalesPipeline from "./pages/crm/SalesPipeline";
@@ -111,6 +118,13 @@ const App = () => (
           <Route path="/management/kpis" element={<ManagementKPIsPage />} />
           <Route path="/management/reports" element={<ManagementReportsPage />} />
           <Route path="/management/documents" element={<ManagementDocumentsPage />} />
+          <Route path="/management/ai-chat" element={<ManagementAIChatPage />} />
+          <Route path="/management/ai-insights" element={<ManagementAIInsightsPage />} />
+          <Route path="/management/ai-recommendations" element={<ManagementAIRecommendationsPage />} />
+          <Route path="/management/ai-decisions" element={<ManagementAIDecisionsPage />} />
+          <Route path="/management/calendar" element={<ManagementCalendarPage />} />
+          <Route path="/management/config" element={<ManagementConfigPage />} />
+          <Route path="/management/traceability" element={<ManagementTraceabilityPage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

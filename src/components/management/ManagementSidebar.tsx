@@ -14,7 +14,11 @@ import {
   FileText,
   Bot,
   MessageSquare,
-  Lightbulb
+  Lightbulb,
+  Scale,
+  Settings,
+  Calendar,
+  Database
 } from 'lucide-react';
 import {
   Sidebar,
@@ -41,10 +45,10 @@ const managementItems = [
   { title: 'Users & Roles', url: '/management/users', icon: Shield },
   { title: 'Employees', url: '/management/employees', icon: Users },
   { title: 'Departments', url: '/management/departments', icon: Building },
+  { title: 'Organization Tree', url: '/management/org-tree', icon: Network },
 ];
 
 const operationItems = [
-  { title: 'Organization Tree', url: '/management/org-tree', icon: Network },
   { title: 'Tasks', url: '/management/tasks', icon: CheckSquare },
   { title: 'Roadmaps', url: '/management/roadmaps', icon: Map },
   { title: 'KPIs', url: '/management/kpis', icon: BarChart3 },
@@ -53,9 +57,16 @@ const operationItems = [
 ];
 
 const aiItems = [
-  { title: 'AI Chat', url: '/crm/ai-chat', icon: MessageSquare },
-  { title: 'AI Insights', url: '/crm/ai-insights', icon: Lightbulb },
-  { title: 'AI Recommendations', url: '/crm/ai-recommendations', icon: Bot },
+  { title: 'AI Chat', url: '/management/ai-chat', icon: MessageSquare },
+  { title: 'AI Insights', url: '/management/ai-insights', icon: Lightbulb },
+  { title: 'AI Recommendations', url: '/management/ai-recommendations', icon: Bot },
+  { title: 'AI Decisions', url: '/management/ai-decisions', icon: Scale },
+];
+
+const toolItems = [
+  { title: 'Configuration', url: '/management/config', icon: Settings },
+  { title: 'Calendar', url: '/management/calendar', icon: Calendar },
+  { title: 'Traceability', url: '/management/traceability', icon: Database },
 ];
 
 export function ManagementSidebar() {
@@ -110,18 +121,23 @@ export function ManagementSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel>Organization</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(managementItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Operation</SidebarGroupLabel>
+          <SidebarGroupLabel>Operations</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(operationItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>AI Tools</SidebarGroupLabel>
+          <SidebarGroupLabel>AI Assistant</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(aiItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(toolItems)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
