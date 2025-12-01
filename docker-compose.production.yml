@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  cortanex-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cortanex-production
+    ports:
+      - "3334:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  default:
+    name: cortanex-network

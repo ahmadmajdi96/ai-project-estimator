@@ -2411,6 +2411,51 @@ export type Database = {
           },
         ]
       }
+      kpi_updates: {
+        Row: {
+          created_at: string | null
+          id: string
+          kpi_id: string | null
+          notes: string | null
+          timestamp: string | null
+          updated_by_employee_id: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kpi_id?: string | null
+          notes?: string | null
+          timestamp?: string | null
+          updated_by_employee_id?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kpi_id?: string | null
+          notes?: string | null
+          timestamp?: string | null
+          updated_by_employee_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_updates_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_updates_updated_by_employee_id_fkey"
+            columns: ["updated_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_campaigns: {
         Row: {
           actual_spend: number | null
@@ -2554,6 +2599,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          link_url: string | null
+          message: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link_url?: string | null
+          message: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link_url?: string | null
+          message?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           actual_close_date: string | null
@@ -2694,6 +2769,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          mission: string | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          updated_at: string | null
+          vision: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          mission?: string | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          vision?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          mission?: string | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          vision?: string | null
+        }
+        Relationships: []
       }
       page_permissions: {
         Row: {
@@ -3534,6 +3645,73 @@ export type Database = {
           },
         ]
       }
+      strategic_goals: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          owner_employee_id: string | null
+          scope: string
+          start_date: string | null
+          status: string | null
+          team_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner_employee_id?: string | null
+          scope: string
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner_employee_id?: string | null
+          scope?: string
+          start_date?: string | null
+          status?: string | null
+          team_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategic_goals_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_goals_owner_employee_id_fkey"
+            columns: ["owner_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategic_goals_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_agents: {
         Row: {
           avatar_url: string | null
@@ -3846,6 +4024,54 @@ export type Database = {
             columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          id: string
+          lead_id: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
