@@ -51,7 +51,7 @@ export function useAddDepartment() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (dept: { name: string; description?: string; color?: string; budget?: number }) => {
+    mutationFn: async (dept: { name: string; description?: string; color?: string; budget?: number; parent_department_id?: string }) => {
       const { data, error } = await supabase
         .from('departments')
         .insert(dept)
