@@ -7,17 +7,12 @@ import {
   FileText, 
   Settings,
   TrendingUp,
-  UserCheck,
-  CheckSquare,
-  Map,
-  BarChart3,
   Bot,
   MessageSquare,
   LogOut,
   BadgeDollarSign,
   ShoppingCart,
   Database,
-  Shield,
   PieChart,
   Lightbulb,
   Scale,
@@ -33,7 +28,8 @@ import {
   Headphones,
   UserCog,
   Wallet,
-  Banknote
+  Banknote,
+  Home
 } from 'lucide-react';
 import {
   Sidebar,
@@ -50,6 +46,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const crmItems = [
   { title: 'Dashboard', url: '/crm', icon: LayoutDashboard },
@@ -85,15 +82,6 @@ const financeItems = [
 const intelligenceItems = [
   { title: 'Competitors', url: '/crm/competitors', icon: Building },
   { title: 'Marketing', url: '/crm/marketing', icon: Megaphone },
-];
-
-const managementItems = [
-  { title: 'Users & Roles', url: '/crm/users', icon: Shield },
-  { title: 'Departments', url: '/crm/departments', icon: LayoutDashboard },
-  { title: 'Employees', url: '/crm/employees', icon: UserCheck },
-  { title: 'Tasks', url: '/crm/tasks', icon: CheckSquare },
-  { title: 'Roadmaps', url: '/crm/roadmaps', icon: Map },
-  { title: 'KPIs', url: '/crm/kpis', icon: BarChart3 },
   { title: 'Reports', url: '/crm/reports', icon: PieChart },
 ];
 
@@ -121,9 +109,14 @@ export function CRMSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleBackToPortal = () => {
+    navigate('/');
   };
 
   const renderMenuItems = (items: typeof crmItems) => (
@@ -189,11 +182,6 @@ export function CRMSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(managementItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
           <SidebarGroupLabel>Automation</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(automationItems)}</SidebarGroupContent>
         </SidebarGroup>
@@ -209,7 +197,16 @@ export function CRMSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-border/50">
+      <SidebarFooter className="p-4 border-t border-border/50 space-y-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full justify-start gap-2"
+          onClick={handleBackToPortal}
+        >
+          <Home className="h-4 w-4" />
+          {!collapsed && <span>Back to Portal</span>}
+        </Button>
         <Button 
           variant="ghost" 
           size="sm" 
