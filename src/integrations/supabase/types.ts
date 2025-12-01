@@ -1036,6 +1036,150 @@ export type Database = {
         }
         Relationships: []
       }
+      debit_cases: {
+        Row: {
+          client_id: string | null
+          collected_amount: number | null
+          collector_id: string | null
+          created_at: string | null
+          current_amount: number | null
+          description: string | null
+          due_date: string | null
+          id: string
+          last_contact_date: string | null
+          notes: string | null
+          original_amount: number | null
+          priority: string | null
+          stage: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          collected_amount?: number | null
+          collector_id?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          last_contact_date?: string | null
+          notes?: string | null
+          original_amount?: number | null
+          priority?: string | null
+          stage?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          collected_amount?: number | null
+          collector_id?: string | null
+          created_at?: string | null
+          current_amount?: number | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          last_contact_date?: string | null
+          notes?: string | null
+          original_amount?: number | null
+          priority?: string | null
+          stage?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debit_cases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debit_cases_collector_id_fkey"
+            columns: ["collector_id"]
+            isOneToOne: false
+            referencedRelation: "debit_collectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debit_collectors: {
+        Row: {
+          avatar_url: string | null
+          commission_rate: number | null
+          created_at: string | null
+          email: string | null
+          hire_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string | null
+          target_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          commission_rate?: number | null
+          created_at?: string | null
+          email?: string | null
+          hire_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          target_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          commission_rate?: number | null
+          created_at?: string | null
+          email?: string | null
+          hire_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          target_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      debit_pipeline_stages: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          value: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          value: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          value?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           budget: number | null

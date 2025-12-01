@@ -32,7 +32,8 @@ import {
   Megaphone,
   Headphones,
   UserCog,
-  Wrench
+  Wallet,
+  Banknote
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,12 +53,22 @@ import { useAuth } from '@/hooks/useAuth';
 
 const crmItems = [
   { title: 'Dashboard', url: '/crm', icon: LayoutDashboard },
-  { title: 'Sales', url: '/crm/sales', icon: ShoppingCart },
   { title: 'Clients', url: '/crm/clients', icon: Users },
+  { title: 'Status Board', url: '/crm/status', icon: Kanban },
+];
+
+const salesItems = [
+  { title: 'Sales Dashboard', url: '/crm/sales', icon: ShoppingCart },
   { title: 'Salesmen', url: '/crm/salesmen', icon: BadgeDollarSign },
   { title: 'Opportunities', url: '/crm/opportunities', icon: Target },
   { title: 'Sales Pipeline', url: '/crm/pipeline', icon: TrendingUp },
-  { title: 'Status Board', url: '/crm/status', icon: Kanban },
+];
+
+const debitItems = [
+  { title: 'Debit Dashboard', url: '/crm/debit', icon: Wallet },
+  { title: 'Collectors', url: '/crm/debit-collectors', icon: Banknote },
+  { title: 'Debit Cases', url: '/crm/debit-cases', icon: Target },
+  { title: 'Debit Pipeline', url: '/crm/debit-pipeline', icon: TrendingUp },
 ];
 
 const supportItems = [
@@ -150,6 +161,16 @@ export function CRMSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>CRM</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(crmItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Sales</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(salesItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Debit Collection</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(debitItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
