@@ -133,14 +133,14 @@ export default function ManagementDepartmentsPage() {
       <div>
         <Label>Parent Department</Label>
         <Select 
-          value={formData.parent_department_id} 
-          onValueChange={(v) => setFormData(prev => ({ ...prev, parent_department_id: v }))}
+          value={formData.parent_department_id || "__none__"} 
+          onValueChange={(v) => setFormData(prev => ({ ...prev, parent_department_id: v === "__none__" ? "" : v }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="None (Top Level)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None (Top Level)</SelectItem>
+            <SelectItem value="__none__">None (Top Level)</SelectItem>
             {departments?.filter(d => d.id !== editingDepartment?.id).map(dept => (
               <SelectItem key={dept.id} value={dept.id}>
                 {dept.name}
