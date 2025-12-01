@@ -16,6 +16,13 @@ import { useRoadmaps } from '@/hooks/useRoadmaps';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useAIConfigs } from '@/hooks/useAIConfig';
 import { useCompanyPolicies } from '@/hooks/useCompanyPolicies';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useDebitCases } from '@/hooks/useDebitCases';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+import { useAIDecisions } from '@/hooks/useAIDecisions';
+import { useWorkflowRules } from '@/hooks/useWorkflows';
+import { useOpportunities } from '@/hooks/useOpportunities';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 import { toast } from 'sonner';
 import { 
@@ -69,6 +76,13 @@ export default function AIChatPage() {
   const { data: departments = [] } = useDepartments();
   const { data: aiConfigs = [] } = useAIConfigs();
   const { data: policies = [] } = useCompanyPolicies();
+  const { data: invoices = [] } = useInvoices();
+  const { data: supportTickets = [] } = useSupportTickets();
+  const { data: debitCases = [] } = useDebitCases();
+  const { data: aiRecommendations = [] } = useAIRecommendations();
+  const { data: aiDecisions = [] } = useAIDecisions();
+  const { data: workflowRules = [] } = useWorkflowRules();
+  const { data: opportunities = [] } = useOpportunities();
 
   const activeConfig = aiConfigs.find(c => c.is_active);
 
@@ -97,6 +111,27 @@ export default function AIChatPage() {
       quotesValue: quotes.reduce((sum, q) => sum + q.total, 0),
       totalDepartments: departments.length,
       totalRoadmaps: roadmaps.length,
+      // Finance metrics
+      totalInvoices: invoices.length,
+      paidInvoices: invoices.filter(i => i.status === 'paid').length,
+      overdueInvoices: invoices.filter(i => i.status === 'overdue').length,
+      totalInvoiceAmount: invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0),
+      // Support metrics
+      totalSupportTickets: supportTickets.length,
+      openTickets: supportTickets.filter(t => t.status === 'open' || t.status === 'in_progress').length,
+      resolvedTickets: supportTickets.filter(t => t.status === 'resolved').length,
+      // Debit collection metrics
+      totalDebitCases: debitCases.length,
+      activeDebitCases: debitCases.filter(d => d.status !== 'closed').length,
+      totalDebitAmount: debitCases.reduce((sum, d) => sum + (d.current_amount || 0), 0),
+      collectedAmount: debitCases.reduce((sum, d) => sum + (d.collected_amount || 0), 0),
+      // AI & Automation
+      activeWorkflows: workflowRules.filter(w => w.is_active).length,
+      pendingDecisions: aiDecisions.filter(d => d.status === 'pending').length,
+      pendingRecommendations: aiRecommendations.filter(r => r.status === 'pending').length,
+      // Opportunities
+      totalOpportunities: opportunities.length,
+      openOpportunities: opportunities.filter(o => o.status === 'open').length,
     },
     clients: clients.map(c => ({
       name: c.client_name,
@@ -131,6 +166,55 @@ export default function AIChatPage() {
       total: q.total,
       client_id: q.client_id,
       created_at: q.created_at,
+    })),
+    invoices: invoices.map(i => ({
+      invoice_number: i.invoice_number,
+      status: i.status,
+      amount: i.amount,
+      total_amount: i.total_amount,
+      issue_date: i.issue_date,
+      due_date: i.due_date,
+      paid_date: i.paid_date,
+    })),
+    supportTickets: supportTickets.map(t => ({
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      category: t.category,
+      created_at: t.created_at,
+    })),
+    debitCases: debitCases.map(d => ({
+      title: d.title,
+      status: d.status,
+      stage: d.stage,
+      original_amount: d.original_amount,
+      current_amount: d.current_amount,
+      collected_amount: d.collected_amount,
+      due_date: d.due_date,
+    })),
+    opportunities: opportunities.map(o => ({
+      title: o.title,
+      status: o.status,
+      sales_stage: o.sales_stage,
+      value: o.value,
+      deal_probability: o.deal_probability,
+      expected_close_date: o.expected_close_date,
+    })),
+    aiRecommendations: aiRecommendations.slice(0, 10).map(r => ({
+      title: r.title,
+      category: r.category,
+      priority: r.priority,
+      status: r.status,
+    })),
+    aiDecisions: aiDecisions.slice(0, 10).map(d => ({
+      title: d.title,
+      status: d.status,
+      final_decision: d.final_decision,
+    })),
+    workflowRules: workflowRules.filter(w => w.is_active).map(w => ({
+      name: w.name,
+      trigger_type: w.trigger_type,
+      action_type: w.action_type,
     })),
     kpis: kpis.map(k => ({
       name: k.name,
