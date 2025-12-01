@@ -17,6 +17,12 @@ import { useClients } from '@/hooks/useClients';
 import { useQuotes } from '@/hooks/useQuotes';
 import { useSalesmen } from '@/hooks/useSalesmen';
 import { useSalesPerformance } from '@/hooks/useSalesPerformance';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useDebitCases } from '@/hooks/useDebitCases';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+import { useWorkflowRules } from '@/hooks/useWorkflows';
+import { useOpportunities } from '@/hooks/useOpportunities';
 import { InsightMetricCard } from '@/components/insights/InsightMetricCard';
 import { AIAnalysisCard } from '@/components/insights/AIAnalysisCard';
 import { toast } from 'sonner';
@@ -35,6 +41,12 @@ export default function AIInsightsPage() {
   const { data: quotes = [] } = useQuotes();
   const { data: salesmen = [] } = useSalesmen();
   const { data: salesPerformance = [] } = useSalesPerformance();
+  const { data: invoices = [] } = useInvoices();
+  const { data: supportTickets = [] } = useSupportTickets();
+  const { data: debitCases = [] } = useDebitCases();
+  const { data: aiRecommendations = [] } = useAIRecommendations();
+  const { data: workflowRules = [] } = useWorkflowRules();
+  const { data: opportunities = [] } = useOpportunities();
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
@@ -157,6 +169,13 @@ export default function AIInsightsPage() {
 - Total Accepted Revenue: $${totalRevenue.toLocaleString()}
 - Average Deal Size: $${quotes.filter(q => q.status === 'accepted').length > 0 ? Math.round(totalRevenue / quotes.filter(q => q.status === 'accepted').length).toLocaleString() : 0}
 
+### Opportunities Pipeline
+- Total Opportunities: ${opportunities.length}
+- Open: ${opportunities.filter(o => o.status === 'open').length}
+- Won: ${opportunities.filter(o => o.status === 'won').length}
+- Lost: ${opportunities.filter(o => o.status === 'lost').length}
+- Pipeline Value: $${opportunities.filter(o => o.status === 'open').reduce((sum, o) => sum + (o.value || 0), 0).toLocaleString()}
+
 ### Sales Team Performance (Last 3 Months)
 - Total Deals Closed: ${totalDeals}
 - Total Revenue Generated: $${totalSalesRevenue.toLocaleString()}
@@ -164,6 +183,34 @@ export default function AIInsightsPage() {
 - Total Leads Contacted: ${salesPerformance.reduce((sum, p) => sum + (p.leads_contacted || 0), 0)}
 - Total Meetings Held: ${salesPerformance.reduce((sum, p) => sum + (p.meetings_held || 0), 0)}
 - Total Proposals Sent: ${salesPerformance.reduce((sum, p) => sum + (p.proposals_sent || 0), 0)}
+
+### Finance & Invoicing
+- Total Invoices: ${invoices.length}
+- Paid: ${invoices.filter(i => i.status === 'paid').length}
+- Sent/Pending: ${invoices.filter(i => i.status === 'sent').length}
+- Overdue: ${invoices.filter(i => i.status === 'overdue').length}
+- Draft: ${invoices.filter(i => i.status === 'draft').length}
+- Total Invoice Value: $${invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0).toLocaleString()}
+- Outstanding Amount: $${invoices.filter(i => i.status !== 'paid').reduce((sum, i) => sum + (i.total_amount || 0), 0).toLocaleString()}
+
+### Support Operations
+- Total Tickets: ${supportTickets.length}
+- Open: ${supportTickets.filter(t => t.status === 'open').length}
+- In Progress: ${supportTickets.filter(t => t.status === 'in_progress').length}
+- Resolved: ${supportTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length}
+- High Priority: ${supportTickets.filter(t => t.priority === 'high' || t.priority === 'urgent').length}
+
+### Debit Collection
+- Total Cases: ${debitCases.length}
+- Active Cases: ${debitCases.filter(d => d.status !== 'closed').length}
+- Total Outstanding: $${debitCases.reduce((sum, d) => sum + (d.current_amount || 0), 0).toLocaleString()}
+- Total Collected: $${debitCases.reduce((sum, d) => sum + (d.collected_amount || 0), 0).toLocaleString()}
+- Collection Rate: ${debitCases.length > 0 ? Math.round((debitCases.reduce((sum, d) => sum + (d.collected_amount || 0), 0) / Math.max(debitCases.reduce((sum, d) => sum + (d.original_amount || 0), 0), 1)) * 100) : 0}%
+
+### Automation & AI
+- Active Workflow Rules: ${workflowRules.filter(w => w.is_active).length}
+- Total AI Recommendations: ${aiRecommendations.length}
+- Pending Recommendations: ${aiRecommendations.filter(r => r.status === 'pending').length}
 
 ### Clients
 - Total Clients: ${clients.length}
