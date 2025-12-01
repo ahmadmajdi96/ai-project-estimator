@@ -23,7 +23,13 @@ import {
   Scale,
   Workflow,
   Bell,
-  Code2
+  Code2,
+  Target,
+  Ticket,
+  Package,
+  Receipt,
+  Building,
+  Megaphone
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,11 +52,23 @@ const crmItems = [
   { title: 'Sales', url: '/crm/sales', icon: ShoppingCart },
   { title: 'Clients', url: '/crm/clients', icon: Users },
   { title: 'Salesmen', url: '/crm/salesmen', icon: BadgeDollarSign },
+  { title: 'Opportunities', url: '/crm/opportunities', icon: Target },
   { title: 'Sales Pipeline', url: '/crm/pipeline', icon: TrendingUp },
   { title: 'Status Board', url: '/crm/status', icon: Kanban },
+  { title: 'Support Tickets', url: '/crm/support-tickets', icon: Ticket },
   { title: 'Calendar', url: '/crm/calendar', icon: Calendar },
   { title: 'Quotes & Estimator', url: '/crm/quotes', icon: FileText },
   { title: 'Traceability', url: '/crm/traceability', icon: Database },
+];
+
+const financeItems = [
+  { title: 'Invoices', url: '/crm/invoices', icon: Receipt },
+  { title: 'Products', url: '/crm/products', icon: Package },
+];
+
+const intelligenceItems = [
+  { title: 'Competitors', url: '/crm/competitors', icon: Building },
+  { title: 'Marketing', url: '/crm/marketing', icon: Megaphone },
 ];
 
 const managementItems = [
@@ -111,6 +129,50 @@ export function CRMSidebar() {
                     <NavLink 
                       to={item.url} 
                       end={item.url === '/crm'}
+                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Finance</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {financeItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url}
+                      className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Intelligence</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {intelligenceItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url}
                       className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >

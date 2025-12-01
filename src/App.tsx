@@ -30,6 +30,12 @@ import RemindersPage from "./pages/crm/RemindersPage";
 import DepartmentsPage from "./pages/crm/DepartmentsPage";
 import EmployeesPage from "./pages/crm/EmployeesPage";
 import DevToolsPage from "./pages/DevToolsPage";
+import OpportunitiesPage from "./pages/crm/OpportunitiesPage";
+import SupportTicketsPage from "./pages/crm/SupportTicketsPage";
+import ProductsPage from "./pages/crm/ProductsPage";
+import InvoicesPage from "./pages/crm/InvoicesPage";
+import CompetitorsPage from "./pages/crm/CompetitorsPage";
+import MarketingPage from "./pages/crm/MarketingPage";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +72,12 @@ const App = () => (
           <Route path="/crm/config" element={<ConfigPage />} />
           <Route path="/crm/traceability" element={<TraceabilityPage />} />
           <Route path="/crm/reports" element={<ReportsPage />} />
+          <Route path="/crm/opportunities" element={<OpportunitiesPage />} />
+          <Route path="/crm/support-tickets" element={<SupportTicketsPage />} />
+          <Route path="/crm/products" element={<ProductsPage />} />
+          <Route path="/crm/invoices" element={<InvoicesPage />} />
+          <Route path="/crm/competitors" element={<CompetitorsPage />} />
+          <Route path="/crm/marketing" element={<MarketingPage />} />
           <Route path="/dev-tools" element={<DevToolsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
