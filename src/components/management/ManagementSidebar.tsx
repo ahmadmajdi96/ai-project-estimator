@@ -18,7 +18,8 @@ import {
   Scale,
   Settings,
   Calendar,
-  Database
+  Database,
+  Award
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,6 +47,7 @@ const managementItems = [
   { title: 'Employees', url: '/management/employees', icon: Users },
   { title: 'Departments', url: '/management/departments', icon: Building },
   { title: 'Organization Tree', url: '/management/org-tree', icon: Network },
+  { title: 'Skills & Positions', url: '/management/skills-positions', icon: Award },
 ];
 
 const operationItems = [
