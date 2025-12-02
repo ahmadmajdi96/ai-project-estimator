@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Search, Users, Edit, Trash2 } from 'lucide-react';
 import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee, Employee } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { toast } from 'sonner';
 
 export default function ManagementEmployeesPage() {
   const [search, setSearch] = useState('');
@@ -50,12 +51,19 @@ export default function ManagementEmployeesPage() {
   };
 
   const handleAdd = () => {
+    if (!formData.position.trim()) {
+      toast.error('Position is required');
+      return;
+    }
+
     addEmployee.mutate({
-      position: formData.position,
+      position: formData.position.trim(),
       department_id: formData.department_id || undefined,
-      employee_code: formData.employee_code || undefined,
+      employee_code: formData.employee_code.trim() || undefined,
       salary: formData.salary ? parseFloat(formData.salary) : undefined,
-      skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : undefined,
+      skills: formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(s => s) : undefined,
+      status: formData.status,
+      hire_date: new Date().toISOString(),
     }, {
       onSuccess: () => {
         setIsAddOpen(false);
@@ -78,13 +86,19 @@ export default function ManagementEmployeesPage() {
 
   const handleUpdate = () => {
     if (!editingEmployee) return;
+    
+    if (!formData.position.trim()) {
+      toast.error('Position is required');
+      return;
+    }
+
     updateEmployee.mutate({
       id: editingEmployee.id,
-      position: formData.position,
+      position: formData.position.trim(),
       department_id: formData.department_id || null,
-      employee_code: formData.employee_code || null,
+      employee_code: formData.employee_code.trim() || null,
       salary: formData.salary ? parseFloat(formData.salary) : null,
-      skills: formData.skills ? formData.skills.split(',').map(s => s.trim()) : null,
+      skills: formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(s => s) : null,
       status: formData.status,
     }, {
       onSuccess: () => {
