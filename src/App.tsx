@@ -7,7 +7,7 @@ import Auth from "./pages/Auth";
 import Portal from "./pages/Portal";
 import NotFound from "./pages/NotFound";
 import CRMDashboard from "./pages/crm/CRMDashboard";
-import ManagementDashboard from "./pages/management/ManagementDashboard";
+import ManagementDashboard from "./pages/management/ManagementDashboardNew";
 import ManagementUsersPage from "./pages/management/ManagementUsersPage";
 import ManagementEmployeesPage from "./pages/management/ManagementEmployeesPage";
 import ManagementDepartmentsPage from "./pages/management/ManagementDepartmentsPage";
