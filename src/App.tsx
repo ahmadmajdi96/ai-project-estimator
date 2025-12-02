@@ -12,6 +12,7 @@ import ManagementUsersPage from "./pages/management/ManagementUsersPage";
 import ManagementEmployeesPage from "./pages/management/ManagementEmployeesPage";
 import ManagementDepartmentsPage from "./pages/management/ManagementDepartmentsPage";
 import OrgTreePage from "./pages/management/OrgTreePage";
+import SkillsAndPositionsPage from "./pages/management/SkillsAndPositionsPage";
 import ManagementTasksPage from "./pages/management/ManagementTasksPage";
 import ManagementRoadmapsPage from "./pages/management/ManagementRoadmapsPage";
 import ManagementKPIsPage from "./pages/management/ManagementKPIsPage";
@@ -120,6 +121,7 @@ const App = () => (
           <Route path="/management/employees" element={<ManagementEmployeesPage />} />
           <Route path="/management/departments" element={<ManagementDepartmentsPage />} />
           <Route path="/management/org-tree" element={<OrgTreePage />} />
+          <Route path="/management/skills-positions" element={<SkillsAndPositionsPage />} />
           <Route path="/management/tasks" element={<ManagementTasksPage />} />
           <Route path="/management/roadmaps" element={<ManagementRoadmapsPage />} />
           <Route path="/management/kpis" element={<ManagementKPIsPage />} />

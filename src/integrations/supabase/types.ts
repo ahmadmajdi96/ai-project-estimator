@@ -2136,8 +2136,61 @@ export type Database = {
           },
         ]
       }
+      employee_skills: {
+        Row: {
+          created_at: string | null
+          employee_id: string
+          id: string
+          last_evaluated_at: string | null
+          level: string
+          skill_id: string
+          validated_by_employee_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          last_evaluated_at?: string | null
+          level: string
+          skill_id: string
+          validated_by_employee_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          last_evaluated_at?: string | null
+          level?: string
+          skill_id?: string
+          validated_by_employee_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_skills_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_skills_validated_by_employee_id_fkey"
+            columns: ["validated_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
           department_id: string | null
           employee_code: string | null
@@ -2145,13 +2198,18 @@ export type Database = {
           id: string
           manager_id: string | null
           position: string | null
+          position_id: string | null
+          responsibilities: string[] | null
           salary: number | null
           skills: string[] | null
+          start_date: string | null
           status: string | null
+          team_id: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
           department_id?: string | null
           employee_code?: string | null
@@ -2159,13 +2217,18 @@ export type Database = {
           id?: string
           manager_id?: string | null
           position?: string | null
+          position_id?: string | null
+          responsibilities?: string[] | null
           salary?: number | null
           skills?: string[] | null
+          start_date?: string | null
           status?: string | null
+          team_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
           department_id?: string | null
           employee_code?: string | null
@@ -2173,9 +2236,13 @@ export type Database = {
           id?: string
           manager_id?: string | null
           position?: string | null
+          position_id?: string | null
+          responsibilities?: string[] | null
           salary?: number | null
           skills?: string[] | null
+          start_date?: string | null
           status?: string | null
+          team_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -2192,6 +2259,20 @@ export type Database = {
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2308,6 +2389,50 @@ export type Database = {
             columns: ["opportunity_id"]
             isOneToOne: false
             referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_descriptions: {
+        Row: {
+          additional_requirements: string | null
+          created_at: string | null
+          id: string
+          ideal_profile: string | null
+          position_id: string
+          required_skills: string[] | null
+          responsibilities: string[] | null
+          summary: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_requirements?: string | null
+          created_at?: string | null
+          id?: string
+          ideal_profile?: string | null
+          position_id: string
+          required_skills?: string[] | null
+          responsibilities?: string[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_requirements?: string | null
+          created_at?: string | null
+          id?: string
+          ideal_profile?: string | null
+          position_id?: string
+          required_skills?: string[] | null
+          responsibilities?: string[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_descriptions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
             referencedColumns: ["id"]
           },
         ]
@@ -2560,9 +2685,15 @@ export type Database = {
           created_at: string | null
           department_id: string | null
           description: string | null
+          due_date: string | null
           id: string
+          owner_employee_id: string | null
+          owner_team_id: string | null
           progress: number | null
+          roadmap_id: string | null
+          start_date: string | null
           status: string | null
+          strategic_goal_id: string | null
           target_date: string | null
           title: string
           updated_at: string | null
@@ -2571,9 +2702,15 @@ export type Database = {
           created_at?: string | null
           department_id?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
+          owner_employee_id?: string | null
+          owner_team_id?: string | null
           progress?: number | null
+          roadmap_id?: string | null
+          start_date?: string | null
           status?: string | null
+          strategic_goal_id?: string | null
           target_date?: string | null
           title: string
           updated_at?: string | null
@@ -2582,9 +2719,15 @@ export type Database = {
           created_at?: string | null
           department_id?: string | null
           description?: string | null
+          due_date?: string | null
           id?: string
+          owner_employee_id?: string | null
+          owner_team_id?: string | null
           progress?: number | null
+          roadmap_id?: string | null
+          start_date?: string | null
           status?: string | null
+          strategic_goal_id?: string | null
           target_date?: string | null
           title?: string
           updated_at?: string | null
@@ -2595,6 +2738,34 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestones_owner_employee_id_fkey"
+            columns: ["owner_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestones_owner_team_id_fkey"
+            columns: ["owner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestones_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestones_strategic_goal_id_fkey"
+            columns: ["strategic_goal_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_goals"
             referencedColumns: ["id"]
           },
         ]
@@ -2958,6 +3129,50 @@ export type Database = {
             columns: ["policy_id"]
             isOneToOne: false
             referencedRelation: "company_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      positions: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          id: string
+          required_skills: string[] | null
+          responsibilities: string[] | null
+          seniority_level: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          required_skills?: string[] | null
+          responsibilities?: string[] | null
+          seniority_level?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          required_skills?: string[] | null
+          responsibilities?: string[] | null
+          seniority_level?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "positions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -3557,6 +3772,30 @@ export type Database = {
           },
         ]
       }
+      skills: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       sla_agreements: {
         Row: {
           client_id: string
@@ -3878,6 +4117,50 @@ export type Database = {
           },
         ]
       }
+      task_ai_estimations: {
+        Row: {
+          ai_raw_output: Json | null
+          confidence_score: number | null
+          created_at: string | null
+          difficulty_level: string
+          estimated_hours: number
+          id: string
+          risk_factors: string[] | null
+          skill_gap: string[] | null
+          task_id: string
+        }
+        Insert: {
+          ai_raw_output?: Json | null
+          confidence_score?: number | null
+          created_at?: string | null
+          difficulty_level: string
+          estimated_hours: number
+          id?: string
+          risk_factors?: string[] | null
+          skill_gap?: string[] | null
+          task_id: string
+        }
+        Update: {
+          ai_raw_output?: Json | null
+          confidence_score?: number | null
+          created_at?: string | null
+          difficulty_level?: string
+          estimated_hours?: number
+          id?: string
+          risk_factors?: string[] | null
+          skill_gap?: string[] | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_ai_estimations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           content: string
@@ -3940,6 +4223,8 @@ export type Database = {
       tasks: {
         Row: {
           actual_hours: number | null
+          ai_estimation_id: string | null
+          assigned_team_id: string | null
           assigned_to: string | null
           blocked_by: string[] | null
           blocks: string[] | null
@@ -3949,9 +4234,12 @@ export type Database = {
           created_by: string | null
           department_id: string | null
           description: string | null
+          difficulty_ai: string | null
           due_date: string | null
           estimated_hours: number | null
+          estimated_hours_ai: number | null
           id: string
+          milestone_id: string | null
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"] | null
           start_date: string | null
@@ -3962,6 +4250,8 @@ export type Database = {
         }
         Insert: {
           actual_hours?: number | null
+          ai_estimation_id?: string | null
+          assigned_team_id?: string | null
           assigned_to?: string | null
           blocked_by?: string[] | null
           blocks?: string[] | null
@@ -3971,9 +4261,12 @@ export type Database = {
           created_by?: string | null
           department_id?: string | null
           description?: string | null
+          difficulty_ai?: string | null
           due_date?: string | null
           estimated_hours?: number | null
+          estimated_hours_ai?: number | null
           id?: string
+          milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
           start_date?: string | null
@@ -3984,6 +4277,8 @@ export type Database = {
         }
         Update: {
           actual_hours?: number | null
+          ai_estimation_id?: string | null
+          assigned_team_id?: string | null
           assigned_to?: string | null
           blocked_by?: string[] | null
           blocks?: string[] | null
@@ -3993,9 +4288,12 @@ export type Database = {
           created_by?: string | null
           department_id?: string | null
           description?: string | null
+          difficulty_ai?: string | null
           due_date?: string | null
           estimated_hours?: number | null
+          estimated_hours_ai?: number | null
           id?: string
+          milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
           start_date?: string | null
@@ -4005,6 +4303,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_ai_estimation_id_fkey"
+            columns: ["ai_estimation_id"]
+            isOneToOne: false
+            referencedRelation: "task_ai_estimations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_team_id_fkey"
+            columns: ["assigned_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -4017,6 +4329,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
             referencedColumns: ["id"]
           },
           {
