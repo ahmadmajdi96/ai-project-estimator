@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { ManagementSidebar } from '@/components/management/ManagementSidebar';
+import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -198,11 +197,8 @@ export default function ManagementEmployeesPage() {
   );
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <ManagementSidebar />
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+    <ManagementLayout title="Employees">
+      <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-display font-bold">Employees</h1>
@@ -318,9 +314,7 @@ export default function ManagementEmployeesPage() {
                 <EmployeeForm onSubmit={handleUpdate} submitLabel="Update Employee" />
               </DialogContent>
             </Dialog>
-          </div>
-        </main>
       </div>
-    </SidebarProvider>
+    </ManagementLayout>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { ManagementSidebar } from '@/components/management/ManagementSidebar';
+import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,11 +128,8 @@ export default function SkillsAndPositionsPage() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <ManagementSidebar />
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+    <ManagementLayout title="Skills & Positions">
+      <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-display font-bold">Skills & Positions</h1>
               <p className="text-muted-foreground">Manage organizational skills catalog and position definitions</p>
@@ -161,11 +157,11 @@ export default function SkillsAndPositionsPage() {
                           <DialogTitle>{editingSkill ? 'Edit Skill' : 'Add New Skill'}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
-                          <div>
+                           <div>
                             <Label>Name *</Label>
                             <Input
                               value={skillForm.name}
-                              onChange={(e) => setSkillForm({ ...skillForm, name: e.target.value })}
+                              onChange={(e) => setSkillForm(prev => ({ ...prev, name: e.target.value }))}
                               placeholder="e.g., React, Project Management"
                             />
                           </div>
@@ -173,7 +169,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Category</Label>
                             <Input
                               value={skillForm.category}
-                              onChange={(e) => setSkillForm({ ...skillForm, category: e.target.value })}
+                              onChange={(e) => setSkillForm(prev => ({ ...prev, category: e.target.value }))}
                               placeholder="e.g., Technical, Leadership"
                             />
                           </div>
@@ -181,7 +177,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Description</Label>
                             <Textarea
                               value={skillForm.description}
-                              onChange={(e) => setSkillForm({ ...skillForm, description: e.target.value })}
+                              onChange={(e) => setSkillForm(prev => ({ ...prev, description: e.target.value }))}
                               placeholder="Describe this skill..."
                             />
                           </div>
@@ -260,7 +256,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Title *</Label>
                             <Input
                               value={positionForm.title}
-                              onChange={(e) => setPositionForm({ ...positionForm, title: e.target.value })}
+                              onChange={(e) => setPositionForm(prev => ({ ...prev, title: e.target.value }))}
                               placeholder="e.g., Senior Software Engineer"
                             />
                           </div>
@@ -268,7 +264,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Department</Label>
                             <Select
                               value={positionForm.department_id}
-                              onValueChange={(value) => setPositionForm({ ...positionForm, department_id: value })}
+                              onValueChange={(value) => setPositionForm(prev => ({ ...prev, department_id: value }))}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select department" />
@@ -286,7 +282,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Seniority Level</Label>
                             <Select
                               value={positionForm.seniority_level}
-                              onValueChange={(value) => setPositionForm({ ...positionForm, seniority_level: value })}
+                              onValueChange={(value) => setPositionForm(prev => ({ ...prev, seniority_level: value }))}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select level" />
@@ -304,7 +300,7 @@ export default function SkillsAndPositionsPage() {
                             <Label>Description</Label>
                             <Textarea
                               value={positionForm.description}
-                              onChange={(e) => setPositionForm({ ...positionForm, description: e.target.value })}
+                              onChange={(e) => setPositionForm(prev => ({ ...prev, description: e.target.value }))}
                               placeholder="Describe this position..."
                             />
                           </div>
@@ -365,9 +361,7 @@ export default function SkillsAndPositionsPage() {
                 </Card>
               </TabsContent>
             </Tabs>
-          </div>
-        </main>
       </div>
-    </SidebarProvider>
+    </ManagementLayout>
   );
 }

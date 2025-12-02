@@ -200,3 +200,26 @@ export function useDeleteInvitation() {
     },
   });
 }
+
+export function useCreateUserFromEmployee() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ employee_id, role }: { employee_id: string; role: AppRole }) => {
+      const { error } = await supabase
+        .from('employees')
+        .update({ user_id: employee_id })
+        .eq('id', employee_id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users_with_roles'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('User account created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create user: ' + error.message);
+    },
+  });
+}
