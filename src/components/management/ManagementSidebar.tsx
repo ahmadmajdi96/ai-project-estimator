@@ -19,7 +19,11 @@ import {
   Settings,
   Calendar,
   Database,
-  Award
+  Award,
+  Target,
+  CheckCircle2,
+  Bell,
+  Workflow
 } from 'lucide-react';
 import {
   Sidebar,
@@ -50,9 +54,14 @@ const managementItems = [
   { title: 'Skills & Positions', url: '/management/skills-positions', icon: Award },
 ];
 
+const strategyItems = [
+  { title: 'Strategic Goals', url: '/management/strategic-goals', icon: Target },
+  { title: 'OKRs', url: '/management/okrs', icon: CheckCircle2 },
+  { title: 'Roadmaps', url: '/management/roadmaps', icon: Map },
+];
+
 const operationItems = [
   { title: 'Tasks', url: '/management/tasks', icon: CheckSquare },
-  { title: 'Roadmaps', url: '/management/roadmaps', icon: Map },
   { title: 'KPIs', url: '/management/kpis', icon: BarChart3 },
   { title: 'Reports', url: '/management/reports', icon: FileBarChart },
   { title: 'Documents', url: '/management/documents', icon: FileText },
@@ -66,6 +75,8 @@ const aiItems = [
 ];
 
 const toolItems = [
+  { title: 'Notifications', url: '/management/notifications', icon: Bell },
+  { title: 'Workflows', url: '/management/workflows', icon: Workflow },
   { title: 'Configuration', url: '/management/config', icon: Settings },
   { title: 'Calendar', url: '/management/calendar', icon: Calendar },
   { title: 'Traceability', url: '/management/traceability', icon: Database },
@@ -125,6 +136,11 @@ export function ManagementSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Organization</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(managementItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Strategy</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(strategyItems)}</SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>

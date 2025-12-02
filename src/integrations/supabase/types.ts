@@ -2437,6 +2437,53 @@ export type Database = {
           },
         ]
       }
+      key_results: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          id: string
+          linked_kpi_id: string | null
+          objective_id: string
+          status: string
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          linked_kpi_id?: string | null
+          objective_id: string
+          status?: string
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          linked_kpi_id?: string | null
+          objective_id?: string
+          status?: string
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_results_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpi_definitions: {
         Row: {
           calculation_method: string | null
@@ -2799,6 +2846,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      objectives: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          owner_employee_id: string | null
+          scope: string
+          start_date: string | null
+          status: string
+          strategic_goal_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner_employee_id?: string | null
+          scope: string
+          start_date?: string | null
+          status?: string
+          strategic_goal_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner_employee_id?: string | null
+          scope?: string
+          start_date?: string | null
+          status?: string
+          strategic_goal_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objectives_owner_employee_id_fkey"
+            columns: ["owner_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "objectives_strategic_goal_id_fkey"
+            columns: ["strategic_goal_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       opportunities: {
         Row: {
@@ -4470,6 +4574,39 @@ export type Database = {
           is_active?: boolean | null
           reason?: string
           reason_type?: string
+        }
+        Relationships: []
+      }
+      workflow_definitions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          related_pages: string[] | null
+          steps: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          related_pages?: string[] | null
+          steps: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          related_pages?: string[] | null
+          steps?: string[]
+          updated_at?: string | null
         }
         Relationships: []
       }

@@ -1,19 +1,32 @@
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { ManagementSidebar } from '@/components/management/ManagementSidebar';
+import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building, Shield, UserCheck } from 'lucide-react';
+import { Users, Building, Target, CheckCircle2, ListTodo, TrendingUp, Activity } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
-import { useUsersWithRoles } from '@/hooks/useUserManagement';
+import { useStrategicGoals } from '@/hooks/useStrategicGoals';
+import { useObjectives } from '@/hooks/useObjectives';
+import { useTasks } from '@/hooks/useTasks';
+import { useRoadmaps } from '@/hooks/useRoadmaps';
+import { useActivityLogs } from '@/hooks/useActivityLogs';
+import { NotificationsBell } from '@/components/management/NotificationsBell';
+import { format } from 'date-fns';
 
 export default function ManagementDashboard() {
   const { data: employees } = useEmployees();
   const { data: departments } = useDepartments();
-  const { data: users } = useUsersWithRoles();
+  const { data: strategicGoals } = useStrategicGoals();
+  const { data: objectives } = useObjectives();
+  const { data: tasks } = useTasks();
+  const { data: roadmaps } = useRoadmaps();
+  const { data: activityLogs } = useActivityLogs();
 
   const activeEmployees = employees?.filter(e => e.status === 'active').length || 0;
   const totalDepartments = departments?.length || 0;
-  const totalUsers = users?.length || 0;
+  const activeGoals = strategicGoals?.filter(g => g.status === 'in_progress').length || 0;
+  const activeObjectives = objectives?.filter(o => o.status === 'in_progress').length || 0;
+  const activeTasks = tasks?.filter(t => t.status !== 'done').length || 0;
+  const activeRoadmaps = roadmaps?.length || 0;
+  const recentActivity = activityLogs?.slice(0, 5) || [];
 
   const stats = [
     {
@@ -31,33 +44,47 @@ export default function ManagementDashboard() {
       gradient: 'from-purple-500 to-pink-500',
     },
     {
-      title: 'System Users',
-      value: totalUsers,
-      subtitle: 'With portal access',
-      icon: Shield,
+      title: 'Strategic Goals',
+      value: strategicGoals?.length || 0,
+      subtitle: `${activeGoals} in progress`,
+      icon: Target,
       gradient: 'from-amber-500 to-orange-500',
     },
     {
-      title: 'On Leave',
-      value: employees?.filter(e => e.status === 'on_leave').length || 0,
-      subtitle: 'Currently away',
-      icon: UserCheck,
+      title: 'Active OKRs',
+      value: activeObjectives,
+      subtitle: 'Current objectives',
+      icon: CheckCircle2,
       gradient: 'from-emerald-500 to-teal-500',
+    },
+    {
+      title: 'Active Tasks',
+      value: activeTasks,
+      subtitle: 'Tasks in progress',
+      icon: ListTodo,
+      gradient: 'from-rose-500 to-pink-500',
+    },
+    {
+      title: 'Roadmaps',
+      value: activeRoadmaps,
+      subtitle: 'Strategic plans',
+      icon: TrendingUp,
+      gradient: 'from-indigo-500 to-purple-500',
     },
   ];
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <ManagementSidebar />
-        <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div>
-              <h1 className="text-3xl font-display font-bold">Management Portal</h1>
-              <p className="text-muted-foreground">Employee and organization management</p>
-            </div>
+    <ManagementLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold">Management Portal</h1>
+            <p className="text-muted-foreground">Employee and organization management</p>
+          </div>
+          <NotificationsBell />
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.map((stat) => {
                 const Icon = stat.icon;
                 return (
@@ -82,32 +109,37 @@ export default function ManagementDashboard() {
               })}
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
                   <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {recentActivity.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-border/50 last:border-0">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-medium">{activity.activity_type}</p>
+                          <p className="text-xs text-muted-foreground">{activity.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(activity.created_at || ''), 'MMM dd, yyyy HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
                   <p className="text-muted-foreground text-sm">
                     No recent activity to display.
                   </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="text-muted-foreground text-sm">
-                    Use the sidebar to navigate to different management sections.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </main>
-      </div>
-    </SidebarProvider>
-  );
-}
+        </ManagementLayout>
+      );
+    }

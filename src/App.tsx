@@ -25,6 +25,10 @@ import ManagementAIDecisionsPage from "./pages/management/ManagementAIDecisionsP
 import ManagementCalendarPage from "./pages/management/ManagementCalendarPage";
 import ManagementConfigPage from "./pages/management/ManagementConfigPage";
 import ManagementTraceabilityPage from "./pages/management/ManagementTraceabilityPage";
+import ManagementNotificationsPage from "./pages/management/ManagementNotificationsPage";
+import ManagementWorkflowsPage from "./pages/management/ManagementWorkflowsPage";
+import ManagementStrategicGoalsPage from "./pages/management/ManagementStrategicGoalsPage";
+import ManagementOKRsPage from "./pages/management/ManagementOKRsPage";
 import CortaCentralDashboard from "./pages/cortacentral/CortaCentralDashboard";
 import CXOConversationsPage from "./pages/cortacentral/CXOConversationsPage";
 import CXOConnectorsPage from "./pages/cortacentral/CXOConnectorsPage";
@@ -122,11 +126,15 @@ const App = () => (
           <Route path="/management/departments" element={<ManagementDepartmentsPage />} />
           <Route path="/management/org-tree" element={<OrgTreePage />} />
           <Route path="/management/skills-positions" element={<SkillsAndPositionsPage />} />
-          <Route path="/management/tasks" element={<ManagementTasksPage />} />
+          <Route path="/management/strategic-goals" element={<ManagementStrategicGoalsPage />} />
+          <Route path="/management/okrs" element={<ManagementOKRsPage />} />
           <Route path="/management/roadmaps" element={<ManagementRoadmapsPage />} />
+          <Route path="/management/tasks" element={<ManagementTasksPage />} />
           <Route path="/management/kpis" element={<ManagementKPIsPage />} />
           <Route path="/management/reports" element={<ManagementReportsPage />} />
           <Route path="/management/documents" element={<ManagementDocumentsPage />} />
+          <Route path="/management/notifications" element={<ManagementNotificationsPage />} />
+          <Route path="/management/workflows" element={<ManagementWorkflowsPage />} />
           <Route path="/management/ai-chat" element={<ManagementAIChatPage />} />
           <Route path="/management/ai-insights" element={<ManagementAIInsightsPage />} />
           <Route path="/management/ai-recommendations" element={<ManagementAIRecommendationsPage />} />
