@@ -69,10 +69,18 @@ export function useAddEmployee() {
       employee_code?: string;
       salary?: number;
       skills?: string[];
+      status?: 'active' | 'inactive' | 'on_leave';
+      hire_date?: string;
     }) => {
+      const insertData = {
+        ...emp,
+        status: emp.status || 'active',
+        hire_date: emp.hire_date || new Date().toISOString(),
+      };
+      
       const { data, error } = await supabase
         .from('employees')
-        .insert(emp)
+        .insert(insertData)
         .select()
         .single();
       
@@ -81,7 +89,7 @@ export function useAddEmployee() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast.success('Employee added');
+      toast.success('Employee added successfully');
     },
     onError: (error) => {
       toast.error('Failed to add employee: ' + error.message);
