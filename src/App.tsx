@@ -72,6 +72,16 @@ import DebitDashboardPage from "./pages/crm/DebitDashboardPage";
 import DebitCollectorsPage from "./pages/crm/DebitCollectorsPage";
 import DebitCasesPage from "./pages/crm/DebitCasesPage";
 import DebitPipelinePage from "./pages/crm/DebitPipelinePage";
+import ChatFlowDashboard from "./pages/chatflow/ChatFlowDashboard";
+import ChatbotsPage from "./pages/chatflow/ChatbotsPage";
+import ConversationsPage from "./pages/chatflow/ConversationsPage";
+import AnalyticsPage from "./pages/chatflow/AnalyticsPage";
+import KnowledgeBasePage from "./pages/chatflow/KnowledgeBasePage";
+import TemplatesPage from "./pages/chatflow/TemplatesPage";
+import IntegrationsPage from "./pages/chatflow/IntegrationsPage";
+import TeamPage from "./pages/chatflow/TeamPage";
+import BillingPage from "./pages/chatflow/BillingPage";
+import SettingsPage from "./pages/chatflow/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -150,6 +160,16 @@ const App = () => (
           <Route path="/cortacentral/analytics" element={<CXOAnalyticsPage />} />
           <Route path="/cortacentral/support" element={<CXOSupportPage />} />
           <Route path="/cortacentral/settings" element={<CXOSettingsPage />} />
+          <Route path="/chatflow" element={<ChatFlowDashboard />} />
+          <Route path="/chatflow/chatbots" element={<ChatbotsPage />} />
+          <Route path="/chatflow/conversations" element={<ConversationsPage />} />
+          <Route path="/chatflow/analytics" element={<AnalyticsPage />} />
+          <Route path="/chatflow/knowledge-base" element={<KnowledgeBasePage />} />
+          <Route path="/chatflow/templates" element={<TemplatesPage />} />
+          <Route path="/chatflow/integrations" element={<IntegrationsPage />} />
+          <Route path="/chatflow/team" element={<TeamPage />} />
+          <Route path="/chatflow/billing" element={<BillingPage />} />
+          <Route path="/chatflow/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
