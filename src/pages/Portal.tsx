@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Loader2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Loader2, LogOut, Bot } from 'lucide-react';
 
 interface DashboardAccess {
   dashboard_name: string;
@@ -35,6 +35,14 @@ const dashboards = [
     icon: Users,
     path: '/management',
     gradient: 'from-purple-500 to-pink-500',
+  },
+  {
+    id: 'chatflow',
+    name: 'ChatFlow AI',
+    description: 'AI-powered chatbot platform with social media integrations',
+    icon: Bot,
+    path: '/chatflow',
+    gradient: 'from-emerald-500 to-teal-500',
   },
 ];
 
