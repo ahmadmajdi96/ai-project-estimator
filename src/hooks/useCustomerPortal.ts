@@ -185,7 +185,7 @@ export function usePortalUser() {
 export function useCreatePortalUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (userData: Partial<PortalUser>) => {
+    mutationFn: async (userData: Partial<PortalUser> & { email: string }) => {
       const { data, error } = await supabase
         .from('portal_users')
         .insert([userData])
