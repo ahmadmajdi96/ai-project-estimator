@@ -349,6 +349,802 @@ export type Database = {
           },
         ]
       }
+      cf_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_chatbot_integrations: {
+        Row: {
+          chatbot_id: string | null
+          config: Json | null
+          created_at: string | null
+          credentials: Json | null
+          error_log: string | null
+          id: string
+          last_synced: string | null
+          metadata: Json | null
+          platform: string
+          platform_id: string | null
+          platform_name: string | null
+          status: string | null
+          updated_at: string | null
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          chatbot_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          credentials?: Json | null
+          error_log?: string | null
+          id?: string
+          last_synced?: string | null
+          metadata?: Json | null
+          platform: string
+          platform_id?: string | null
+          platform_name?: string | null
+          status?: string | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          chatbot_id?: string | null
+          config?: Json | null
+          created_at?: string | null
+          credentials?: Json | null
+          error_log?: string | null
+          id?: string
+          last_synced?: string | null
+          metadata?: Json | null
+          platform?: string
+          platform_id?: string | null
+          platform_name?: string | null
+          status?: string | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_chatbot_integrations_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "cf_chatbots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_chatbots: {
+        Row: {
+          ai_model: string | null
+          config: Json | null
+          conversation_flow: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          escalation_rules: Json | null
+          id: string
+          is_template: boolean | null
+          knowledge_base: Json | null
+          last_trained_at: string | null
+          metadata: Json | null
+          name: string
+          organization_id: string | null
+          personality_settings: Json | null
+          status: string | null
+          template_category: string | null
+          training_data: Json | null
+          type: string | null
+          updated_at: string | null
+          variables: Json | null
+          version: number | null
+          working_hours: Json | null
+        }
+        Insert: {
+          ai_model?: string | null
+          config?: Json | null
+          conversation_flow?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          escalation_rules?: Json | null
+          id?: string
+          is_template?: boolean | null
+          knowledge_base?: Json | null
+          last_trained_at?: string | null
+          metadata?: Json | null
+          name: string
+          organization_id?: string | null
+          personality_settings?: Json | null
+          status?: string | null
+          template_category?: string | null
+          training_data?: Json | null
+          type?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+          version?: number | null
+          working_hours?: Json | null
+        }
+        Update: {
+          ai_model?: string | null
+          config?: Json | null
+          conversation_flow?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          escalation_rules?: Json | null
+          id?: string
+          is_template?: boolean | null
+          knowledge_base?: Json | null
+          last_trained_at?: string | null
+          metadata?: Json | null
+          name?: string
+          organization_id?: string | null
+          personality_settings?: Json | null
+          status?: string | null
+          template_category?: string | null
+          training_data?: Json | null
+          type?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+          version?: number | null
+          working_hours?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_chatbots_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_conversations: {
+        Row: {
+          assigned_to: string | null
+          chatbot_id: string | null
+          closed_at: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          platform: string
+          platform_conversation_id: string | null
+          priority: number | null
+          resolution: string | null
+          sentiment_score: number | null
+          status: string | null
+          summary: string | null
+          tags: string[] | null
+          updated_at: string | null
+          visitor_id: string | null
+          visitor_metadata: Json | null
+          visitor_name: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          chatbot_id?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          platform: string
+          platform_conversation_id?: string | null
+          priority?: number | null
+          resolution?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          visitor_id?: string | null
+          visitor_metadata?: Json | null
+          visitor_name?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          chatbot_id?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          platform?: string
+          platform_conversation_id?: string | null
+          priority?: number | null
+          resolution?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          visitor_id?: string | null
+          visitor_metadata?: Json | null
+          visitor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_conversations_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "cf_chatbots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_invoices: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          items: Json | null
+          metadata: Json | null
+          notes: string | null
+          organization_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          stripe_invoice_id: string | null
+          subscription_id: string | null
+          tax_amount: number | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          items?: Json | null
+          metadata?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tax_amount?: number | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          items?: Json | null
+          metadata?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cf_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "cf_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_knowledge_articles: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          content: string
+          created_at: string | null
+          helpful_votes: number | null
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          published_at: string | null
+          status: string | null
+          subcategory: string | null
+          tags: string[] | null
+          title: string
+          unhelpful_votes: number | null
+          updated_at: string | null
+          views: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          content: string
+          created_at?: string | null
+          helpful_votes?: number | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          published_at?: string | null
+          status?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
+          title: string
+          unhelpful_votes?: number | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          helpful_votes?: number | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          published_at?: string | null
+          status?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
+          title?: string
+          unhelpful_votes?: number | null
+          updated_at?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_knowledge_articles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_messages: {
+        Row: {
+          attachments: Json | null
+          buttons: Json | null
+          carousel: Json | null
+          confidence: number | null
+          content: string | null
+          conversation_id: string | null
+          delivered_at: string | null
+          direction: string | null
+          id: string
+          intent: string | null
+          message_type: string | null
+          metadata: Json | null
+          quick_replies: Json | null
+          read_at: string | null
+          sender_id: string | null
+          sender_type: string
+          sent_at: string | null
+          sentiment: number | null
+        }
+        Insert: {
+          attachments?: Json | null
+          buttons?: Json | null
+          carousel?: Json | null
+          confidence?: number | null
+          content?: string | null
+          conversation_id?: string | null
+          delivered_at?: string | null
+          direction?: string | null
+          id?: string
+          intent?: string | null
+          message_type?: string | null
+          metadata?: Json | null
+          quick_replies?: Json | null
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type: string
+          sent_at?: string | null
+          sentiment?: number | null
+        }
+        Update: {
+          attachments?: Json | null
+          buttons?: Json | null
+          carousel?: Json | null
+          confidence?: number | null
+          content?: string | null
+          conversation_id?: string | null
+          delivered_at?: string | null
+          direction?: string | null
+          id?: string
+          intent?: string | null
+          message_type?: string | null
+          metadata?: Json | null
+          quick_replies?: Json | null
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type?: string
+          sent_at?: string | null
+          sentiment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "cf_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_organization_members: {
+        Row: {
+          id: string
+          invitation_status: string | null
+          invitation_token: string | null
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string | null
+          permissions: Json | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          invitation_status?: string | null
+          invitation_token?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string | null
+          permissions?: Json | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          invitation_status?: string | null
+          invitation_token?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string | null
+          permissions?: Json | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_organizations: {
+        Row: {
+          address: Json | null
+          billing_email: string | null
+          created_at: string | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          name: string
+          owner_id: string | null
+          settings: Json | null
+          size: string | null
+          tax_id: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: Json | null
+          billing_email?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          name: string
+          owner_id?: string | null
+          settings?: Json | null
+          size?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: Json | null
+          billing_email?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          name?: string
+          owner_id?: string | null
+          settings?: Json | null
+          size?: string | null
+          tax_id?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      cf_subscriptions: {
+        Row: {
+          amount: number
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created_at: string | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          features: Json | null
+          id: string
+          interval: string | null
+          interval_count: number | null
+          metadata: Json | null
+          organization_id: string | null
+          plan_id: string
+          plan_name: string
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+          usage_limits: Json | null
+        }
+        Insert: {
+          amount: number
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          features?: Json | null
+          id?: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          organization_id?: string | null
+          plan_id: string
+          plan_name: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          usage_limits?: Json | null
+        }
+        Update: {
+          amount?: number
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          features?: Json | null
+          id?: string
+          interval?: string | null
+          interval_count?: number | null
+          metadata?: Json | null
+          organization_id?: string | null
+          plan_id?: string
+          plan_name?: string
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+          usage_limits?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cf_templates: {
+        Row: {
+          category: string
+          content: Json | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          demo_url: string | null
+          description: string | null
+          download_count: number | null
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          metadata: Json | null
+          name: string
+          preview_image_url: string | null
+          price: number | null
+          rating: number | null
+          review_count: number | null
+          tags: string[] | null
+          updated_at: string | null
+          use_case: string | null
+        }
+        Insert: {
+          category: string
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          demo_url?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          metadata?: Json | null
+          name: string
+          preview_image_url?: string | null
+          price?: number | null
+          rating?: number | null
+          review_count?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+          use_case?: string | null
+        }
+        Update: {
+          category?: string
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          demo_url?: string | null
+          description?: string | null
+          download_count?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          metadata?: Json | null
+          name?: string
+          preview_image_url?: string | null
+          price?: number | null
+          rating?: number | null
+          review_count?: number | null
+          tags?: string[] | null
+          updated_at?: string | null
+          use_case?: string | null
+        }
+        Relationships: []
+      }
+      cf_usage_metrics: {
+        Row: {
+          chatbot_id: string | null
+          count: number | null
+          created_at: string | null
+          date: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          organization_id: string | null
+          platform: string | null
+          response_time_avg: number | null
+          satisfaction_score: number | null
+          unique_users: number | null
+        }
+        Insert: {
+          chatbot_id?: string | null
+          count?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          organization_id?: string | null
+          platform?: string | null
+          response_time_avg?: number | null
+          satisfaction_score?: number | null
+          unique_users?: number | null
+        }
+        Update: {
+          chatbot_id?: string | null
+          count?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          organization_id?: string | null
+          platform?: string | null
+          response_time_avg?: number | null
+          satisfaction_score?: number | null
+          unique_users?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cf_usage_metrics_chatbot_id_fkey"
+            columns: ["chatbot_id"]
+            isOneToOne: false
+            referencedRelation: "cf_chatbots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cf_usage_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "cf_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_communications: {
         Row: {
           attachments: Json | null
