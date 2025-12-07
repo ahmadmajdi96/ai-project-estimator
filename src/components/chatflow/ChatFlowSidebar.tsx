@@ -39,6 +39,7 @@ const mainItems = [
   { title: 'Chatbots', url: '/chatflow/chatbots', icon: Bot },
   { title: 'Conversations', url: '/chatflow/conversations', icon: MessageSquare },
   { title: 'Analytics', url: '/chatflow/analytics', icon: BarChart3 },
+  { title: 'Users', url: '/chatflow/users', icon: Users },
 ];
 
 const contentItems = [
