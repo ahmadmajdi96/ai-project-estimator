@@ -82,6 +82,19 @@ import IntegrationsPage from "./pages/chatflow/IntegrationsPage";
 import TeamPage from "./pages/chatflow/TeamPage";
 import BillingPage from "./pages/chatflow/BillingPage";
 import SettingsPage from "./pages/chatflow/SettingsPage";
+import UsersManagementPage from "./pages/chatflow/UsersManagementPage";
+import NotificationsPage from "./pages/chatflow/NotificationsPage";
+import ApiWebhooksPage from "./pages/chatflow/ApiWebhooksPage";
+import SecurityPage from "./pages/chatflow/SecurityPage";
+import HelpPage from "./pages/chatflow/HelpPage";
+import CustomerPortalLoginPage from "./pages/customerportal/CustomerPortalLoginPage";
+import CustomerPortalDashboard from "./pages/customerportal/CustomerPortalDashboard";
+import MyChatbotsPage from "./pages/customerportal/MyChatbotsPage";
+import ChatbotDetailPage from "./pages/customerportal/ChatbotDetailPage";
+import AnswerRulesPage from "./pages/customerportal/AnswerRulesPage";
+import CustomerPortalKnowledgeBasePage from "./pages/customerportal/CustomerPortalKnowledgeBasePage";
+import TrainingPage from "./pages/customerportal/TrainingPage";
+import TestChatbotPage from "./pages/customerportal/TestChatbotPage";
 
 const queryClient = new QueryClient();
 
@@ -170,6 +183,19 @@ const App = () => (
           <Route path="/chatflow/team" element={<TeamPage />} />
           <Route path="/chatflow/billing" element={<BillingPage />} />
           <Route path="/chatflow/settings" element={<SettingsPage />} />
+          <Route path="/chatflow/users" element={<UsersManagementPage />} />
+          <Route path="/chatflow/notifications" element={<NotificationsPage />} />
+          <Route path="/chatflow/api" element={<ApiWebhooksPage />} />
+          <Route path="/chatflow/security" element={<SecurityPage />} />
+          <Route path="/chatflow/help" element={<HelpPage />} />
+          <Route path="/customer-portal/login" element={<CustomerPortalLoginPage />} />
+          <Route path="/customer-portal" element={<CustomerPortalDashboard />} />
+          <Route path="/customer-portal/chatbots" element={<MyChatbotsPage />} />
+          <Route path="/customer-portal/chatbots/:id" element={<ChatbotDetailPage />} />
+          <Route path="/customer-portal/chatbots/:id/rules" element={<AnswerRulesPage />} />
+          <Route path="/customer-portal/chatbots/:id/knowledge-base" element={<CustomerPortalKnowledgeBasePage />} />
+          <Route path="/customer-portal/chatbots/:id/training" element={<TrainingPage />} />
+          <Route path="/customer-portal/chatbots/:id/test" element={<TestChatbotPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
