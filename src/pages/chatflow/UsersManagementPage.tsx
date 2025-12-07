@@ -50,7 +50,123 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export default function UsersManagementPage() {
-  const { data: users = [], isLoading } = useQuery({
+  // Sample user data
+  const sampleUsers = [
+    {
+      id: '1',
+      email: 'john.smith@techcorp.com',
+      first_name: 'John',
+      last_name: 'Smith',
+      avatar_url: null,
+      phone: '+1 555-0101',
+      company_name: 'TechCorp Inc.',
+      company_size: '50-100',
+      industry: 'Technology',
+      timezone: 'America/New_York',
+      language: 'en',
+      email_verified: true,
+      last_login: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    },
+    {
+      id: '2',
+      email: 'sarah.johnson@startupxyz.io',
+      first_name: 'Sarah',
+      last_name: 'Johnson',
+      avatar_url: null,
+      phone: '+1 555-0102',
+      company_name: 'StartupXYZ',
+      company_size: '10-50',
+      industry: 'E-commerce',
+      timezone: 'America/Los_Angeles',
+      language: 'en',
+      email_verified: true,
+      last_login: new Date().toISOString(),
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    },
+    {
+      id: '3',
+      email: 'michael.chen@globalretail.com',
+      first_name: 'Michael',
+      last_name: 'Chen',
+      avatar_url: null,
+      phone: '+1 555-0103',
+      company_name: 'Global Retail Co.',
+      company_size: '100-500',
+      industry: 'Retail',
+      timezone: 'America/Chicago',
+      language: 'en',
+      email_verified: true,
+      last_login: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    },
+    {
+      id: '4',
+      email: 'emma.wilson@healthplus.org',
+      first_name: 'Emma',
+      last_name: 'Wilson',
+      avatar_url: null,
+      phone: '+1 555-0104',
+      company_name: 'HealthPlus Clinic',
+      company_size: '10-50',
+      industry: 'Healthcare',
+      timezone: 'America/Denver',
+      language: 'en',
+      email_verified: false,
+      last_login: null,
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    },
+    {
+      id: '5',
+      email: 'david.brown@financegroup.com',
+      first_name: 'David',
+      last_name: 'Brown',
+      avatar_url: null,
+      phone: '+1 555-0105',
+      company_name: 'Finance Group LLC',
+      company_size: '50-100',
+      industry: 'Finance',
+      timezone: 'America/New_York',
+      language: 'en',
+      email_verified: true,
+      last_login: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    },
+    {
+      id: '6',
+      email: 'lisa.martinez@edulearn.edu',
+      first_name: 'Lisa',
+      last_name: 'Martinez',
+      avatar_url: null,
+      phone: '+1 555-0106',
+      company_name: 'EduLearn Academy',
+      company_size: '10-50',
+      industry: 'Education',
+      timezone: 'America/Phoenix',
+      language: 'es',
+      email_verified: true,
+      last_login: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20).toISOString(),
+      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+    },
+  ];
+
+  // Sample chatbots data
+  const sampleChatbots = [
+    { id: 'c1', customer_id: '1', chatbot_id: 'bot-001', name: 'TechCorp Support Bot', status: 'active', used_messages: 4500, max_messages_per_month: 10000, subscription_tier: 'Pro' },
+    { id: 'c2', customer_id: '1', chatbot_id: 'bot-002', name: 'TechCorp Sales Bot', status: 'active', used_messages: 2300, max_messages_per_month: 10000, subscription_tier: 'Pro' },
+    { id: 'c3', customer_id: '2', chatbot_id: 'bot-003', name: 'StartupXYZ Assistant', status: 'active', used_messages: 1200, max_messages_per_month: 5000, subscription_tier: 'Starter' },
+    { id: 'c4', customer_id: '3', chatbot_id: 'bot-004', name: 'Retail Customer Service', status: 'active', used_messages: 8900, max_messages_per_month: 20000, subscription_tier: 'Enterprise' },
+    { id: 'c5', customer_id: '5', chatbot_id: 'bot-005', name: 'Finance FAQ Bot', status: 'paused', used_messages: 500, max_messages_per_month: 5000, subscription_tier: 'Starter' },
+    { id: 'c6', customer_id: '6', chatbot_id: 'bot-006', name: 'EduLearn Tutor', status: 'active', used_messages: 3400, max_messages_per_month: 10000, subscription_tier: 'Pro' },
+  ];
+
+  const { data: dbUsers = [] } = useQuery({
     queryKey: ['portal-users-all'],
     queryFn: async () => {
       const { data, error } = await supabase.from('portal_users').select('*').order('created_at', { ascending: false });
@@ -58,7 +174,8 @@ export default function UsersManagementPage() {
       return data;
     },
   });
-  const { data: allChatbots = [] } = useQuery({
+  
+  const { data: dbChatbots = [] } = useQuery({
     queryKey: ['customer-chatbots-all'],
     queryFn: async () => {
       const { data, error } = await supabase.from('customer_chatbots').select('*');
@@ -66,6 +183,12 @@ export default function UsersManagementPage() {
       return data;
     },
   });
+
+  // Combine sample data with database data - use sample if DB is empty
+  const users = dbUsers.length > 0 ? dbUsers : sampleUsers;
+  const allChatbots = dbChatbots.length > 0 ? dbChatbots : sampleChatbots;
+  const isLoading = false;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<typeof users[0] | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
