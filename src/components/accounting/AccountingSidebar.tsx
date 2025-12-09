@@ -1,42 +1,41 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAccountingAuth } from '@/hooks/useAccountingAuth';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Calculator,
-  LayoutDashboard,
+import { NavLink } from '@/components/NavLink';
+import { 
+  LayoutDashboard, 
   BookOpen,
   FileText,
+  Users,
   Receipt,
   Building2,
   CreditCard,
   Landmark,
-  Users,
   Clock,
   DollarSign,
   TrendingUp,
   PieChart,
   Settings,
   LogOut,
-  FileSpreadsheet,
+  Home,
   Package,
   Briefcase,
   Wallet,
-  ArrowLeftRight,
+  FileSpreadsheet
 } from 'lucide-react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const overviewItems = [
   { title: 'Dashboard', url: '/accounting', icon: LayoutDashboard },
@@ -50,27 +49,27 @@ const glItems = [
 
 const arItems = [
   { title: 'Customers', url: '/accounting/ar/customers', icon: Users },
-  { title: 'Invoices', url: '/accounting/ar/invoices', icon: FileText },
+  { title: 'Invoices', url: '/accounting/ar/invoices', icon: Receipt },
   { title: 'Payments', url: '/accounting/ar/payments', icon: CreditCard },
   { title: 'Aging Report', url: '/accounting/ar/aging', icon: Clock },
 ];
 
 const apItems = [
   { title: 'Vendors', url: '/accounting/ap/vendors', icon: Building2 },
-  { title: 'Bills', url: '/accounting/ap/bills', icon: Receipt },
+  { title: 'Bills', url: '/accounting/ap/bills', icon: FileText },
   { title: 'Payments', url: '/accounting/ap/payments', icon: Wallet },
 ];
 
 const bankingItems = [
   { title: 'Bank Accounts', url: '/accounting/banking/accounts', icon: Landmark },
-  { title: 'Transactions', url: '/accounting/banking/transactions', icon: ArrowLeftRight },
+  { title: 'Transactions', url: '/accounting/banking/transactions', icon: CreditCard },
   { title: 'Reconciliation', url: '/accounting/banking/reconciliation', icon: FileSpreadsheet },
 ];
 
 const payrollItems = [
   { title: 'Employees', url: '/accounting/payroll/employees', icon: Users },
   { title: 'Payroll Runs', url: '/accounting/payroll/runs', icon: DollarSign },
-  { title: 'Paystubs', url: '/accounting/payroll/paystubs', icon: FileText },
+  { title: 'Paystubs', url: '/accounting/payroll/paystubs', icon: Receipt },
 ];
 
 const expenseItems = [
@@ -97,176 +96,125 @@ const settingsItems = [
 ];
 
 export function AccountingSidebar() {
-  const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { signOut, canAccess, accountingUser, company } = useAccountingAuth();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/accounting/auth');
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
-  const renderMenuItems = (items: typeof overviewItems, requiredFeature?: string) => {
-    if (requiredFeature && !canAccess(requiredFeature)) return null;
-    
-    return items.map((item) => (
-      <SidebarMenuItem key={item.title}>
-        <SidebarMenuButton asChild>
-          <NavLink
-            to={item.url}
-            end={item.url === '/accounting'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                isActive
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            {!collapsed && <span>{item.title}</span>}
-          </NavLink>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    ));
+  const handleBackToPortal = () => {
+    navigate('/');
   };
+
+  const renderMenuItems = (items: typeof overviewItems) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild>
+            <NavLink 
+              to={item.url} 
+              end={item.url === '/accounting'}
+              className="flex items-center gap-2 hover:bg-muted/50 rounded-md px-2 py-1.5"
+              activeClassName="bg-primary/10 text-primary font-medium"
+            >
+              <item.icon className="h-4 w-4" />
+              {!collapsed && <span>{item.title}</span>}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
 
   return (
-    <Sidebar className="border-r border-slate-800 bg-slate-950">
-      <SidebarHeader className="p-4 border-b border-slate-800">
-        <NavLink to="/accounting" className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/20 rounded-lg">
-            <Calculator className="h-6 w-6 text-emerald-400" />
+    <Sidebar collapsible="icon" className="border-r border-border/50">
+      <SidebarHeader className="p-4 border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+            <span className="text-white font-bold text-sm">A</span>
           </div>
-          {!collapsed && (
-            <div>
-              <span className="text-lg font-bold text-white">AccountingPro</span>
-              {company && (
-                <p className="text-xs text-slate-500 truncate max-w-[150px]">{company.name}</p>
-              )}
-            </div>
-          )}
-        </NavLink>
+          {!collapsed && <span className="font-display font-bold text-lg">Accounting</span>}
+        </div>
       </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Overview</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(overviewItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-      <SidebarContent className="bg-slate-950">
-        <ScrollArea className="h-[calc(100vh-180px)]">
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Overview'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(overviewItems)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>General Ledger</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(glItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'General Ledger'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(glItems, 'gl')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Accounts Receivable</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(arItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Receivables'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(arItems, 'ar')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Accounts Payable</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(apItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Payables'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(apItems, 'ap')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Banking</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(bankingItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Banking'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(bankingItems, 'banking')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Payroll</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(payrollItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          {canAccess('payroll') && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-                {!collapsed && 'Payroll'}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(payrollItems, 'payroll')}</SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
+        <SidebarGroup>
+          <SidebarGroupLabel>Expenses</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(expenseItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Expenses'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(expenseItems, 'expenses')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Reports</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(reportsItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'Reports'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(reportsItems, 'reports')}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Assets</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(assetsItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          {canAccess('assets') && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-                {!collapsed && 'Assets'}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(assetsItems, 'assets')}</SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
+        <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(projectItems)}</SidebarGroupContent>
+        </SidebarGroup>
 
-          {canAccess('projects') && (
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-                {!collapsed && 'Projects'}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(projectItems, 'projects')}</SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
-
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-500 text-xs uppercase tracking-wider px-3">
-              {!collapsed && 'System'}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderMenuItems(settingsItems)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </ScrollArea>
+        <SidebarGroup>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenuItems(settingsItems)}</SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-slate-800 bg-slate-950">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800"
+      <SidebarFooter className="p-4 border-t border-border/50 space-y-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full justify-start gap-2"
+          onClick={handleBackToPortal}
+        >
+          <Home className="h-4 w-4" />
+          {!collapsed && <span>Back to Portal</span>}
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-start gap-2"
           onClick={handleSignOut}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          {!collapsed && 'Sign Out'}
+          <LogOut className="h-4 w-4" />
+          {!collapsed && <span>Sign Out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
