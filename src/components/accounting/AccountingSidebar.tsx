@@ -33,9 +33,11 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useRef } from 'react';
 
 const overviewItems = [
   { title: 'Dashboard', url: '/accounting', icon: LayoutDashboard },

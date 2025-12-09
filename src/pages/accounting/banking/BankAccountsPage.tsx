@@ -1,75 +1,83 @@
 import { AccountingLayout } from '@/components/accounting/AccountingLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Landmark, RefreshCw } from 'lucide-react';
+import { AccountingDataTable, Column } from '@/components/accounting/AccountingDataTable';
+import { Card, CardContent } from '@/components/ui/card';
+import { Landmark } from 'lucide-react';
 
-const bankAccounts = [
-  { id: 'BA-001', name: 'Main Operating Account', bank: 'First National Bank', type: 'Checking', balance: 125000, status: 'active' },
-  { id: 'BA-002', name: 'Payroll Account', bank: 'First National Bank', type: 'Checking', balance: 45000, status: 'active' },
-  { id: 'BA-003', name: 'Savings Reserve', bank: 'Capital Savings', type: 'Savings', balance: 250000, status: 'active' },
-  { id: 'BA-004', name: 'Petty Cash', bank: 'Local Credit Union', type: 'Checking', balance: 5000, status: 'active' },
-  { id: 'BA-005', name: 'Investment Account', bank: 'Investment Bank', type: 'Money Market', balance: 100000, status: 'active' },
+interface BankAccount {
+  id: string;
+  name: string;
+  bank: string;
+  type: string;
+  accountNumber: string;
+  balance: number;
+  status: string;
+}
+
+const initialAccounts: BankAccount[] = [
+  { id: 'BA-001', name: 'Main Operating Account', bank: 'First National Bank', type: 'Checking', accountNumber: '****1234', balance: 125000, status: 'active' },
+  { id: 'BA-002', name: 'Payroll Account', bank: 'First National Bank', type: 'Checking', accountNumber: '****5678', balance: 45000, status: 'active' },
+  { id: 'BA-003', name: 'Savings Reserve', bank: 'Capital Savings', type: 'Savings', accountNumber: '****9012', balance: 250000, status: 'active' },
+  { id: 'BA-004', name: 'Petty Cash', bank: 'Local Credit Union', type: 'Checking', accountNumber: '****3456', balance: 5000, status: 'active' },
+  { id: 'BA-005', name: 'Investment Account', bank: 'Investment Bank', type: 'Money Market', accountNumber: '****7890', balance: 100000, status: 'active' },
+];
+
+const columns: Column<BankAccount>[] = [
+  { key: 'name', label: 'Account Name', type: 'text' },
+  { key: 'bank', label: 'Bank', type: 'text' },
+  { key: 'type', label: 'Type', type: 'select', options: [
+    { value: 'Checking', label: 'Checking' },
+    { value: 'Savings', label: 'Savings' },
+    { value: 'Money Market', label: 'Money Market' },
+  ]},
+  { key: 'accountNumber', label: 'Account #', type: 'text' },
+  { key: 'balance', label: 'Balance', type: 'currency', align: 'right' },
+  { 
+    key: 'status', 
+    label: 'Status', 
+    type: 'select',
+    options: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+    ],
+    badgeVariant: (value) => value === 'active' ? 'default' : 'secondary',
+  },
 ];
 
 export default function BankAccountsPage() {
-  const totalBalance = bankAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalBalance = initialAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
   return (
     <AccountingLayout title="Bank Accounts">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Total Cash Position</h2>
-            <p className="text-3xl font-bold text-primary">${totalBalance.toLocaleString()}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sync All
-            </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Account
-            </Button>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Total Cash Position</div>
+              <div className="text-2xl font-bold text-primary">${totalBalance.toLocaleString()}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Active Accounts</div>
+              <div className="text-2xl font-bold">{initialAccounts.filter(a => a.status === 'active').length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Last Sync</div>
+              <div className="text-2xl font-bold">Just now</div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Landmark className="h-5 w-5" />
-              Bank Accounts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Account Name</TableHead>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bankAccounts.map((account) => (
-                  <TableRow key={account.id}>
-                    <TableCell className="font-medium">{account.name}</TableCell>
-                    <TableCell>{account.bank}</TableCell>
-                    <TableCell>{account.type}</TableCell>
-                    <TableCell className="text-right font-semibold">${account.balance.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="default">{account.status}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <AccountingDataTable
+          title="Bank Accounts"
+          icon={Landmark}
+          data={initialAccounts}
+          columns={columns}
+          addButtonLabel="Add Account"
+          searchPlaceholder="Search accounts..."
+        />
       </div>
     </AccountingLayout>
   );
