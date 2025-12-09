@@ -98,8 +98,28 @@ import TestChatbotPage from "./pages/customerportal/TestChatbotPage";
 import AccountingAuth from "./pages/accounting/AccountingAuth";
 import AccountingDashboard from "./pages/accounting/AccountingDashboard";
 import ChartOfAccountsPage from "./pages/accounting/gl/ChartOfAccountsPage";
+import JournalEntriesPage from "./pages/accounting/gl/JournalEntriesPage";
+import TrialBalancePage from "./pages/accounting/gl/TrialBalancePage";
 import ARCustomersPage from "./pages/accounting/ar/CustomersPage";
 import ARInvoicesPage from "./pages/accounting/ar/InvoicesPage";
+import ARPaymentsPage from "./pages/accounting/ar/PaymentsPage";
+import AgingReportPage from "./pages/accounting/ar/AgingReportPage";
+import VendorsPage from "./pages/accounting/ap/VendorsPage";
+import BillsPage from "./pages/accounting/ap/BillsPage";
+import APPaymentsPage from "./pages/accounting/ap/APPaymentsPage";
+import BankAccountsPage from "./pages/accounting/banking/BankAccountsPage";
+import BankTransactionsPage from "./pages/accounting/banking/TransactionsPage";
+import ReconciliationPage from "./pages/accounting/banking/ReconciliationPage";
+import PayrollEmployeesPage from "./pages/accounting/payroll/EmployeesPage";
+import PayrollRunsPage from "./pages/accounting/payroll/PayrollRunsPage";
+import PaystubsPage from "./pages/accounting/payroll/PaystubsPage";
+import ExpensesPage from "./pages/accounting/ExpensesPage";
+import AccountingReportsPage from "./pages/accounting/ReportsPage";
+import BudgetsPage from "./pages/accounting/BudgetsPage";
+import FixedAssetsPage from "./pages/accounting/FixedAssetsPage";
+import InventoryPage from "./pages/accounting/InventoryPage";
+import AccountingProjectsPage from "./pages/accounting/ProjectsPage";
+import TimeEntriesPage from "./pages/accounting/TimeEntriesPage";
 import AccountingSettingsPage from "./pages/accounting/AccountingSettingsPage";
 
 const queryClient = new QueryClient();
@@ -205,8 +225,28 @@ const App = () => (
           <Route path="/accounting/auth" element={<AccountingAuth />} />
           <Route path="/accounting" element={<AccountingDashboard />} />
           <Route path="/accounting/gl/accounts" element={<ChartOfAccountsPage />} />
+          <Route path="/accounting/gl/journals" element={<JournalEntriesPage />} />
+          <Route path="/accounting/gl/trial-balance" element={<TrialBalancePage />} />
           <Route path="/accounting/ar/customers" element={<ARCustomersPage />} />
           <Route path="/accounting/ar/invoices" element={<ARInvoicesPage />} />
+          <Route path="/accounting/ar/payments" element={<ARPaymentsPage />} />
+          <Route path="/accounting/ar/aging" element={<AgingReportPage />} />
+          <Route path="/accounting/ap/vendors" element={<VendorsPage />} />
+          <Route path="/accounting/ap/bills" element={<BillsPage />} />
+          <Route path="/accounting/ap/payments" element={<APPaymentsPage />} />
+          <Route path="/accounting/banking/accounts" element={<BankAccountsPage />} />
+          <Route path="/accounting/banking/transactions" element={<BankTransactionsPage />} />
+          <Route path="/accounting/banking/reconciliation" element={<ReconciliationPage />} />
+          <Route path="/accounting/payroll/employees" element={<PayrollEmployeesPage />} />
+          <Route path="/accounting/payroll/runs" element={<PayrollRunsPage />} />
+          <Route path="/accounting/payroll/paystubs" element={<PaystubsPage />} />
+          <Route path="/accounting/expenses" element={<ExpensesPage />} />
+          <Route path="/accounting/reports" element={<AccountingReportsPage />} />
+          <Route path="/accounting/budgets" element={<BudgetsPage />} />
+          <Route path="/accounting/assets" element={<FixedAssetsPage />} />
+          <Route path="/accounting/inventory" element={<InventoryPage />} />
+          <Route path="/accounting/projects" element={<AccountingProjectsPage />} />
+          <Route path="/accounting/time" element={<TimeEntriesPage />} />
           <Route path="/accounting/settings" element={<AccountingSettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
