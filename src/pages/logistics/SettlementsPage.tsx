@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogisticsLayout } from "@/components/logistics/LogisticsLayout";
-import { AccountingDataTable } from "@/components/accounting/AccountingDataTable";
+import { AccountingDataTable, Column } from "@/components/accounting/AccountingDataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCarrierSettlements, useCarriers, useShipments, CarrierSettlement } from "@/hooks/useLogistics";
@@ -86,42 +86,42 @@ export default function SettlementsPage() {
     },
   });
 
-  const columns = [
+  const columns: Column<CarrierSettlement>[] = [
     { key: "settlement_number", label: "Settlement #", sortable: true },
     { 
       key: "carrier", 
       label: "Carrier", 
       sortable: true,
-      render: (value: { name: string } | null) => value?.name || '-'
+      render: (row) => row.carrier?.name || '-'
     },
     { 
       key: "settlement_date", 
       label: "Date", 
       sortable: true,
-      render: (value: string) => format(new Date(value), 'MMM d, yyyy')
+      render: (row) => row.settlement_date ? format(new Date(row.settlement_date), 'MMM d, yyyy') : '-'
     },
     { 
       key: "total_amount", 
       label: "Amount", 
       sortable: true,
-      render: (value: number) => `$${(value / 100).toLocaleString()}`
+      render: (row) => `$${(row.total_amount / 100).toLocaleString()}`
     },
     { 
       key: "status", 
       label: "Status",
-      render: (value: string) => {
+      render: (row) => {
         const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
           pending: "outline",
           approved: "default",
           paid: "secondary",
         };
-        return <Badge variant={variants[value]}>{value}</Badge>;
+        return <Badge variant={variants[row.status || '']}>{row.status}</Badge>;
       }
     },
     {
       key: "actions",
       label: "Actions",
-      render: (_: unknown, row: CarrierSettlement) => {
+      render: (row) => {
         if (row.status !== 'pending') return null;
         return (
           <Button 

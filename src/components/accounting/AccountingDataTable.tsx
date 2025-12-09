@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, X, Download, ChevronDown } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, X, Download, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LucideIcon } from 'lucide-react';
 
@@ -22,19 +22,29 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
   editable?: boolean;
   filterable?: boolean;
+  sortable?: boolean;
   align?: 'left' | 'center' | 'right';
 }
 
+export interface FilterConfig {
+  key: string;
+  label: string;
+  options: { value: string; label: string }[];
+}
+
 interface AccountingDataTableProps<T extends { id: string }> {
-  title: string;
+  title?: string;
   icon?: LucideIcon;
   data: T[];
   columns: Column<T>[];
+  filters?: FilterConfig[];
   onAdd?: (item: Partial<T>) => void;
   onEdit?: (item: T) => void;
   onDelete?: (id: string) => void;
+  onView?: (item: T) => void;
   addButtonLabel?: string;
   searchPlaceholder?: string;
+  isLoading?: boolean;
 }
 
 export function AccountingDataTable<T extends { id: string }>({
@@ -42,11 +52,14 @@ export function AccountingDataTable<T extends { id: string }>({
   icon: Icon,
   data,
   columns,
+  filters = [],
   onAdd,
   onEdit,
   onDelete,
+  onView,
   addButtonLabel = 'Add New',
   searchPlaceholder = 'Search...',
+  isLoading = false,
 }: AccountingDataTableProps<T>) {
   const [items, setItems] = useState<T[]>(data);
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,6 +72,11 @@ export function AccountingDataTable<T extends { id: string }>({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState<Partial<T>>({});
 
+  // Sync items with data prop
+  useEffect(() => {
+    setItems(data);
+  }, [data]);
+
   const filterableColumns = columns.filter(col => col.filterable !== false && col.type !== 'currency');
 
   const filteredItems = useMemo(() => {
@@ -66,13 +84,16 @@ export function AccountingDataTable<T extends { id: string }>({
       // Search filter
       const matchesSearch = searchQuery === '' || 
         columns.some(col => {
-          const value = (item as any)[col.key];
+          const value = getValue(item, col.key as string);
           return value?.toString().toLowerCase().includes(searchQuery.toLowerCase());
         });
 
       // Column filter
-      const matchesFilter = filterColumn === 'all' || filterValue === '' ||
-        ((item as any)[filterColumn]?.toString().toLowerCase().includes(filterValue.toLowerCase()));
+      let matchesFilter = true;
+      if (filterColumn !== 'all' && filterValue !== '') {
+        const itemValue = getValue(item, filterColumn);
+        matchesFilter = itemValue?.toString().toLowerCase() === filterValue.toLowerCase();
+      }
 
       return matchesSearch && matchesFilter;
     });
@@ -108,7 +129,7 @@ export function AccountingDataTable<T extends { id: string }>({
     const csv = [
       columns.map(c => c.label).join(','),
       ...filteredItems.map(item => 
-        columns.map(col => (item as any)[col.key] ?? '').join(',')
+        columns.map(col => getValue(item, col.key as string) ?? '').join(',')
       )
     ].join('\n');
     
@@ -116,7 +137,7 @@ export function AccountingDataTable<T extends { id: string }>({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.toLowerCase().replace(/\s/g, '-')}-export.csv`;
+    a.download = `${(title || 'data').toLowerCase().replace(/\s/g, '-')}-export.csv`;
     a.click();
     toast.success('Data exported successfully');
   };
@@ -175,6 +196,8 @@ export function AccountingDataTable<T extends { id: string }>({
     );
   };
 
+  const hasActions = onEdit || onDelete || onView;
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -211,10 +234,12 @@ export function AccountingDataTable<T extends { id: string }>({
             Export
           </Button>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          {addButtonLabel}
-        </Button>
+        {onAdd && (
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            {addButtonLabel}
+          </Button>
+        )}
       </div>
 
       {/* Filter Panel */}
@@ -222,30 +247,51 @@ export function AccountingDataTable<T extends { id: string }>({
         <Card className="p-4">
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1">
-              <Label className="text-xs">Filter by column</Label>
-              <Select value={filterColumn} onValueChange={setFilterColumn}>
+              <Label className="text-xs">Filter by</Label>
+              <Select value={filterColumn} onValueChange={(v) => { setFilterColumn(v); setFilterValue(''); }}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border shadow-md z-50">
                   <SelectItem value="all">All columns</SelectItem>
-                  {filterableColumns.map(col => (
-                    <SelectItem key={col.key as string} value={col.key as string}>
-                      {col.label}
-                    </SelectItem>
-                  ))}
+                  {filters.length > 0 ? (
+                    filters.map(f => (
+                      <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                    ))
+                  ) : (
+                    filterableColumns.map(col => (
+                      <SelectItem key={col.key as string} value={col.key as string}>
+                        {col.label}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Value</Label>
-              <Input 
-                placeholder="Filter value..."
-                className="w-48"
-                value={filterValue}
-                onChange={(e) => setFilterValue(e.target.value)}
-              />
-            </div>
+            {filterColumn !== 'all' && (
+              <div className="space-y-1">
+                <Label className="text-xs">Value</Label>
+                {filters.find(f => f.key === filterColumn)?.options ? (
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select value" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border shadow-md z-50">
+                      {filters.find(f => f.key === filterColumn)?.options.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input 
+                    placeholder="Filter value..."
+                    className="w-48"
+                    value={filterValue}
+                    onChange={(e) => setFilterValue(e.target.value)}
+                  />
+                )}
+              </div>
+            )}
             <Button 
               variant="ghost" 
               size="sm"
@@ -259,14 +305,16 @@ export function AccountingDataTable<T extends { id: string }>({
 
       {/* Table */}
       <Card>
-        <CardHeader className="py-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            {Icon && <Icon className="h-5 w-5" />}
-            {title}
-            <Badge variant="secondary" className="ml-2">{filteredItems.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+        {title && (
+          <CardHeader className="py-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              {Icon && <Icon className="h-5 w-5" />}
+              {title}
+              <Badge variant="secondary" className="ml-2">{filteredItems.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+        )}
+        <CardContent className={title ? "p-0" : "p-0 pt-4"}>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -279,19 +327,25 @@ export function AccountingDataTable<T extends { id: string }>({
                       {col.label}
                     </TableHead>
                   ))}
-                  <TableHead className="w-12">Actions</TableHead>
+                  {hasActions && <TableHead className="w-12">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.length === 0 ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="text-center py-8 text-muted-foreground">
                       No data found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredItems.map((item) => (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className={onView ? "cursor-pointer hover:bg-muted/50" : ""} onClick={() => onView?.(item)}>
                       {columns.map(col => (
                         <TableCell 
                           key={col.key as string}
@@ -300,28 +354,40 @@ export function AccountingDataTable<T extends { id: string }>({
                           {renderCell(item, col)}
                         </TableCell>
                       ))}
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover border shadow-md z-50">
-                            <DropdownMenuItem onClick={() => { setEditingItem(item); setIsEditDialogOpen(true); }}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleteId(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      {hasActions && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border shadow-md z-50">
+                              {onView && (
+                                <DropdownMenuItem onClick={() => onView(item)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View
+                                </DropdownMenuItem>
+                              )}
+                              {onEdit && (
+                                <DropdownMenuItem onClick={() => onEdit(item)}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                              )}
+                              {onDelete && (
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeleteId(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -332,33 +398,35 @@ export function AccountingDataTable<T extends { id: string }>({
       </Card>
 
       {/* Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add {title.replace(/s$/, '')}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {columns.filter(col => col.editable !== false && col.key !== 'id').map(col => (
-              <div key={col.key as string} className="space-y-1">
-                <Label>{col.label}</Label>
-                {renderEditField(col, (newItem as any)[col.key], (val) => setNewItem({ ...newItem, [col.key]: val }))}
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleAdd}>Add</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {onAdd && (
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add {(title || 'Item').replace(/s$/, '')}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              {columns.filter(col => col.editable !== false && col.key !== 'id').map(col => (
+                <div key={col.key as string} className="space-y-1">
+                  <Label>{col.label}</Label>
+                  {renderEditField(col, (newItem as any)[col.key], (val) => setNewItem({ ...newItem, [col.key]: val }))}
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleAdd}>Add</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit {title.replace(/s$/, '')}</DialogTitle>
+            <DialogTitle>Edit {(title || 'Item').replace(/s$/, '')}</DialogTitle>
           </DialogHeader>
           {editingItem && (
             <div className="grid gap-4 py-4">
