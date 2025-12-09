@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogisticsLayout } from "@/components/logistics/LogisticsLayout";
-import { AccountingDataTable } from "@/components/accounting/AccountingDataTable";
+import { AccountingDataTable, Column } from "@/components/accounting/AccountingDataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useShipments, useDeleteShipment, Shipment } from "@/hooks/useLogistics";
@@ -22,25 +22,25 @@ export default function ShipmentsPage() {
   const [editingShipment, setEditingShipment] = useState<Shipment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const columns = [
+  const columns: Column<Shipment>[] = [
     { key: "shipment_number", label: "Shipment #", sortable: true },
     { 
       key: "customer", 
       label: "Customer", 
       sortable: true,
-      render: (value: { name: string } | null) => value?.name || '-'
+      render: (row) => row.customer?.name || '-'
     },
     { 
       key: "carrier", 
       label: "Carrier", 
       sortable: true,
-      render: (value: { name: string } | null) => value?.name || '-'
+      render: (row) => row.carrier?.name || '-'
     },
     { 
       key: "status", 
       label: "Status", 
       sortable: true,
-      render: (value: string) => {
+      render: (row) => {
         const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
           draft: "outline",
           booked: "secondary",
@@ -49,34 +49,34 @@ export default function ShipmentsPage() {
           delivered: "secondary",
           cancelled: "destructive",
         };
-        return <Badge variant={variants[value] || "outline"}>{value}</Badge>;
+        return <Badge variant={variants[row.status || ''] || "outline"}>{row.status}</Badge>;
       }
     },
     { 
       key: "pickup_date", 
       label: "Pickup Date", 
       sortable: true,
-      render: (value: string) => value ? format(new Date(value), 'MMM d, yyyy') : '-'
+      render: (row) => row.pickup_date ? format(new Date(row.pickup_date), 'MMM d, yyyy') : '-'
     },
     { 
       key: "delivery_date", 
       label: "Delivery Date", 
       sortable: true,
-      render: (value: string) => value ? format(new Date(value), 'MMM d, yyyy') : '-'
+      render: (row) => row.delivery_date ? format(new Date(row.delivery_date), 'MMM d, yyyy') : '-'
     },
     { 
       key: "total_revenue", 
       label: "Revenue", 
       sortable: true,
-      render: (value: number) => `$${(value / 100).toLocaleString()}`
+      render: (row) => `$${((row.total_revenue || 0) / 100).toLocaleString()}`
     },
     { 
       key: "margin", 
       label: "Margin", 
       sortable: true,
-      render: (value: number, row: Shipment) => {
-        const margin = value / 100;
-        const pct = row.total_revenue > 0 ? ((value / row.total_revenue) * 100).toFixed(1) : '0';
+      render: (row) => {
+        const margin = (row.margin || 0) / 100;
+        const pct = (row.total_revenue || 0) > 0 ? (((row.margin || 0) / (row.total_revenue || 1)) * 100).toFixed(1) : '0';
         return (
           <span className={margin >= 0 ? "text-green-600" : "text-red-600"}>
             ${margin.toLocaleString()} ({pct}%)
@@ -106,9 +106,10 @@ export default function ShipmentsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (shipment: Shipment) => {
-    if (confirm(`Delete shipment ${shipment.shipment_number}?`)) {
-      deleteShipment.mutate(shipment.id);
+  const handleDelete = (id: string) => {
+    const shipment = shipments.find(s => s.id === id);
+    if (shipment && confirm(`Delete shipment ${shipment.shipment_number}?`)) {
+      deleteShipment.mutate(id);
     }
   };
 

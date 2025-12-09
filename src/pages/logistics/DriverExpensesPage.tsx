@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogisticsLayout } from "@/components/logistics/LogisticsLayout";
-import { AccountingDataTable } from "@/components/accounting/AccountingDataTable";
+import { AccountingDataTable, Column } from "@/components/accounting/AccountingDataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDriverExpenses, useApproveExpense, DriverExpense } from "@/hooks/useLogistics";
@@ -27,6 +27,7 @@ import { useAccountingAuth } from "@/hooks/useAccountingAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TablesInsert } from "@/integrations/supabase/types";
 
 export default function DriverExpensesPage() {
   const { company } = useAccountingAuth();
@@ -36,10 +37,10 @@ export default function DriverExpensesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const createExpense = useMutation({
-    mutationFn: async (expense: Partial<DriverExpense>) => {
+    mutationFn: async (expense: TablesInsert<'driver_expenses'>) => {
       const { data, error } = await supabase
         .from('driver_expenses')
-        .insert(expense)
+        .insert([expense])
         .select()
         .single();
       if (error) throw error;
@@ -83,45 +84,45 @@ export default function DriverExpensesPage() {
     },
   });
 
-  const columns = [
+  const columns: Column<DriverExpense>[] = [
     { 
       key: "expense_date", 
       label: "Date", 
       sortable: true,
-      render: (value: string) => format(new Date(value), 'MMM d, yyyy')
+      render: (row) => format(new Date(row.expense_date), 'MMM d, yyyy')
     },
     { 
       key: "expense_type", 
       label: "Type", 
       sortable: true,
-      render: (value: string) => (
-        <Badge variant="outline" className="capitalize">{value}</Badge>
+      render: (row) => (
+        <Badge variant="outline" className="capitalize">{row.expense_type}</Badge>
       )
     },
     { 
       key: "amount", 
       label: "Amount", 
       sortable: true,
-      render: (value: number) => `$${(value / 100).toLocaleString()}`
+      render: (row) => `$${(row.amount / 100).toLocaleString()}`
     },
-    { key: "description", label: "Description" },
+    { key: "description", label: "Description", render: (row) => row.description || '-' },
     { 
       key: "status", 
       label: "Status",
-      render: (value: string) => {
+      render: (row) => {
         const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
           pending: "outline",
           approved: "default",
           rejected: "destructive",
           reimbursed: "secondary",
         };
-        return <Badge variant={variants[value]}>{value}</Badge>;
+        return <Badge variant={variants[row.status || '']}>{row.status}</Badge>;
       }
     },
     {
       key: "actions",
       label: "Actions",
-      render: (_: unknown, row: DriverExpense) => {
+      render: (row) => {
         if (row.status !== 'pending') return null;
         return (
           <div className="flex gap-1">
@@ -171,7 +172,7 @@ export default function DriverExpensesPage() {
   ];
 
   const onSubmit = async (data: any) => {
-    const payload = {
+    const payload: TablesInsert<'driver_expenses'> = {
       company_id: company?.id,
       expense_type: data.expense_type,
       amount: Math.round(parseFloat(data.amount) * 100),

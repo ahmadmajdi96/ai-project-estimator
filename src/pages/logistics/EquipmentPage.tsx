@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogisticsLayout } from "@/components/logistics/LogisticsLayout";
-import { AccountingDataTable } from "@/components/accounting/AccountingDataTable";
+import { AccountingDataTable, Column } from "@/components/accounting/AccountingDataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEquipmentTypes, useCreateEquipmentType, EquipmentType } from "@/hooks/useLogistics";
@@ -74,7 +74,7 @@ export default function EquipmentPage() {
     },
   });
 
-  const columns = [
+  const columns: Column<EquipmentType>[] = [
     { key: "code", label: "Code", sortable: true },
     { key: "name", label: "Name", sortable: true },
     { key: "description", label: "Description" },
@@ -82,19 +82,19 @@ export default function EquipmentPage() {
       key: "max_weight_lbs", 
       label: "Max Weight (lbs)", 
       sortable: true,
-      render: (value: number | null) => value ? value.toLocaleString() : '-'
+      render: (row) => row.max_weight_lbs ? row.max_weight_lbs.toLocaleString() : '-'
     },
     { 
       key: "max_volume_cuft", 
       label: "Max Volume (cu ft)", 
       sortable: true,
-      render: (value: number | null) => value ? value.toLocaleString() : '-'
+      render: (row) => row.max_volume_cuft ? row.max_volume_cuft.toLocaleString() : '-'
     },
     { 
       key: "is_active", 
       label: "Status",
-      render: (value: boolean) => (
-        <Badge variant={value ? "default" : "secondary"}>{value ? 'Active' : 'Inactive'}</Badge>
+      render: (row) => (
+        <Badge variant={row.is_active ? "default" : "secondary"}>{row.is_active ? 'Active' : 'Inactive'}</Badge>
       )
     },
   ];
@@ -107,14 +107,15 @@ export default function EquipmentPage() {
       description: eq.description || '',
       max_weight_lbs: eq.max_weight_lbs?.toString() || '',
       max_volume_cuft: eq.max_volume_cuft?.toString() || '',
-      is_active: eq.is_active,
+      is_active: eq.is_active ?? true,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (eq: EquipmentType) => {
-    if (confirm(`Delete equipment type ${eq.name}?`)) {
-      deleteEquipment.mutate(eq.id);
+  const handleDelete = (id: string) => {
+    const eq = equipment.find(e => e.id === id);
+    if (eq && confirm(`Delete equipment type ${eq.name}?`)) {
+      deleteEquipment.mutate(id);
     }
   };
 

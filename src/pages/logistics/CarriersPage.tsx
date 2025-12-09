@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LogisticsLayout } from "@/components/logistics/LogisticsLayout";
-import { AccountingDataTable } from "@/components/accounting/AccountingDataTable";
+import { AccountingDataTable, Column } from "@/components/accounting/AccountingDataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCarriers, useDeleteCarrier, useCreateCarrier, useUpdateCarrier, Carrier } from "@/hooks/useLogistics";
@@ -45,7 +45,7 @@ export default function CarriersPage() {
     },
   });
 
-  const columns = [
+  const columns: Column<Carrier>[] = [
     { key: "carrier_number", label: "Carrier #", sortable: true },
     { key: "name", label: "Name", sortable: true },
     { key: "mc_number", label: "MC #", sortable: true },
@@ -56,26 +56,26 @@ export default function CarriersPage() {
       key: "performance_score", 
       label: "Score", 
       sortable: true,
-      render: (value: number) => (
-        <Badge variant={value >= 90 ? "default" : value >= 70 ? "secondary" : "destructive"}>
-          {value}%
+      render: (row) => (
+        <Badge variant={(row.performance_score || 0) >= 90 ? "default" : (row.performance_score || 0) >= 70 ? "secondary" : "destructive"}>
+          {row.performance_score || 0}%
         </Badge>
       )
     },
     { 
       key: "is_active", 
       label: "Status",
-      render: (value: boolean) => (
-        <Badge variant={value ? "default" : "secondary"}>{value ? 'Active' : 'Inactive'}</Badge>
+      render: (row) => (
+        <Badge variant={row.is_active ? "default" : "secondary"}>{row.is_active ? 'Active' : 'Inactive'}</Badge>
       )
     },
     { 
       key: "insurance_expiry", 
       label: "Insurance Exp.", 
       sortable: true,
-      render: (value: string) => {
-        if (!value) return '-';
-        const expDate = new Date(value);
+      render: (row) => {
+        if (!row.insurance_expiry) return '-';
+        const expDate = new Date(row.insurance_expiry);
         const isExpired = expDate < new Date();
         return (
           <span className={isExpired ? "text-red-600" : ""}>
@@ -107,18 +107,19 @@ export default function CarriersPage() {
       contact_name: carrier.contact_name || '',
       email: carrier.email || '',
       phone: carrier.phone || '',
-      payment_terms: carrier.payment_terms.toString(),
-      default_rate_per_mile: (carrier.default_rate_per_mile / 100).toString(),
+      payment_terms: (carrier.payment_terms || 30).toString(),
+      default_rate_per_mile: ((carrier.default_rate_per_mile || 0) / 100).toString(),
       insurance_expiry: carrier.insurance_expiry || '',
-      is_active: carrier.is_active,
+      is_active: carrier.is_active ?? true,
       notes: carrier.notes || '',
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (carrier: Carrier) => {
-    if (confirm(`Delete carrier ${carrier.name}?`)) {
-      deleteCarrier.mutate(carrier.id);
+  const handleDelete = (id: string) => {
+    const carrier = carriers.find(c => c.id === id);
+    if (carrier && confirm(`Delete carrier ${carrier.name}?`)) {
+      deleteCarrier.mutate(id);
     }
   };
 
