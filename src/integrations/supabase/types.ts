@@ -528,6 +528,8 @@ export type Database = {
           due_date: string
           id: string
           notes: string | null
+          source_id: string | null
+          source_type: string | null
           status: string | null
           subtotal: number | null
           tax_amount: number | null
@@ -552,6 +554,8 @@ export type Database = {
           due_date: string
           id?: string
           notes?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -576,6 +580,8 @@ export type Database = {
           due_date?: string
           id?: string
           notes?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -886,6 +892,8 @@ export type Database = {
           is_recurring: boolean | null
           notes: string | null
           recurring_frequency: string | null
+          source_id: string | null
+          source_type: string | null
           status: string | null
           subtotal: number | null
           tax_amount: number | null
@@ -909,6 +917,8 @@ export type Database = {
           is_recurring?: boolean | null
           notes?: string | null
           recurring_frequency?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -932,6 +942,8 @@ export type Database = {
           is_recurring?: boolean | null
           notes?: string | null
           recurring_frequency?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           subtotal?: number | null
           tax_amount?: number | null
@@ -1487,6 +1499,191 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carrier_settlement_lines: {
+        Row: {
+          accessorials: number | null
+          created_at: string | null
+          deductions: number | null
+          fuel_surcharge: number | null
+          id: string
+          line_haul: number | null
+          settlement_id: string | null
+          shipment_id: string | null
+          total: number | null
+        }
+        Insert: {
+          accessorials?: number | null
+          created_at?: string | null
+          deductions?: number | null
+          fuel_surcharge?: number | null
+          id?: string
+          line_haul?: number | null
+          settlement_id?: string | null
+          shipment_id?: string | null
+          total?: number | null
+        }
+        Update: {
+          accessorials?: number | null
+          created_at?: string | null
+          deductions?: number | null
+          fuel_surcharge?: number | null
+          id?: string
+          line_haul?: number | null
+          settlement_id?: string | null
+          shipment_id?: string | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_settlement_lines_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "carrier_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carrier_settlement_lines_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carrier_settlements: {
+        Row: {
+          bill_id: string | null
+          carrier_id: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          settlement_date: string | null
+          settlement_number: string
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          bill_id?: string | null
+          carrier_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          settlement_date?: string | null
+          settlement_number: string
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          bill_id?: string | null
+          carrier_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          settlement_date?: string | null
+          settlement_number?: string
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_settlements_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carrier_settlements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carriers: {
+        Row: {
+          address: Json | null
+          carrier_number: string
+          company_id: string | null
+          contact_name: string | null
+          created_at: string | null
+          default_rate_per_mile: number | null
+          dot_number: string | null
+          email: string | null
+          id: string
+          insurance_expiry: string | null
+          is_active: boolean | null
+          mc_number: string | null
+          name: string
+          notes: string | null
+          payment_terms: number | null
+          performance_score: number | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          carrier_number: string
+          company_id?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          default_rate_per_mile?: number | null
+          dot_number?: string | null
+          email?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          mc_number?: string | null
+          name: string
+          notes?: string | null
+          payment_terms?: number | null
+          performance_score?: number | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          carrier_number?: string
+          company_id?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          default_rate_per_mile?: number | null
+          dot_number?: string | null
+          email?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          is_active?: boolean | null
+          mc_number?: string | null
+          name?: string
+          notes?: string | null
+          payment_terms?: number | null
+          performance_score?: number | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carriers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
             referencedColumns: ["id"]
           },
         ]
@@ -4229,6 +4426,78 @@ export type Database = {
           },
         ]
       }
+      driver_expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          driver_id: string | null
+          expense_date: string | null
+          expense_type: string
+          id: string
+          journal_entry_id: string | null
+          receipt_url: string | null
+          shipment_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          driver_id?: string | null
+          expense_date?: string | null
+          expense_type: string
+          id?: string
+          journal_entry_id?: string | null
+          receipt_url?: string | null
+          shipment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          driver_id?: string | null
+          expense_date?: string | null
+          expense_type?: string
+          id?: string
+          journal_entry_id?: string | null
+          receipt_url?: string | null
+          shipment_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_expenses_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_certifications: {
         Row: {
           certification_name: string
@@ -4410,6 +4679,53 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_types: {
+        Row: {
+          code: string
+          company_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_volume_cuft: number | null
+          max_weight_lbs: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_volume_cuft?: number | null
+          max_weight_lbs?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_volume_cuft?: number | null
+          max_weight_lbs?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_types_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
             referencedColumns: ["id"]
           },
         ]
@@ -4761,6 +5077,8 @@ export type Database = {
           posted_by: string | null
           recurring_frequency: string | null
           reference: string | null
+          source_id: string | null
+          source_type: string | null
           status: string | null
           updated_at: string | null
         }
@@ -4779,6 +5097,8 @@ export type Database = {
           posted_by?: string | null
           recurring_frequency?: string | null
           reference?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -4797,6 +5117,8 @@ export type Database = {
           posted_by?: string | null
           recurring_frequency?: string | null
           reference?: string | null
+          source_id?: string | null
+          source_type?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -6718,6 +7040,76 @@ export type Database = {
           },
         ]
       }
+      rate_contracts: {
+        Row: {
+          carrier_id: string | null
+          company_id: string | null
+          created_at: string | null
+          destination_region: string | null
+          effective_date: string
+          equipment_type_id: string | null
+          expiry_date: string | null
+          flat_rate: number | null
+          fuel_surcharge_percent: number | null
+          id: string
+          is_active: boolean | null
+          origin_region: string | null
+          rate_per_mile: number
+        }
+        Insert: {
+          carrier_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          destination_region?: string | null
+          effective_date: string
+          equipment_type_id?: string | null
+          expiry_date?: string | null
+          flat_rate?: number | null
+          fuel_surcharge_percent?: number | null
+          id?: string
+          is_active?: boolean | null
+          origin_region?: string | null
+          rate_per_mile: number
+        }
+        Update: {
+          carrier_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          destination_region?: string | null
+          effective_date?: string
+          equipment_type_id?: string | null
+          expiry_date?: string | null
+          flat_rate?: number | null
+          fuel_surcharge_percent?: number | null
+          id?: string
+          is_active?: boolean | null
+          origin_region?: string | null
+          rate_per_mile?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_contracts_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_contracts_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           assigned_to: string | null
@@ -7044,6 +7436,143 @@ export type Database = {
           },
         ]
       }
+      shipments: {
+        Row: {
+          accessorial_charges: number | null
+          actual_delivery_date: string | null
+          actual_pickup_date: string | null
+          bol_number: string | null
+          carrier_id: string | null
+          carrier_rate: number | null
+          commodity: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          current_location: Json | null
+          customer_id: string | null
+          customer_po: string | null
+          customer_rate: number | null
+          customer_ref: string | null
+          delivery_date: string | null
+          dispatched_at: string | null
+          dispatched_by: string | null
+          equipment_type_id: string | null
+          fuel_surcharge: number | null
+          fx_rate: number | null
+          id: string
+          margin: number | null
+          pickup_date: string | null
+          pieces: number | null
+          shipment_number: string
+          special_instructions: string | null
+          status: string | null
+          total_cost: number | null
+          total_revenue: number | null
+          updated_at: string | null
+          weight_lbs: number | null
+        }
+        Insert: {
+          accessorial_charges?: number | null
+          actual_delivery_date?: string | null
+          actual_pickup_date?: string | null
+          bol_number?: string | null
+          carrier_id?: string | null
+          carrier_rate?: number | null
+          commodity?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          current_location?: Json | null
+          customer_id?: string | null
+          customer_po?: string | null
+          customer_rate?: number | null
+          customer_ref?: string | null
+          delivery_date?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
+          equipment_type_id?: string | null
+          fuel_surcharge?: number | null
+          fx_rate?: number | null
+          id?: string
+          margin?: number | null
+          pickup_date?: string | null
+          pieces?: number | null
+          shipment_number: string
+          special_instructions?: string | null
+          status?: string | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+          weight_lbs?: number | null
+        }
+        Update: {
+          accessorial_charges?: number | null
+          actual_delivery_date?: string | null
+          actual_pickup_date?: string | null
+          bol_number?: string | null
+          carrier_id?: string | null
+          carrier_rate?: number | null
+          commodity?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          current_location?: Json | null
+          customer_id?: string | null
+          customer_po?: string | null
+          customer_rate?: number | null
+          customer_ref?: string | null
+          delivery_date?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
+          equipment_type_id?: string | null
+          fuel_surcharge?: number | null
+          fx_rate?: number | null
+          id?: string
+          margin?: number | null
+          pickup_date?: string | null
+          pieces?: number | null
+          shipment_number?: string
+          special_instructions?: string | null
+          status?: string | null
+          total_cost?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+          weight_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "ar_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipments_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skills: {
         Row: {
           category: string | null
@@ -7152,6 +7681,92 @@ export type Database = {
             columns: ["sla_id"]
             isOneToOne: false
             referencedRelation: "sla_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stops: {
+        Row: {
+          actual_arrival: string | null
+          actual_departure: string | null
+          address_line1: string | null
+          address_line2: string | null
+          city: string
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string | null
+          facility_name: string
+          id: string
+          location: Json | null
+          notes: string | null
+          postal_code: string | null
+          scheduled_date: string | null
+          scheduled_time_from: string | null
+          scheduled_time_to: string | null
+          shipment_id: string | null
+          state: string | null
+          status: string | null
+          stop_number: number
+          stop_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          city: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          facility_name: string
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          postal_code?: string | null
+          scheduled_date?: string | null
+          scheduled_time_from?: string | null
+          scheduled_time_to?: string | null
+          shipment_id?: string | null
+          state?: string | null
+          status?: string | null
+          stop_number: number
+          stop_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_arrival?: string | null
+          actual_departure?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string | null
+          facility_name?: string
+          id?: string
+          location?: Json | null
+          notes?: string | null
+          postal_code?: string | null
+          scheduled_date?: string | null
+          scheduled_time_from?: string | null
+          scheduled_time_to?: string | null
+          shipment_id?: string | null
+          state?: string | null
+          status?: string | null
+          stop_number?: number
+          stop_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stops_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
             referencedColumns: ["id"]
           },
         ]
@@ -7762,6 +8377,50 @@ export type Database = {
           },
         ]
       }
+      tracking_events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_time: string | null
+          event_type: string
+          id: string
+          location: Json | null
+          metadata: Json | null
+          reported_by: string | null
+          shipment_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_time?: string | null
+          event_type: string
+          id?: string
+          location?: Json | null
+          metadata?: Json | null
+          reported_by?: string | null
+          shipment_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_time?: string | null
+          event_type?: string
+          id?: string
+          location?: Json | null
+          metadata?: Json | null
+          reported_by?: string | null
+          shipment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_questions: {
         Row: {
           answer: string
@@ -8075,6 +8734,12 @@ export type Database = {
         | "department_head"
         | "team_lead"
         | "employee"
+        | "dispatcher"
+        | "warehouse_manager"
+        | "driver"
+        | "carrier"
+        | "customer"
+        | "finance_manager"
       call_type: "incoming" | "outgoing"
       client_status: "prospect" | "active" | "inactive" | "former"
       communication_type:
@@ -8318,6 +8983,12 @@ export const Constants = {
         "department_head",
         "team_lead",
         "employee",
+        "dispatcher",
+        "warehouse_manager",
+        "driver",
+        "carrier",
+        "customer",
+        "finance_manager",
       ],
       call_type: ["incoming", "outgoing"],
       client_status: ["prospect", "active", "inactive", "former"],
