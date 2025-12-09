@@ -1,46 +1,26 @@
-import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAccountingAuth } from '@/hooks/useAccountingAuth';
+import { ReactNode } from 'react';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AccountingSidebar } from './AccountingSidebar';
-import { AccountingHeader } from './AccountingHeader';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 interface AccountingLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
+  title?: string;
 }
 
-export function AccountingLayout({ children }: AccountingLayoutProps) {
-  const navigate = useNavigate();
-  const { user, loading, accountingUser } = useAccountingAuth();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/accounting/auth');
-    }
-  }, [user, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    );
-  }
-
-  if (!user || !accountingUser) {
-    return null;
-  }
-
+export function AccountingLayout({ children, title }: AccountingLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-slate-900">
+      <div className="min-h-screen flex w-full bg-background">
         <AccountingSidebar />
-        <SidebarInset className="flex flex-col flex-1">
-          <AccountingHeader />
-          <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto">
+          <header className="sticky top-0 z-10 h-14 flex items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+            <SidebarTrigger />
+            {title && <h1 className="font-display font-semibold text-lg">{title}</h1>}
+          </header>
+          <div className="p-6">
             {children}
-          </main>
-        </SidebarInset>
+          </div>
+        </main>
       </div>
     </SidebarProvider>
   );

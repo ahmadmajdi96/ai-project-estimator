@@ -1,378 +1,431 @@
-import { useAccountingAuth } from '@/hooks/useAccountingAuth';
 import { AccountingLayout } from '@/components/accounting/AccountingLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import {
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  FileText,
-  Receipt,
-  CreditCard,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Plus,
-  ArrowRight,
+import { 
+  DollarSign, TrendingUp, TrendingDown, AlertCircle, 
+  LayoutDashboard, BarChart3, Receipt, FileText, 
+  ArrowUpRight, Activity, PieChart, Calendar
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { format, subMonths } from 'date-fns';
+import { Link } from 'react-router-dom';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart as RechartsPie, Pie, Cell
+} from 'recharts';
+
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#10b981', '#f59e0b', '#8b5cf6'];
 
 // Sample data
-const revenueData = [
-  { month: 'Jan', revenue: 45000, expenses: 32000 },
-  { month: 'Feb', revenue: 52000, expenses: 35000 },
-  { month: 'Mar', revenue: 48000, expenses: 31000 },
-  { month: 'Apr', revenue: 61000, expenses: 38000 },
-  { month: 'May', revenue: 55000, expenses: 34000 },
-  { month: 'Jun', revenue: 67000, expenses: 42000 },
-];
+const monthlyData = Array.from({ length: 6 }, (_, i) => {
+  const date = subMonths(new Date(), 5 - i);
+  return {
+    month: format(date, 'MMM'),
+    revenue: Math.floor(Math.random() * 50000) + 30000,
+    expenses: Math.floor(Math.random() * 30000) + 15000,
+  };
+});
 
-const cashFlowData = [
-  { month: 'Jan', inflow: 65000, outflow: 45000 },
-  { month: 'Feb', inflow: 72000, outflow: 52000 },
-  { month: 'Mar', inflow: 58000, outflow: 48000 },
-  { month: 'Apr', inflow: 81000, outflow: 55000 },
-  { month: 'May', inflow: 75000, outflow: 51000 },
-  { month: 'Jun', inflow: 87000, outflow: 58000 },
-];
-
-const expenseBreakdown = [
-  { name: 'Payroll', value: 45, color: '#10b981' },
-  { name: 'Operations', value: 25, color: '#3b82f6' },
-  { name: 'Marketing', value: 15, color: '#8b5cf6' },
-  { name: 'Utilities', value: 10, color: '#f59e0b' },
-  { name: 'Other', value: 5, color: '#6b7280' },
+const expenseCategories = [
+  { name: 'Payroll', value: 45000 },
+  { name: 'Operations', value: 15000 },
+  { name: 'Marketing', value: 8000 },
+  { name: 'Utilities', value: 3000 },
+  { name: 'Other', value: 5000 },
 ];
 
 const recentTransactions = [
-  { id: 1, type: 'income', description: 'Payment from Acme Corp', amount: 5250, date: '2024-01-15', status: 'completed' },
-  { id: 2, type: 'expense', description: 'Office supplies', amount: -342, date: '2024-01-14', status: 'completed' },
-  { id: 3, type: 'income', description: 'Invoice #1042', amount: 12800, date: '2024-01-13', status: 'pending' },
-  { id: 4, type: 'expense', description: 'Software subscription', amount: -299, date: '2024-01-12', status: 'completed' },
-  { id: 5, type: 'expense', description: 'Vendor payment - SupplyCo', amount: -4500, date: '2024-01-11', status: 'processing' },
+  { id: 1, description: 'Invoice #1001 - ABC Corp', amount: 5000, type: 'income', date: '2024-01-15' },
+  { id: 2, description: 'Office Supplies', amount: -250, type: 'expense', date: '2024-01-14' },
+  { id: 3, description: 'Invoice #1002 - XYZ Ltd', amount: 3500, type: 'income', date: '2024-01-13' },
+  { id: 4, description: 'Payroll - January', amount: -15000, type: 'expense', date: '2024-01-12' },
+  { id: 5, description: 'Utility Bill', amount: -450, type: 'expense', date: '2024-01-11' },
 ];
 
-const upcomingPayables = [
-  { vendor: 'SupplyCo Inc', amount: 8500, dueDate: '2024-01-20', daysUntil: 5 },
-  { vendor: 'Tech Solutions', amount: 2400, dueDate: '2024-01-22', daysUntil: 7 },
-  { vendor: 'Office Pro', amount: 1250, dueDate: '2024-01-25', daysUntil: 10 },
+const overdueInvoices = [
+  { id: 1, customer: 'ABC Corp', amount: 2500, daysOverdue: 15 },
+  { id: 2, customer: 'DEF Inc', amount: 1800, daysOverdue: 7 },
+  { id: 3, customer: 'GHI LLC', amount: 3200, daysOverdue: 3 },
 ];
 
-const overdueReceivables = [
-  { customer: 'Beta Corp', amount: 15000, dueDate: '2024-01-05', daysOverdue: 10 },
-  { customer: 'StartupXYZ', amount: 4200, dueDate: '2024-01-08', daysOverdue: 7 },
+const upcomingBills = [
+  { id: 1, vendor: 'Office Rent', amount: 5000, dueDate: '2024-01-20' },
+  { id: 2, vendor: 'Insurance', amount: 1200, dueDate: '2024-01-25' },
+  { id: 3, vendor: 'Internet Service', amount: 150, dueDate: '2024-01-28' },
 ];
 
 export default function AccountingDashboard() {
-  const { fullName, accountingUser, company } = useAccountingAuth();
+  const totalRevenue = 125000;
+  const totalExpenses = 76000;
+  const netProfit = totalRevenue - totalExpenses;
+  const cashBalance = 89500;
+  const arBalance = 45000;
+  const apBalance = 28000;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: company?.currency || 'USD',
+      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
 
   return (
-    <AccountingLayout>
-      <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Welcome back, {accountingUser?.first_name}!
-            </h1>
-            <p className="text-slate-400">
-              Here's what's happening with your finances today.
-            </p>
+    <AccountingLayout title="Dashboard">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview" className="gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/10">
+                  <DollarSign className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
+                  <p className="text-xs text-muted-foreground">Total Revenue</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-500/10">
+                  <TrendingDown className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(totalExpenses)}</p>
+                  <p className="text-xs text-muted-foreground">Expenses</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(netProfit)}</p>
+                  <p className="text-xs text-muted-foreground">Net Profit</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <DollarSign className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(cashBalance)}</p>
+                  <p className="text-xs text-muted-foreground">Cash Balance</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <Receipt className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(arBalance)}</p>
+                  <p className="text-xs text-muted-foreground">A/R Balance</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/10">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrency(apBalance)}</p>
+                  <p className="text-xs text-muted-foreground">A/P Balance</p>
+                </div>
+              </div>
+            </Card>
           </div>
-          <div className="flex gap-3">
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="mr-2 h-4 w-4" />
-              New Transaction
-            </Button>
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
-              <FileText className="mr-2 h-4 w-4" />
-              Create Invoice
-            </Button>
-          </div>
-        </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Total Revenue</p>
-                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(328000)}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowUpRight className="h-4 w-4 text-emerald-400" />
-                    <span className="text-sm text-emerald-400">12.5%</span>
-                    <span className="text-sm text-slate-500">vs last month</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-emerald-500/20 rounded-full">
-                  <DollarSign className="h-6 w-6 text-emerald-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Total Expenses</p>
-                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(212000)}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowDownRight className="h-4 w-4 text-red-400" />
-                    <span className="text-sm text-red-400">8.2%</span>
-                    <span className="text-sm text-slate-500">vs last month</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-red-500/20 rounded-full">
-                  <Receipt className="h-6 w-6 text-red-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Net Profit</p>
-                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(116000)}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <TrendingUp className="h-4 w-4 text-emerald-400" />
-                    <span className="text-sm text-emerald-400">35.4%</span>
-                    <span className="text-sm text-slate-500">margin</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-blue-500/20 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Cash Balance</p>
-                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(89500)}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowUpRight className="h-4 w-4 text-emerald-400" />
-                    <span className="text-sm text-emerald-400">5.1%</span>
-                    <span className="text-sm text-slate-500">vs last week</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-purple-500/20 rounded-full">
-                  <CreditCard className="h-6 w-6 text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue vs Expenses Chart */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Revenue vs Expenses</CardTitle>
-              <CardDescription className="text-slate-400">Monthly comparison</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis dataKey="month" stroke="#64748b" />
-                    <YAxis stroke="#64748b" tickFormatter={(value) => `$${value/1000}k`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                      labelStyle={{ color: '#f8fafc' }}
-                      formatter={(value: number) => formatCurrency(value)}
-                    />
-                    <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#colorRevenue)" name="Revenue" />
-                    <Area type="monotone" dataKey="expenses" stroke="#ef4444" fillOpacity={1} fill="url(#colorExpenses)" name="Expenses" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Expense Breakdown */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Expense Breakdown</CardTitle>
-              <CardDescription className="text-slate-400">By category this month</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={expenseBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {expenseBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                      formatter={(value: number) => `${value}%`}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {expenseBreakdown.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm text-slate-400">{item.name}</span>
-                    <span className="text-sm text-white ml-auto">{item.value}%</span>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Expense Categories */}
+            <Card className="p-4 bg-card/50 border-border/50">
+              <h3 className="font-semibold mb-4">Expense Breakdown</h3>
+              <div className="space-y-3">
+                {expenseCategories.map((cat, i) => (
+                  <div key={cat.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <span className="text-sm">{cat.name}</span>
+                    </div>
+                    <span className="font-medium">{formatCurrency(cat.value)}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </Card>
 
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Transactions */}
-          <Card className="bg-slate-800/50 border-slate-700 lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-white">Recent Transactions</CardTitle>
-                <CardDescription className="text-slate-400">Latest financial activity</CardDescription>
+            {/* Overdue Invoices */}
+            <Card className="p-4 bg-card/50 border-border/50">
+              <h3 className="font-semibold mb-4">Overdue Invoices</h3>
+              {overdueInvoices.length > 0 ? (
+                <div className="space-y-3">
+                  {overdueInvoices.map(invoice => (
+                    <div 
+                      key={invoice.id} 
+                      className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 cursor-pointer"
+                    >
+                      <AlertCircle className="h-4 w-4 text-red-500 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{invoice.customer}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {invoice.daysOverdue} days overdue
+                        </p>
+                      </div>
+                      <span className="font-semibold text-sm text-red-500">
+                        {formatCurrency(invoice.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No overdue invoices</p>
+              )}
+            </Card>
+
+            {/* Upcoming Bills */}
+            <Card className="p-4 bg-card/50 border-border/50">
+              <h3 className="font-semibold mb-4">Upcoming Bills</h3>
+              {upcomingBills.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingBills.map(bill => (
+                    <div 
+                      key={bill.id} 
+                      className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 cursor-pointer"
+                    >
+                      <Calendar className="h-4 w-4 text-amber-500 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{bill.vendor}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Due {format(new Date(bill.dueDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <span className="font-semibold text-sm">
+                        {formatCurrency(bill.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No upcoming bills</p>
+              )}
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Recent Transactions</h3>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/accounting/gl/journals">View All</Link>
+                </Button>
               </div>
-              <Button variant="ghost" className="text-emerald-400 hover:text-emerald-300">
-                View All <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {recentTransactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${tx.type === 'income' ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
-                        {tx.type === 'income' ? (
-                          <ArrowUpRight className={`h-4 w-4 text-emerald-400`} />
-                        ) : (
-                          <ArrowDownRight className={`h-4 w-4 text-red-400`} />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{tx.description}</p>
-                        <p className="text-xs text-slate-500">{tx.date}</p>
-                      </div>
+                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <div>
+                      <p className="font-medium text-sm">{tx.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(tx.date), 'MMM d, yyyy')}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm font-medium ${tx.amount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
+                      <p className={`font-semibold text-sm ${tx.amount >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
                       </p>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${
-                          tx.status === 'completed' ? 'border-emerald-500/50 text-emerald-400' :
-                          tx.status === 'pending' ? 'border-yellow-500/50 text-yellow-400' :
-                          'border-blue-500/50 text-blue-400'
-                        }`}
-                      >
-                        {tx.status}
+                      <Badge variant="secondary" className={
+                        tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
+                      }>
+                        {tx.type}
                       </Badge>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </Card>
 
-          {/* Alerts & Tasks */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Alerts & Tasks</CardTitle>
-              <CardDescription className="text-slate-400">Items requiring attention</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Overdue Receivables */}
-              {overdueReceivables.length > 0 && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-4 w-4 text-red-400" />
-                    <span className="text-sm font-medium text-red-400">Overdue Invoices</span>
-                  </div>
-                  {overdueReceivables.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm mt-2">
-                      <span className="text-slate-400">{item.customer}</span>
-                      <span className="text-white">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Upcoming Payables */}
-              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-yellow-400" />
-                  <span className="text-sm font-medium text-yellow-400">Upcoming Bills</span>
-                </div>
-                {upcomingPayables.slice(0, 2).map((item, idx) => (
-                  <div key={idx} className="flex justify-between text-sm mt-2">
-                    <span className="text-slate-400">{item.vendor}</span>
-                    <span className="text-white">{formatCurrency(item.amount)}</span>
-                  </div>
-                ))}
+            <Card className="p-4 bg-card/50 border-border/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Quick Actions</h3>
               </div>
-
-              {/* Quick Tasks */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-400">Quick Tasks</p>
-                <div className="flex items-center gap-2 p-2 rounded bg-slate-800/50">
-                  <div className="w-4 h-4 rounded border border-slate-600" />
-                  <span className="text-sm text-slate-300">Reconcile bank statements</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 rounded bg-slate-800/50">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm text-slate-500 line-through">Review pending approvals</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 rounded bg-slate-800/50">
-                  <div className="w-4 h-4 rounded border border-slate-600" />
-                  <span className="text-sm text-slate-300">Submit Q4 tax filings</span>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
+                  <Link to="/accounting/ar/invoices">
+                    <Receipt className="h-5 w-5" />
+                    <span>New Invoice</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
+                  <Link to="/accounting/ap/bills">
+                    <FileText className="h-5 w-5" />
+                    <span>Record Bill</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
+                  <Link to="/accounting/gl/journals">
+                    <DollarSign className="h-5 w-5" />
+                    <span>Journal Entry</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
+                  <Link to="/accounting/reports">
+                    <BarChart3 className="h-5 w-5" />
+                    <span>View Reports</span>
+                  </Link>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          {/* Charts */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Revenue vs Expenses (6 Months)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#10b981" 
+                      fill="#10b981" 
+                      fillOpacity={0.2}
+                      name="Revenue"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="#ef4444" 
+                      fill="#ef4444" 
+                      fillOpacity={0.2}
+                      name="Expenses"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Expense Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RechartsPie>
+                    <Pie
+                      data={expenseCategories}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name }) => `${name}`}
+                    >
+                      {expenseCategories.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Stats */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Profit Margin</p>
+                  <p className="text-2xl font-bold">{((netProfit / totalRevenue) * 100).toFixed(1)}%</p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+              </div>
+              <Progress value={(netProfit / totalRevenue) * 100} className="mt-2 h-1.5" />
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">A/R Collection</p>
+                  <p className="text-2xl font-bold">85%</p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+              </div>
+              <Progress value={85} className="mt-2 h-1.5" />
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Budget Used</p>
+                  <p className="text-2xl font-bold">72%</p>
+                </div>
+                <TrendingUp className="h-5 w-5 text-amber-500" />
+              </div>
+              <Progress value={72} className="mt-2 h-1.5" />
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">YTD Growth</p>
+                  <p className="text-2xl font-bold">+12.5%</p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+              </div>
+              <Progress value={62} className="mt-2 h-1.5" />
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </AccountingLayout>
   );
 }
