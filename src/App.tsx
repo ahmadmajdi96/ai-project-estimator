@@ -95,6 +95,12 @@ import AnswerRulesPage from "./pages/customerportal/AnswerRulesPage";
 import CustomerPortalKnowledgeBasePage from "./pages/customerportal/CustomerPortalKnowledgeBasePage";
 import TrainingPage from "./pages/customerportal/TrainingPage";
 import TestChatbotPage from "./pages/customerportal/TestChatbotPage";
+import AccountingAuth from "./pages/accounting/AccountingAuth";
+import AccountingDashboard from "./pages/accounting/AccountingDashboard";
+import ChartOfAccountsPage from "./pages/accounting/gl/ChartOfAccountsPage";
+import ARCustomersPage from "./pages/accounting/ar/CustomersPage";
+import ARInvoicesPage from "./pages/accounting/ar/InvoicesPage";
+import AccountingSettingsPage from "./pages/accounting/AccountingSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +202,12 @@ const App = () => (
           <Route path="/customer-portal/chatbots/:id/knowledge-base" element={<CustomerPortalKnowledgeBasePage />} />
           <Route path="/customer-portal/chatbots/:id/training" element={<TrainingPage />} />
           <Route path="/customer-portal/chatbots/:id/test" element={<TestChatbotPage />} />
+          <Route path="/accounting/auth" element={<AccountingAuth />} />
+          <Route path="/accounting" element={<AccountingDashboard />} />
+          <Route path="/accounting/gl/accounts" element={<ChartOfAccountsPage />} />
+          <Route path="/accounting/ar/customers" element={<ARCustomersPage />} />
+          <Route path="/accounting/ar/invoices" element={<ARInvoicesPage />} />
+          <Route path="/accounting/settings" element={<AccountingSettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

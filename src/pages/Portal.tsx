@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, Loader2, LogOut, Bot } from 'lucide-react';
+import { LayoutDashboard, Users, Loader2, LogOut, Bot, Calculator } from 'lucide-react';
 
 interface DashboardAccess {
   dashboard_name: string;
@@ -43,6 +43,14 @@ const dashboards = [
     icon: Bot,
     path: '/chatflow',
     gradient: 'from-emerald-500 to-teal-500',
+  },
+  {
+    id: 'accounting',
+    name: 'Accounting',
+    description: 'Enterprise accounting with GL, AR/AP, payroll, and financial reporting',
+    icon: Calculator,
+    path: '/accounting',
+    gradient: 'from-amber-500 to-orange-500',
   },
 ];
 
