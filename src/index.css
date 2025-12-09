@@ -167,6 +167,18 @@
   animation: float 6s ease-in-out infinite;
 }
 
+.animate-float.delay-100 {
+  animation-delay: 1s;
+}
+
+.animate-float.delay-200 {
+  animation-delay: 2s;
+}
+
+.animate-float.delay-300 {
+  animation-delay: 3s;
+}
+
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Portal from "./pages/Portal";
+import CompanyProfile from "./pages/CompanyProfile";
 import NotFound from "./pages/NotFound";
 import CRMDashboard from "./pages/crm/CRMDashboard";
 import ManagementDashboard from "./pages/management/ManagementDashboardNew";
@@ -143,7 +144,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Portal />} />
+          <Route path="/" element={<CompanyProfile />} />
+          <Route path="/dashboard" element={<Portal />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/sales" element={<SalesPage />} />

@@ -31,13 +31,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 
 const portals = [
-  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/', gradient: 'from-slate-500 to-zinc-600' },
+  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/dashboard', gradient: 'from-slate-500 to-zinc-600' },
   { id: 'crm', name: 'CRM', icon: Users, path: '/crm', gradient: 'from-blue-500 to-cyan-500' },
   { id: 'management', name: 'Management', icon: UserCheck, path: '/management', gradient: 'from-purple-500 to-pink-500' },
   { id: 'accounting', name: 'Accounting', icon: Calculator, path: '/accounting', gradient: 'from-amber-500 to-orange-500' },
   { id: 'logistics', name: 'Logistics', icon: Truck, path: '/logistics', gradient: 'from-emerald-500 to-teal-500' },
   { id: 'chatflow', name: 'ChatFlow', icon: Bot, path: '/chatflow', gradient: 'from-rose-500 to-red-500' },
-  { id: 'ai', name: 'AI Center', icon: Brain, path: '/?tab=ai', gradient: 'from-violet-500 to-purple-600' },
+  { id: 'ai', name: 'AI Center', icon: Brain, path: '/dashboard?tab=ai', gradient: 'from-violet-500 to-purple-600' },
 ];
 
 export default function Portal() {
@@ -231,10 +231,10 @@ export default function Portal() {
   const handlePortalClick = (portal: typeof portals[0]) => {
     if (portal.id === 'overview') {
       setActiveTab('overview');
-      navigate('/');
+      navigate('/dashboard');
     } else if (portal.id === 'ai') {
       setActiveTab('ai');
-      navigate('/?tab=ai');
+      navigate('/dashboard?tab=ai');
     } else {
       navigate(portal.path);
     }
@@ -375,7 +375,7 @@ export default function Portal() {
                 <span className="text-primary-foreground font-bold text-lg">C</span>
               </div>
               <div>
-                <h1 className="font-display font-bold text-xl">CortaneX AI</h1>
+                <h1 className="font-display font-bold text-xl">Coetanex AI</h1>
                 <p className="text-xs text-muted-foreground">Enterprise Suite</p>
               </div>
             </div>
