@@ -121,6 +121,18 @@ import InventoryPage from "./pages/accounting/InventoryPage";
 import AccountingProjectsPage from "./pages/accounting/ProjectsPage";
 import TimeEntriesPage from "./pages/accounting/TimeEntriesPage";
 import AccountingSettingsPage from "./pages/accounting/AccountingSettingsPage";
+// Logistics
+import LogisticsDashboard from "./pages/logistics/LogisticsDashboard";
+import ShipmentsPage from "./pages/logistics/ShipmentsPage";
+import CarriersPage from "./pages/logistics/CarriersPage";
+import EquipmentPage from "./pages/logistics/EquipmentPage";
+import DispatchPage from "./pages/logistics/DispatchPage";
+import TrackingPage from "./pages/logistics/TrackingPage";
+import DriverExpensesPage from "./pages/logistics/DriverExpensesPage";
+import SettlementsPage from "./pages/logistics/SettlementsPage";
+import LogisticsAnalyticsPage from "./pages/logistics/AnalyticsPage";
+import LogisticsBillingPage from "./pages/logistics/BillingPage";
+import LogisticsSettingsPage from "./pages/logistics/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -248,6 +260,18 @@ const App = () => (
           <Route path="/accounting/projects" element={<AccountingProjectsPage />} />
           <Route path="/accounting/time" element={<TimeEntriesPage />} />
           <Route path="/accounting/settings" element={<AccountingSettingsPage />} />
+          {/* Logistics Routes */}
+          <Route path="/logistics" element={<LogisticsDashboard />} />
+          <Route path="/logistics/shipments" element={<ShipmentsPage />} />
+          <Route path="/logistics/carriers" element={<CarriersPage />} />
+          <Route path="/logistics/equipment" element={<EquipmentPage />} />
+          <Route path="/logistics/dispatch" element={<DispatchPage />} />
+          <Route path="/logistics/tracking" element={<TrackingPage />} />
+          <Route path="/logistics/expenses" element={<DriverExpensesPage />} />
+          <Route path="/logistics/settlements" element={<SettlementsPage />} />
+          <Route path="/logistics/analytics" element={<LogisticsAnalyticsPage />} />
+          <Route path="/logistics/billing" element={<LogisticsBillingPage />} />
+          <Route path="/logistics/settings" element={<LogisticsSettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
