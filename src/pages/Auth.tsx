@@ -27,7 +27,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !loading) {
-      navigate('/crm');
+      navigate('/dashboard');
     }
   }, [user, loading, navigate]);
 
@@ -106,8 +106,8 @@ export default function Auth() {
               <Building2 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground">CEO Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Enterprise Management System</p>
+          <h1 className="font-display text-3xl font-bold text-foreground">Coetanex AI</h1>
+          <p className="text-muted-foreground mt-2">Enterprise AI Platform</p>
         </div>
 
         <Card className="glass-card">
