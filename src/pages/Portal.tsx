@@ -1,25 +1,33 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { 
   LayoutDashboard, Users, Loader2, LogOut, Bot, Calculator, Truck, 
   Brain, TrendingUp, MessageSquare, Lightbulb, Scale, BarChart3,
-  DollarSign, Package, UserCheck, Activity, AlertTriangle, CheckCircle
+  DollarSign, Package, UserCheck, Activity, AlertTriangle, CheckCircle,
+  Target, FileText, Briefcase, HeadphonesIcon, Clock, Star, ArrowUpRight,
+  ArrowDownRight, PieChart, Zap, Shield, RefreshCw
 } from 'lucide-react';
-import { useShipments, useCarriers } from '@/hooks/useLogistics';
+import { useShipments, useCarriers, useDriverExpenses, useCarrierSettlements } from '@/hooks/useLogistics';
 import { useClients } from '@/hooks/useClients';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useTasks } from '@/hooks/useTasks';
 import { useInvoices } from '@/hooks/useInvoices';
+import { useQuotes } from '@/hooks/useQuotes';
+import { useSupportTickets } from '@/hooks/useSupportTickets';
+import { useOpportunities } from '@/hooks/useOpportunities';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useKPIDefinitions } from '@/hooks/useKPIs';
+import { useStrategicGoals } from '@/hooks/useStrategicGoals';
+import { useProducts } from '@/hooks/useProducts';
 import { useEnterpriseAI } from '@/hooks/useEnterpriseAI';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 
 const portals = [
@@ -38,24 +46,167 @@ export default function Portal() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInput, setAiInput] = useState('');
+  const [aiSubTab, setAiSubTab] = useState('chat');
 
-  // Data hooks
-  const { data: shipments = [] } = useShipments();
-  const { data: carriers = [] } = useCarriers();
+  // CRM Data
   const { data: clients = [] } = useClients();
+  const { data: quotes = [] } = useQuotes();
+  const { data: supportTickets = [] } = useSupportTickets();
+  const { data: opportunities = [] } = useOpportunities();
+  const { data: products = [] } = useProducts();
+
+  // Management Data
   const { data: employees = [] } = useEmployees();
   const { data: tasks = [] } = useTasks();
+  const { data: departments = [] } = useDepartments();
+  const { data: kpis = [] } = useKPIDefinitions();
+  const { data: strategicGoals = [] } = useStrategicGoals();
+
+  // Accounting Data
   const { data: invoices = [] } = useInvoices();
 
-  // AI context with all data
+  // Logistics Data
+  const { data: shipments = [] } = useShipments();
+  const { data: carriers = [] } = useCarriers();
+  const { data: driverExpenses = [] } = useDriverExpenses();
+  const { data: settlements = [] } = useCarrierSettlements();
+
+  // Comprehensive AI Context with ALL data
   const aiContext = useMemo(() => ({
-    shipments: { total: shipments.length, inTransit: shipments.filter(s => s.status === 'in_transit').length },
-    carriers: { total: carriers.length, active: carriers.filter(c => c.is_active).length },
-    clients: { total: clients.length },
-    employees: { total: employees.length },
-    tasks: { total: tasks.length, pending: tasks.filter(t => t.status === 'todo').length },
-    invoices: { total: invoices.length },
-  }), [shipments, carriers, clients, employees, tasks, invoices]);
+    // CRM Portal Data
+    crm: {
+      clients: {
+        total: clients.length,
+        byStatus: clients.reduce((acc, c) => {
+          acc[c.status || 'unknown'] = (acc[c.status || 'unknown'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        recentClients: clients.slice(0, 5).map(c => ({ name: c.client_name, status: c.status })),
+      },
+      quotes: {
+        total: quotes.length,
+        totalValue: quotes.reduce((sum, q) => sum + (q.subtotal || 0), 0),
+        byStatus: quotes.reduce((acc, q) => {
+          acc[q.status || 'draft'] = (acc[q.status || 'draft'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+      opportunities: {
+        total: opportunities.length,
+        totalValue: opportunities.reduce((sum, o) => sum + (o.value || 0), 0),
+        byStage: opportunities.reduce((acc, o) => {
+          acc[o.sales_stage || 'unknown'] = (acc[o.sales_stage || 'unknown'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+      supportTickets: {
+        total: supportTickets.length,
+        open: supportTickets.filter(t => t.status === 'open').length,
+        inProgress: supportTickets.filter(t => t.status === 'in_progress').length,
+        resolved: supportTickets.filter(t => t.status === 'resolved').length,
+        byPriority: supportTickets.reduce((acc, t) => {
+          acc[t.priority || 'medium'] = (acc[t.priority || 'medium'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+      products: {
+        total: products.length,
+        active: products.filter(p => p.is_active).length,
+      },
+    },
+    // Management Portal Data
+    management: {
+      employees: {
+        total: employees.length,
+        byDepartment: employees.reduce((acc, e) => {
+          acc[e.departments?.name || 'unassigned'] = (acc[e.departments?.name || 'unassigned'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+      tasks: {
+        total: tasks.length,
+        byStatus: tasks.reduce((acc, t) => {
+          acc[t.status || 'todo'] = (acc[t.status || 'todo'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        byPriority: tasks.reduce((acc, t) => {
+          acc[t.priority || 'medium'] = (acc[t.priority || 'medium'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length,
+      },
+      departments: {
+        total: departments.length,
+        list: departments.map(d => d.name),
+      },
+      kpis: {
+        total: kpis.length,
+        list: kpis.slice(0, 10).map(k => ({ name: k.name, target: k.target_value })),
+      },
+      strategicGoals: {
+        total: strategicGoals.length,
+        byStatus: strategicGoals.reduce((acc, g) => {
+          acc[g.status || 'active'] = (acc[g.status || 'active'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      },
+    },
+    // Accounting Portal Data
+    accounting: {
+      invoices: {
+        total: invoices.length,
+        totalValue: invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0),
+        byStatus: invoices.reduce((acc, i) => {
+          acc[i.status || 'draft'] = (acc[i.status || 'draft'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        overdue: invoices.filter(i => i.due_date && new Date(i.due_date) < new Date() && i.status !== 'paid').length,
+      },
+    },
+    // Logistics Portal Data
+    logistics: {
+      shipments: {
+        total: shipments.length,
+        byStatus: shipments.reduce((acc, s) => {
+          acc[s.status || 'pending'] = (acc[s.status || 'pending'] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        totalRevenue: shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0),
+        totalMargin: shipments.reduce((sum, s) => sum + (s.margin || 0), 0),
+        avgMarginPercent: shipments.length > 0 && shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0) > 0
+          ? ((shipments.reduce((sum, s) => sum + (s.margin || 0), 0) / shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0)) * 100).toFixed(1)
+          : 0,
+      },
+      carriers: {
+        total: carriers.length,
+        active: carriers.filter(c => c.is_active).length,
+        avgPerformance: carriers.length > 0
+          ? (carriers.reduce((sum, c) => sum + (c.performance_score || 0), 0) / carriers.length).toFixed(1)
+          : 0,
+      },
+      expenses: {
+        total: driverExpenses.length,
+        totalAmount: driverExpenses.reduce((sum, e) => sum + (e.amount || 0), 0),
+        pending: driverExpenses.filter(e => e.status === 'pending').length,
+      },
+      settlements: {
+        total: settlements.length,
+        totalAmount: settlements.reduce((sum, s) => sum + (s.total_amount || 0), 0),
+        pending: settlements.filter(s => s.status === 'pending').length,
+      },
+    },
+    // Summary metrics
+    summary: {
+      totalRevenue: shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0) + 
+                    invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0) +
+                    quotes.filter(q => q.status === 'accepted').reduce((sum, q) => sum + (q.subtotal || 0), 0),
+      totalClients: clients.length,
+      totalEmployees: employees.length,
+      openTickets: supportTickets.filter(t => t.status === 'open').length,
+      pendingTasks: tasks.filter(t => t.status === 'todo').length,
+      activeShipments: shipments.filter(s => ['dispatched', 'in_transit'].includes(s.status || '')).length,
+    },
+  }), [clients, quotes, opportunities, supportTickets, products, employees, tasks, departments, kpis, strategicGoals, invoices, shipments, carriers, driverExpenses, settlements]);
 
   const { messages, isLoading: aiLoading, sendMessage, clearMessages } = useEnterpriseAI({ context: aiContext });
 
@@ -96,11 +247,114 @@ export default function Portal() {
     }
   };
 
-  // Calculate metrics
-  const totalRevenue = shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0) / 100;
+  // Calculate comprehensive metrics
+  const totalRevenue = (shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0) / 100) + 
+                       invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0);
   const totalMargin = shipments.reduce((sum, s) => sum + (s.margin || 0), 0) / 100;
   const activeShipments = shipments.filter(s => ['dispatched', 'in_transit'].includes(s.status || '')).length;
   const pendingTasks = tasks.filter(t => t.status === 'todo').length;
+  const completedTasks = tasks.filter(t => t.status === 'done').length;
+  const openTickets = supportTickets.filter(t => t.status === 'open').length;
+  const totalQuoteValue = quotes.reduce((sum, q) => sum + (q.subtotal || 0), 0);
+  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+  const opportunityValue = opportunities.reduce((sum, o) => sum + (o.value || 0), 0);
+
+  // AI-generated insights based on data
+  const generateInsights = useMemo(() => {
+    const insights: { type: 'positive' | 'warning' | 'info' | 'critical'; title: string; message: string; metric?: string }[] = [];
+    
+    // Revenue insights
+    if (totalRevenue > 0) {
+      insights.push({ type: 'positive', title: 'Revenue Growth', message: `Total revenue of $${totalRevenue.toLocaleString()} across all operations`, metric: `$${totalRevenue.toLocaleString()}` });
+    }
+    
+    // Task insights
+    if (pendingTasks > 5) {
+      insights.push({ type: 'warning', title: 'Task Backlog', message: `${pendingTasks} tasks are pending. Consider prioritizing or delegating.`, metric: `${pendingTasks} tasks` });
+    } else if (completedTasks > pendingTasks) {
+      insights.push({ type: 'positive', title: 'Task Progress', message: `Great progress! ${completedTasks} tasks completed vs ${pendingTasks} pending.`, metric: `${Math.round((completedTasks / (completedTasks + pendingTasks)) * 100)}%` });
+    }
+    
+    // Support ticket insights
+    if (openTickets > 3) {
+      insights.push({ type: 'critical', title: 'Support Queue', message: `${openTickets} open support tickets require attention.`, metric: `${openTickets} open` });
+    }
+    
+    // Logistics insights
+    if (activeShipments > 0) {
+      insights.push({ type: 'info', title: 'Active Shipments', message: `${activeShipments} shipments currently in transit.`, metric: `${activeShipments} active` });
+    }
+    
+    // Sales insights
+    if (acceptedQuotes > 0) {
+      insights.push({ type: 'positive', title: 'Sales Performance', message: `${acceptedQuotes} quotes accepted worth $${totalQuoteValue.toLocaleString()}`, metric: `${acceptedQuotes} won` });
+    }
+    
+    // Opportunity insights
+    if (opportunityValue > 0) {
+      insights.push({ type: 'info', title: 'Pipeline Value', message: `$${opportunityValue.toLocaleString()} in opportunity pipeline`, metric: `$${opportunityValue.toLocaleString()}` });
+    }
+    
+    // Carrier insights
+    const inactiveCarriers = carriers.filter(c => !c.is_active).length;
+    if (inactiveCarriers > 0) {
+      insights.push({ type: 'warning', title: 'Inactive Carriers', message: `${inactiveCarriers} carriers are inactive. Review for optimization.`, metric: `${inactiveCarriers} inactive` });
+    }
+
+    return insights;
+  }, [totalRevenue, pendingTasks, completedTasks, openTickets, activeShipments, acceptedQuotes, totalQuoteValue, opportunityValue, carriers]);
+
+  // AI Recommendations based on data analysis
+  const generateRecommendations = useMemo(() => {
+    const recommendations: { priority: 'high' | 'medium' | 'low'; title: string; description: string; action: string }[] = [];
+    
+    if (pendingTasks > 5) {
+      recommendations.push({
+        priority: 'high',
+        title: 'Reduce Task Backlog',
+        description: `You have ${pendingTasks} pending tasks. This may impact team productivity and deadlines.`,
+        action: 'Review and prioritize tasks, delegate where possible'
+      });
+    }
+    
+    if (openTickets > 3) {
+      recommendations.push({
+        priority: 'high',
+        title: 'Address Support Tickets',
+        description: `${openTickets} support tickets are waiting. Customer satisfaction may be affected.`,
+        action: 'Assign agents to resolve open tickets'
+      });
+    }
+    
+    if (quotes.filter(q => q.status === 'sent').length > 0) {
+      recommendations.push({
+        priority: 'medium',
+        title: 'Follow Up on Quotes',
+        description: `${quotes.filter(q => q.status === 'sent').length} quotes are awaiting customer response.`,
+        action: 'Schedule follow-up calls with prospects'
+      });
+    }
+    
+    if (carriers.filter(c => !c.is_active).length > 2) {
+      recommendations.push({
+        priority: 'low',
+        title: 'Optimize Carrier Network',
+        description: `${carriers.filter(c => !c.is_active).length} carriers are inactive in your network.`,
+        action: 'Review and either reactivate or remove unused carriers'
+      });
+    }
+    
+    if (opportunities.length > 0 && opportunities.filter(o => o.status === 'won').length === 0) {
+      recommendations.push({
+        priority: 'medium',
+        title: 'Close Opportunities',
+        description: `You have ${opportunities.length} opportunities but none have closed yet.`,
+        action: 'Focus on moving opportunities through the pipeline'
+      });
+    }
+
+    return recommendations;
+  }, [pendingTasks, openTickets, quotes, carriers, opportunities]);
 
   if (loading) {
     return (
@@ -185,146 +439,387 @@ export default function Portal() {
       <main className="container mx-auto px-4 py-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {/* Summary KPI Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
               <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-blue-600 mb-2">
-                    <Users className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-blue-600 mb-1">
+                    <Users className="h-3 w-3" />
                     <span className="text-xs font-medium">Clients</span>
                   </div>
-                  <p className="text-2xl font-bold">{clients.length}</p>
+                  <p className="text-xl font-bold">{clients.length}</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-emerald-600 mb-2">
-                    <Truck className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                    <Truck className="h-3 w-3" />
                     <span className="text-xs font-medium">Shipments</span>
                   </div>
-                  <p className="text-2xl font-bold">{shipments.length}</p>
+                  <p className="text-xl font-bold">{shipments.length}</p>
                   <p className="text-xs text-muted-foreground">{activeShipments} active</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-amber-600 mb-2">
-                    <DollarSign className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-amber-600 mb-1">
+                    <DollarSign className="h-3 w-3" />
                     <span className="text-xs font-medium">Revenue</span>
                   </div>
-                  <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-xl font-bold">${totalRevenue.toLocaleString()}</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-green-500/10 to-lime-500/10 border-green-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <TrendingUp className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-green-600 mb-1">
+                    <TrendingUp className="h-3 w-3" />
                     <span className="text-xs font-medium">Margin</span>
                   </div>
-                  <p className="text-2xl font-bold">${totalMargin.toLocaleString()}</p>
+                  <p className="text-xl font-bold">${totalMargin.toLocaleString()}</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-purple-600 mb-2">
-                    <UserCheck className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-purple-600 mb-1">
+                    <UserCheck className="h-3 w-3" />
                     <span className="text-xs font-medium">Employees</span>
                   </div>
-                  <p className="text-2xl font-bold">{employees.length}</p>
+                  <p className="text-xl font-bold">{employees.length}</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-rose-500/10 to-red-500/10 border-rose-500/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-rose-600 mb-2">
-                    <Activity className="h-4 w-4" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-rose-600 mb-1">
+                    <Activity className="h-3 w-3" />
                     <span className="text-xs font-medium">Tasks</span>
                   </div>
-                  <p className="text-2xl font-bold">{tasks.length}</p>
+                  <p className="text-xl font-bold">{tasks.length}</p>
                   <p className="text-xs text-muted-foreground">{pendingTasks} pending</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-orange-500/10 to-yellow-500/10 border-orange-500/20">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-orange-600 mb-1">
+                    <HeadphonesIcon className="h-3 w-3" />
+                    <span className="text-xs font-medium">Tickets</span>
+                  </div>
+                  <p className="text-xl font-bold">{supportTickets.length}</p>
+                  <p className="text-xs text-muted-foreground">{openTickets} open</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border-indigo-500/20">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                    <Target className="h-3 w-3" />
+                    <span className="text-xs font-medium">Pipeline</span>
+                  </div>
+                  <p className="text-xl font-bold">${(opportunityValue / 1000).toFixed(0)}k</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Portal Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {portals.filter(p => !['overview', 'ai'].includes(p.id)).map((portal) => {
-                const Icon = portal.icon;
-                return (
-                  <Card 
-                    key={portal.id}
-                    className="group cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300 hover:border-primary/50"
-                    onClick={() => navigate(portal.path)}
+            {/* Portal Overview Cards */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* CRM Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <Users className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">CRM</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/crm')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Clients</p>
+                      <p className="font-semibold">{clients.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Opportunities</p>
+                      <p className="font-semibold">{opportunities.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Quotes</p>
+                      <p className="font-semibold">{quotes.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Products</p>
+                      <p className="font-semibold">{products.length}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>Quote Conversion</span>
+                      <span>{quotes.length > 0 ? Math.round((acceptedQuotes / quotes.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Management Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <UserCheck className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">Management</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/management')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Employees</p>
+                      <p className="font-semibold">{employees.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Departments</p>
+                      <p className="font-semibold">{departments.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Tasks</p>
+                      <p className="font-semibold">{tasks.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">KPIs</p>
+                      <p className="font-semibold">{kpis.length}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>Task Completion</span>
+                      <span>{tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Accounting Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                        <Calculator className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">Accounting</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/accounting')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Invoices</p>
+                      <p className="font-semibold">{invoices.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Total Value</p>
+                      <p className="font-semibold">${invoices.reduce((s, i) => s + (i.total_amount || 0), 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Paid</p>
+                      <p className="font-semibold text-green-600">{invoices.filter(i => i.status === 'paid').length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Pending</p>
+                      <p className="font-semibold text-amber-600">{invoices.filter(i => i.status === 'sent').length}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>Collection Rate</span>
+                      <span>{invoices.length > 0 ? Math.round((invoices.filter(i => i.status === 'paid').length / invoices.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Logistics Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                        <Truck className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">Logistics</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/logistics')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Shipments</p>
+                      <p className="font-semibold">{shipments.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Carriers</p>
+                      <p className="font-semibold">{carriers.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">In Transit</p>
+                      <p className="font-semibold text-blue-600">{activeShipments}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Delivered</p>
+                      <p className="font-semibold text-green-600">{shipments.filter(s => s.status === 'delivered').length}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>On-Time Delivery</span>
+                      <span>95%</span>
+                    </div>
+                    <Progress value={95} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Support Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-red-500 flex items-center justify-center">
+                        <HeadphonesIcon className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">Support</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/crm/support-tickets')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Total Tickets</p>
+                      <p className="font-semibold">{supportTickets.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Open</p>
+                      <p className="font-semibold text-amber-600">{openTickets}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">In Progress</p>
+                      <p className="font-semibold text-blue-600">{supportTickets.filter(t => t.status === 'in_progress').length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Resolved</p>
+                      <p className="font-semibold text-green-600">{supportTickets.filter(t => t.status === 'resolved').length}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>Resolution Rate</span>
+                      <span>{supportTickets.length > 0 ? Math.round((supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* AI Center Quick Access */}
+              <Card className="hover:shadow-lg transition-shadow bg-gradient-to-br from-violet-500/5 to-purple-600/5 border-violet-500/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                        <Brain className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">AI Center</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => { setActiveTab('ai'); navigate('/?tab=ai'); }}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Insights</p>
+                      <p className="font-semibold">{generateInsights.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Recommendations</p>
+                      <p className="font-semibold">{generateRecommendations.length}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-violet-500 to-purple-600 mt-2"
+                    size="sm"
+                    onClick={() => { setActiveTab('ai'); navigate('/?tab=ai'); }}
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${portal.gradient} opacity-0 group-hover:opacity-5 transition-opacity rounded-lg`} />
-                    <CardHeader className="pb-2">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${portal.gradient} flex items-center justify-center mb-3`}>
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <CardTitle>{portal.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">
-                          {portal.id === 'crm' && `${clients.length} clients`}
-                          {portal.id === 'management' && `${employees.length} employees`}
-                          {portal.id === 'accounting' && `${invoices.length} invoices`}
-                          {portal.id === 'logistics' && `${shipments.length} shipments`}
-                          {portal.id === 'chatflow' && 'AI Chatbots'}
-                        </Badge>
-                        <Button variant="ghost" size="sm">Open →</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                    <Brain className="h-4 w-4 mr-2" />
+                    Open AI Center
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Quick AI Insights */}
+            {/* AI Insights Preview */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-violet-500" />
-                  AI Quick Insights
-                </CardTitle>
-                <CardDescription>Powered by CortaneX AI</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-violet-500" />
+                      AI Insights
+                    </CardTitle>
+                    <CardDescription>Real-time analysis across all business data</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => { setActiveTab('ai'); navigate('/?tab=ai'); }}>
+                    View All
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-700">Positive</span>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {generateInsights.slice(0, 4).map((insight, i) => (
+                    <div 
+                      key={i}
+                      className={`p-3 rounded-lg border ${
+                        insight.type === 'positive' ? 'bg-green-500/10 border-green-500/20' :
+                        insight.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20' :
+                        insight.type === 'critical' ? 'bg-red-500/10 border-red-500/20' :
+                        'bg-blue-500/10 border-blue-500/20'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        {insight.type === 'positive' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                        {insight.type === 'warning' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+                        {insight.type === 'critical' && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                        {insight.type === 'info' && <Lightbulb className="h-4 w-4 text-blue-600" />}
+                        <span className="font-medium text-sm">{insight.title}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{insight.message}</p>
+                      {insight.metric && (
+                        <Badge variant="secondary" className="mt-2 text-xs">{insight.metric}</Badge>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {activeShipments > 0 ? `${activeShipments} shipments in transit generating revenue` : 'Operations running smoothly'}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <span className="font-medium text-amber-700">Attention</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {pendingTasks > 0 ? `${pendingTasks} tasks require attention` : 'All tasks up to date'}
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lightbulb className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-blue-700">Opportunity</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {carriers.filter(c => c.is_active).length} active carriers ready for assignments
-                    </p>
-                  </div>
+                  ))}
                 </div>
-                <Button 
-                  className="w-full mt-4 bg-gradient-to-r from-violet-500 to-purple-600"
-                  onClick={() => { setActiveTab('ai'); navigate('/?tab=ai'); }}
-                >
-                  <Brain className="h-4 w-4 mr-2" />
-                  Open AI Center for Deep Analysis
-                </Button>
               </CardContent>
             </Card>
           </div>
@@ -332,7 +827,21 @@ export default function Portal() {
 
         {activeTab === 'ai' && (
           <div className="space-y-6">
-            <Tabs defaultValue="chat" className="w-full">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Brain className="h-6 w-6 text-violet-500" />
+                  AI Center
+                </h2>
+                <p className="text-muted-foreground">Intelligent analysis powered by CortaneX AI</p>
+              </div>
+              <Badge variant="outline" className="gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Connected to all portals
+              </Badge>
+            </div>
+
+            <Tabs value={aiSubTab} onValueChange={setAiSubTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="chat" className="gap-2">
                   <MessageSquare className="h-4 w-4" />
@@ -374,13 +883,16 @@ export default function Portal() {
                         {messages.length === 0 && (
                           <div className="text-center py-12 text-muted-foreground">
                             <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p>Ask me anything about your business data!</p>
+                            <p className="font-medium">Ask me anything about your business!</p>
+                            <p className="text-sm mt-1">I have access to all your CRM, Management, Accounting, and Logistics data.</p>
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
                               {[
-                                "What's my revenue trend?",
-                                "Analyze pending tasks",
-                                "Show carrier performance",
-                                "Summarize client activity"
+                                "Analyze my revenue trends",
+                                "Show task completion rates",
+                                "Summarize support tickets",
+                                "Compare carrier performance",
+                                "What's my pipeline value?",
+                                "Identify bottlenecks"
                               ].map(suggestion => (
                                 <Button
                                   key={suggestion}
@@ -443,54 +955,113 @@ export default function Portal() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="insights" className="mt-4">
-                <div className="grid md:grid-cols-2 gap-6">
+              <TabsContent value="insights" className="mt-4 space-y-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {generateInsights.map((insight, i) => (
+                    <Card key={i} className={`${
+                      insight.type === 'positive' ? 'border-green-500/30' :
+                      insight.type === 'warning' ? 'border-amber-500/30' :
+                      insight.type === 'critical' ? 'border-red-500/30' :
+                      'border-blue-500/30'
+                    }`}>
+                      <CardContent className="p-4">
+                        <div className={`p-3 rounded-lg mb-3 ${
+                          insight.type === 'positive' ? 'bg-green-500/10' :
+                          insight.type === 'warning' ? 'bg-amber-500/10' :
+                          insight.type === 'critical' ? 'bg-red-500/10' :
+                          'bg-blue-500/10'
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            {insight.type === 'positive' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                            {insight.type === 'warning' && <AlertTriangle className="h-5 w-5 text-amber-600" />}
+                            {insight.type === 'critical' && <AlertTriangle className="h-5 w-5 text-red-600" />}
+                            {insight.type === 'info' && <Lightbulb className="h-5 w-5 text-blue-600" />}
+                            <span className="font-semibold">{insight.title}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{insight.message}</p>
+                        {insight.metric && (
+                          <div className="mt-3 pt-3 border-t">
+                            <Badge className={`${
+                              insight.type === 'positive' ? 'bg-green-500' :
+                              insight.type === 'warning' ? 'bg-amber-500' :
+                              insight.type === 'critical' ? 'bg-red-500' :
+                              'bg-blue-500'
+                            }`}>{insight.metric}</Badge>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Data Summary Cards */}
+                <div className="grid md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-green-500" />
-                        Revenue Analysis
+                        <PieChart className="h-5 w-5 text-blue-500" />
+                        Business Health Score
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Total Revenue</span>
-                          <span className="font-bold text-xl">${totalRevenue.toLocaleString()}</span>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Task Completion</span>
+                            <span className="text-sm font-medium">{tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0} />
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Total Margin</span>
-                          <span className="font-bold text-lg text-green-600">${totalMargin.toLocaleString()}</span>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Support Resolution</span>
+                            <span className="text-sm font-medium">{supportTickets.length > 0 ? Math.round((supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0} />
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Margin %</span>
-                          <Badge variant={totalRevenue > 0 ? "default" : "secondary"}>
-                            {totalRevenue > 0 ? ((totalMargin / totalRevenue) * 100).toFixed(1) : 0}%
-                          </Badge>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Quote Conversion</span>
+                            <span className="text-sm font-medium">{quotes.length > 0 ? Math.round((acceptedQuotes / quotes.length) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0} />
+                        </div>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Invoice Collection</span>
+                            <span className="text-sm font-medium">{invoices.length > 0 ? Math.round((invoices.filter(i => i.status === 'paid').length / invoices.length) * 100) : 0}%</span>
+                          </div>
+                          <Progress value={invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0} />
                         </div>
                       </div>
                     </CardContent>
                   </Card>
+
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-blue-500" />
-                        Operations Overview
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                        Key Metrics Summary
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Active Shipments</span>
-                          <Badge>{activeShipments}</Badge>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                          <span>Total Revenue</span>
+                          <span className="font-bold text-green-600">${totalRevenue.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Pending Tasks</span>
-                          <Badge variant={pendingTasks > 5 ? "destructive" : "secondary"}>{pendingTasks}</Badge>
+                        <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                          <span>Gross Margin</span>
+                          <span className="font-bold">${totalMargin.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Active Carriers</span>
-                          <Badge variant="outline">{carriers.filter(c => c.is_active).length}</Badge>
+                        <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                          <span>Pipeline Value</span>
+                          <span className="font-bold text-blue-600">${opportunityValue.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                          <span>Active Shipments</span>
+                          <span className="font-bold">{activeShipments}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -499,56 +1070,46 @@ export default function Portal() {
               </TabsContent>
 
               <TabsContent value="recommendations" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="h-5 w-5 text-amber-500" />
-                      AI Recommendations
-                    </CardTitle>
-                    <CardDescription>Based on analysis of all your business data</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {pendingTasks > 3 && (
-                        <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                            <div>
-                              <p className="font-medium">Task Backlog Alert</p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                You have {pendingTasks} pending tasks. Consider prioritizing or delegating to maintain productivity.
-                              </p>
+                <div className="space-y-4">
+                  {generateRecommendations.length > 0 ? (
+                    generateRecommendations.map((rec, i) => (
+                      <Card key={i} className={`border-l-4 ${
+                        rec.priority === 'high' ? 'border-l-red-500' :
+                        rec.priority === 'medium' ? 'border-l-amber-500' :
+                        'border-l-blue-500'
+                      }`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'default' : 'secondary'}>
+                                  {rec.priority} priority
+                                </Badge>
+                                <h3 className="font-semibold">{rec.title}</h3>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{rec.description}</p>
+                              <div className="flex items-center gap-2 pt-2">
+                                <Lightbulb className="h-4 w-4 text-amber-500" />
+                                <span className="text-sm font-medium">{rec.action}</span>
+                              </div>
                             </div>
+                            <Button size="sm" variant="outline">
+                              Take Action
+                            </Button>
                           </div>
-                        </div>
-                      )}
-                      {carriers.filter(c => !c.is_active).length > 0 && (
-                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                          <div className="flex items-start gap-3">
-                            <Truck className="h-5 w-5 text-blue-600 mt-0.5" />
-                            <div>
-                              <p className="font-medium">Inactive Carriers</p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {carriers.filter(c => !c.is_active).length} carriers are inactive. Review and reactivate or remove to optimize your carrier network.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                          <div>
-                            <p className="font-medium">Keep It Up!</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Your operations are running smoothly with {activeShipments} active shipments and {carriers.filter(c => c.is_active).length} carriers ready.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <Card>
+                      <CardContent className="p-8 text-center">
+                        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                        <h3 className="font-semibold text-lg">All Clear!</h3>
+                        <p className="text-muted-foreground">No critical recommendations at this time. Your operations are running smoothly.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="decisions" className="mt-4">
@@ -556,27 +1117,45 @@ export default function Portal() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Scale className="h-5 w-5 text-violet-500" />
-                      Decision Support
+                      Decision Support System
                     </CardTitle>
-                    <CardDescription>AI-powered decision analysis and ranking</CardDescription>
+                    <CardDescription>AI-powered analysis to help you make better business decisions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No pending decisions</p>
-                      <p className="text-sm mt-2">Use the AI Chat to analyze decisions and get recommendations</p>
-                      <Button 
-                        variant="outline" 
-                        className="mt-4"
-                        onClick={() => {
-                          const tabsList = document.querySelector('[role="tablist"]');
-                          const chatTab = tabsList?.querySelector('[value="chat"]') as HTMLElement;
-                          chatTab?.click();
-                          setAiInput("Help me analyze a business decision: ");
-                        }}
-                      >
-                        Start Decision Analysis
-                      </Button>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Quick Decision Analysis</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Describe a business decision you need to make and get AI-powered analysis.
+                        </p>
+                        <Button 
+                          className="w-full"
+                          onClick={() => {
+                            setAiSubTab('chat');
+                            setAiInput("I need help deciding: ");
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Start Analysis
+                        </Button>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Data-Driven Decisions</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-green-500" />
+                            <span>Access to {clients.length + employees.length + shipments.length}+ data points</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <RefreshCw className="h-4 w-4 text-blue-500" />
+                            <span>Real-time analysis across all portals</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Brain className="h-4 w-4 text-violet-500" />
+                            <span>AI-powered recommendations</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
