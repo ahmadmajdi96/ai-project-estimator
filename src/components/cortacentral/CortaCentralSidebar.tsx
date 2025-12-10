@@ -16,6 +16,7 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -102,9 +103,7 @@ export function CortaCentralSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="p-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Zap className="h-4 w-4 text-white" />
-          </div>
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-8 h-8 object-contain" />
           {!collapsed && (
             <div>
               <span className="font-display font-bold text-lg">CortaCentral</span>

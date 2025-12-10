@@ -3,6 +3,7 @@ import { Calculator, Settings, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import coetanexLogo from '@/assets/coetanex-logo.png';
 
 export function Header() {
   const location = useLocation();
@@ -18,11 +19,9 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-soft group-hover:shadow-glow transition-shadow duration-300">
-            <Calculator className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="h-10 w-10 object-contain" />
           <span className="font-display text-xl font-bold text-foreground">
-            Cost<span className="gradient-text">Calc</span>
+            Coetanex<span className="gradient-text">AI</span>
           </span>
         </Link>
 

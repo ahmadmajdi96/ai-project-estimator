@@ -13,6 +13,7 @@ import {
   GraduationCap,
   TestTube
 } from "lucide-react";
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import { NavLink, useLocation, useParams } from "react-router-dom";
 import {
   Sidebar,
@@ -60,9 +61,7 @@ export function CustomerPortalSidebar() {
     <Sidebar className="border-r border-border">
       <SidebarHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-            <Bot className="h-6 w-6 text-white" />
-          </div>
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="h-10 w-10 object-contain" />
           <div>
             <h2 className="font-bold text-foreground">Customer Portal</h2>
             <p className="text-xs text-muted-foreground">Manage your chatbots</p>
