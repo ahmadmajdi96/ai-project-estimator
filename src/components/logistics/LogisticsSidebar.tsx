@@ -31,6 +31,7 @@ import {
   LogOut,
   Calculator,
 } from "lucide-react";
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import { Button } from "@/components/ui/button";
 import { useAccountingAuth } from "@/hooks/useAccountingAuth";
 
@@ -104,11 +105,9 @@ export function LogisticsSidebar() {
     <Sidebar className="border-r border-border">
       <SidebarHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <Truck className="w-6 h-6 text-primary-foreground" />
-          </div>
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-10 h-10 object-contain" />
           <div>
-            <h2 className="font-semibold text-foreground">LogiFinance</h2>
+            <h2 className="font-semibold text-foreground">Logistics</h2>
             <p className="text-xs text-muted-foreground">{company?.name || 'Logistics Portal'}</p>
           </div>
         </div>

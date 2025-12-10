@@ -31,6 +31,7 @@ import {
   Banknote,
   Home
 } from 'lucide-react';
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -143,10 +144,8 @@ export function CRMSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="p-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">C</span>
-          </div>
-          {!collapsed && <span className="font-display font-bold text-lg">CEO Dashboard</span>}
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-8 h-8 object-contain" />
+          {!collapsed && <span className="font-display font-bold text-lg">CRM</span>}
         </div>
       </SidebarHeader>
       

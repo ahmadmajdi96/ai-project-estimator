@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Building2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -102,9 +103,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Building2 className="h-8 w-8 text-primary-foreground" />
-            </div>
+            <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-20 h-20 object-contain" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground">Coetanex AI</h1>
           <p className="text-muted-foreground mt-2">Enterprise AI Platform</p>

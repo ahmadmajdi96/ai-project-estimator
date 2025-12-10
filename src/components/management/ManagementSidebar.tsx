@@ -25,6 +25,7 @@ import {
   Bell,
   Workflow
 } from 'lucide-react';
+import coetanexLogo from '@/assets/coetanex-logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -120,9 +121,7 @@ export function ManagementSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="p-4 border-b border-border/50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
-          </div>
+          <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-8 h-8 object-contain" />
           {!collapsed && <span className="font-display font-bold text-lg">Management</span>}
         </div>
       </SidebarHeader>
