@@ -9,6 +9,7 @@ import {
   Calculator, Truck, Workflow, Briefcase, GraduationCap, Heart,
   Clock, FileText, Linkedin, Twitter
 } from 'lucide-react';
+import cortanexLogo from '@/assets/cortanex-logo.png';
 
 const companyInfo = {
   name: 'Coetanex AI',
@@ -89,9 +90,11 @@ export default function CompanyProfile() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Brain className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img 
+                src={cortanexLogo} 
+                alt="Cortanex AI Logo" 
+                className="w-14 h-14 rounded-xl object-contain"
+              />
               <div>
                 <h1 className="font-display text-2xl font-bold">{companyInfo.name}</h1>
                 <p className="text-sm text-muted-foreground">{companyInfo.tagline}</p>
