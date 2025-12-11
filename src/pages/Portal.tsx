@@ -12,7 +12,7 @@ import {
   Brain, TrendingUp, MessageSquare, Lightbulb, Scale, BarChart3,
   DollarSign, Package, UserCheck, Activity, AlertTriangle, CheckCircle,
   Target, FileText, Briefcase, HeadphonesIcon, Clock, Star, ArrowUpRight,
-  ArrowDownRight, PieChart, Zap, Shield, RefreshCw
+  ArrowDownRight, PieChart, Zap, Shield, RefreshCw, Building2
 } from 'lucide-react';
 import coetanexLogo from '@/assets/coetanex-logo.png';
 import { useShipments, useCarriers, useDriverExpenses, useCarrierSettlements } from '@/hooks/useLogistics';
@@ -28,6 +28,7 @@ import { useKPIDefinitions } from '@/hooks/useKPIs';
 import { useStrategicGoals } from '@/hooks/useStrategicGoals';
 import { useProducts } from '@/hooks/useProducts';
 import { useEnterpriseAI } from '@/hooks/useEnterpriseAI';
+import { useHRDashboardStats } from '@/hooks/useHR';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 
@@ -35,9 +36,11 @@ const portals = [
   { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/dashboard', gradient: 'from-slate-500 to-zinc-600' },
   { id: 'crm', name: 'CRM', icon: Users, path: '/crm', gradient: 'from-blue-500 to-cyan-500' },
   { id: 'management', name: 'Management', icon: UserCheck, path: '/management', gradient: 'from-purple-500 to-pink-500' },
+  { id: 'hr', name: 'HR', icon: Building2, path: '/hr', gradient: 'from-teal-500 to-green-500' },
   { id: 'accounting', name: 'Accounting', icon: Calculator, path: '/accounting', gradient: 'from-amber-500 to-orange-500' },
   { id: 'logistics', name: 'Logistics', icon: Truck, path: '/logistics', gradient: 'from-emerald-500 to-teal-500' },
   { id: 'chatflow', name: 'ChatFlow', icon: Bot, path: '/chatflow', gradient: 'from-rose-500 to-red-500' },
+  { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/dashboard?tab=analytics', gradient: 'from-indigo-500 to-blue-600' },
   { id: 'ai', name: 'AI Center', icon: Brain, path: '/dashboard?tab=ai', gradient: 'from-violet-500 to-purple-600' },
 ];
 
@@ -71,6 +74,9 @@ export default function Portal() {
   const { data: carriers = [] } = useCarriers();
   const { data: driverExpenses = [] } = useDriverExpenses();
   const { data: settlements = [] } = useCarrierSettlements();
+
+  // HR Data
+  const { data: hrStats } = useHRDashboardStats();
 
   // Comprehensive AI Context with ALL data
   const aiContext = useMemo(() => ({
@@ -196,18 +202,28 @@ export default function Portal() {
         pending: settlements.filter(s => s.status === 'pending').length,
       },
     },
+    // HR Portal Data
+    hr: {
+      totalEmployees: hrStats?.totalEmployees || 0,
+      activeEmployees: hrStats?.activeEmployees || 0,
+      newHires: hrStats?.newHires || 0,
+      attendance: hrStats?.attendance || { present: 0, absent: 0, late: 0 },
+      pendingLeaves: hrStats?.pendingLeaves || 0,
+      openJobs: hrStats?.openJobs || 0,
+      candidatesByStage: hrStats?.candidatesByStage || {},
+    },
     // Summary metrics
     summary: {
       totalRevenue: shipments.reduce((sum, s) => sum + (s.total_revenue || 0), 0) + 
                     invoices.reduce((sum, i) => sum + (i.total_amount || 0), 0) +
                     quotes.filter(q => q.status === 'accepted').reduce((sum, q) => sum + (q.subtotal || 0), 0),
       totalClients: clients.length,
-      totalEmployees: employees.length,
+      totalEmployees: hrStats?.totalEmployees || employees.length,
       openTickets: supportTickets.filter(t => t.status === 'open').length,
       pendingTasks: tasks.filter(t => t.status === 'todo').length,
       activeShipments: shipments.filter(s => ['dispatched', 'in_transit'].includes(s.status || '')).length,
     },
-  }), [clients, quotes, opportunities, supportTickets, products, employees, tasks, departments, kpis, strategicGoals, invoices, shipments, carriers, driverExpenses, settlements]);
+  }), [clients, quotes, opportunities, supportTickets, products, employees, tasks, departments, kpis, strategicGoals, invoices, shipments, carriers, driverExpenses, settlements, hrStats]);
 
   const { messages, isLoading: aiLoading, sendMessage, clearMessages } = useEnterpriseAI({ context: aiContext });
 
@@ -236,6 +252,9 @@ export default function Portal() {
     } else if (portal.id === 'ai') {
       setActiveTab('ai');
       navigate('/dashboard?tab=ai');
+    } else if (portal.id === 'analytics') {
+      setActiveTab('analytics');
+      navigate('/dashboard?tab=analytics');
     } else {
       navigate(portal.path);
     }
@@ -483,7 +502,8 @@ export default function Portal() {
                     <UserCheck className="h-3 w-3" />
                     <span className="text-xs font-medium">Employees</span>
                   </div>
-                  <p className="text-xl font-bold">{employees.length}</p>
+                  <p className="text-xl font-bold">{hrStats?.totalEmployees || employees.length}</p>
+                  <p className="text-xs text-muted-foreground">{hrStats?.newHires || 0} new</p>
                 </CardContent>
               </Card>
               <Card className="bg-gradient-to-br from-rose-500/10 to-red-500/10 border-rose-500/20">
@@ -735,6 +755,50 @@ export default function Portal() {
                       <span>{supportTickets.length > 0 ? Math.round((supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100) : 0}%</span>
                     </div>
                     <Progress value={supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0} className="h-1 mt-1" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* HR Overview */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-green-500 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-white" />
+                      </div>
+                      <CardTitle className="text-base">HR</CardTitle>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/hr')}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Employees</p>
+                      <p className="font-semibold">{hrStats?.totalEmployees || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">New Hires</p>
+                      <p className="font-semibold text-green-600">{hrStats?.newHires || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Present Today</p>
+                      <p className="font-semibold text-blue-600">{hrStats?.attendance?.present || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Open Jobs</p>
+                      <p className="font-semibold text-amber-600">{hrStats?.openJobs || 0}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex justify-between text-xs">
+                      <span>Attendance Rate</span>
+                      <span>{hrStats?.totalEmployees ? Math.round(((hrStats?.attendance?.present || 0) / hrStats.totalEmployees) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={hrStats?.totalEmployees ? ((hrStats?.attendance?.present || 0) / hrStats.totalEmployees) * 100 : 0} className="h-1 mt-1" />
                   </div>
                 </CardContent>
               </Card>
@@ -1160,6 +1224,339 @@ export default function Portal() {
                 </Card>
               </TabsContent>
             </Tabs>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6 text-indigo-500" />
+                  Enterprise Analytics
+                </h2>
+                <p className="text-muted-foreground">Comprehensive analytics across all portals</p>
+              </div>
+              <Badge variant="outline" className="gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Live Data
+              </Badge>
+            </div>
+
+            {/* Key Performance Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-blue-600 mb-2">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-xs font-medium">Total Revenue</span>
+                  </div>
+                  <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">All sources</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-green-600 mb-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-xs font-medium">Gross Margin</span>
+                  </div>
+                  <p className="text-2xl font-bold">${totalMargin.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Logistics margin</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-purple-600 mb-2">
+                    <Target className="h-4 w-4" />
+                    <span className="text-xs font-medium">Pipeline</span>
+                  </div>
+                  <p className="text-2xl font-bold">${(opportunityValue / 1000).toFixed(0)}k</p>
+                  <p className="text-xs text-muted-foreground mt-1">{opportunities.length} opportunities</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-amber-600 mb-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="text-xs font-medium">Quotes</span>
+                  </div>
+                  <p className="text-2xl font-bold">${totalQuoteValue.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{quotes.length} total</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-teal-500/10 to-green-500/10 border-teal-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-teal-600 mb-2">
+                    <Users className="h-4 w-4" />
+                    <span className="text-xs font-medium">Workforce</span>
+                  </div>
+                  <p className="text-2xl font-bold">{hrStats?.totalEmployees || employees.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{hrStats?.activeEmployees || 0} active</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-rose-500/10 to-red-500/10 border-rose-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-rose-600 mb-2">
+                    <HeadphonesIcon className="h-4 w-4" />
+                    <span className="text-xs font-medium">Support</span>
+                  </div>
+                  <p className="text-2xl font-bold">{supportTickets.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{openTickets} open</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Portal Performance Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* CRM Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                      <Users className="h-3 w-3 text-white" />
+                    </div>
+                    CRM Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Quote Conversion</span>
+                      <span className="font-medium">{quotes.length > 0 ? Math.round((acceptedQuotes / quotes.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Clients</p>
+                      <p className="font-semibold">{clients.length}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Products</p>
+                      <p className="font-semibold">{products.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Management Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                      <UserCheck className="h-3 w-3 text-white" />
+                    </div>
+                    Management Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Task Completion</span>
+                      <span className="font-medium">{tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Departments</p>
+                      <p className="font-semibold">{departments.length}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">KPIs</p>
+                      <p className="font-semibold">{kpis.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* HR Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-teal-500 to-green-500 flex items-center justify-center">
+                      <Building2 className="h-3 w-3 text-white" />
+                    </div>
+                    HR Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Attendance Rate</span>
+                      <span className="font-medium">{hrStats?.totalEmployees ? Math.round(((hrStats?.attendance?.present || 0) / hrStats.totalEmployees) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={hrStats?.totalEmployees ? ((hrStats?.attendance?.present || 0) / hrStats.totalEmployees) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Pending Leaves</p>
+                      <p className="font-semibold">{hrStats?.pendingLeaves || 0}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Open Jobs</p>
+                      <p className="font-semibold">{hrStats?.openJobs || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Accounting Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                      <Calculator className="h-3 w-3 text-white" />
+                    </div>
+                    Accounting Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Collection Rate</span>
+                      <span className="font-medium">{invoices.length > 0 ? Math.round((invoices.filter(i => i.status === 'paid').length / invoices.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Total Invoices</p>
+                      <p className="font-semibold">${invoices.reduce((s, i) => s + (i.total_amount || 0), 0).toLocaleString()}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Paid</p>
+                      <p className="font-semibold text-green-600">{invoices.filter(i => i.status === 'paid').length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Logistics Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                      <Truck className="h-3 w-3 text-white" />
+                    </div>
+                    Logistics Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Delivery Rate</span>
+                      <span className="font-medium">{shipments.length > 0 ? Math.round((shipments.filter(s => s.status === 'delivered').length / shipments.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={shipments.length > 0 ? (shipments.filter(s => s.status === 'delivered').length / shipments.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Carriers</p>
+                      <p className="font-semibold">{carriers.length}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Active</p>
+                      <p className="font-semibold text-blue-600">{activeShipments}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Support Analytics */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-rose-500 to-red-500 flex items-center justify-center">
+                      <HeadphonesIcon className="h-3 w-3 text-white" />
+                    </div>
+                    Support Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Resolution Rate</span>
+                      <span className="font-medium">{supportTickets.length > 0 ? Math.round((supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Open</p>
+                      <p className="font-semibold text-amber-600">{openTickets}</p>
+                    </div>
+                    <div className="p-2 bg-muted/50 rounded">
+                      <p className="text-muted-foreground">Resolved</p>
+                      <p className="font-semibold text-green-600">{supportTickets.filter(t => t.status === 'resolved').length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Business Health Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5 text-indigo-500" />
+                  Business Health Overview
+                </CardTitle>
+                <CardDescription>Cross-portal performance metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Overall Efficiency</span>
+                      <span className="font-medium">
+                        {Math.round(
+                          (
+                            (tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0) +
+                            (supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0) +
+                            (quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0) +
+                            (invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0)
+                          ) / 4
+                        )}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={Math.round(
+                        (
+                          (tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0) +
+                          (supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 0) +
+                          (quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0) +
+                          (invoices.length > 0 ? (invoices.filter(i => i.status === 'paid').length / invoices.length) * 100 : 0)
+                        ) / 4
+                      )} 
+                      className="h-2" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Customer Satisfaction</span>
+                      <span className="font-medium">{supportTickets.length > 0 ? Math.round((supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100) : 100}%</span>
+                    </div>
+                    <Progress value={supportTickets.length > 0 ? (supportTickets.filter(t => t.status === 'resolved').length / supportTickets.length) * 100 : 100} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Sales Performance</span>
+                      <span className="font-medium">{quotes.length > 0 ? Math.round((acceptedQuotes / quotes.length) * 100) : 0}%</span>
+                    </div>
+                    <Progress value={quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Operational Health</span>
+                      <span className="font-medium">{shipments.length > 0 ? Math.round((shipments.filter(s => s.status === 'delivered').length / shipments.length) * 100) : 100}%</span>
+                    </div>
+                    <Progress value={shipments.length > 0 ? (shipments.filter(s => s.status === 'delivered').length / shipments.length) * 100 : 100} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>

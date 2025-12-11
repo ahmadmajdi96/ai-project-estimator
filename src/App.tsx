@@ -124,6 +124,23 @@ import TimeEntriesPage from "./pages/accounting/TimeEntriesPage";
 import AccountingSettingsPage from "./pages/accounting/AccountingSettingsPage";
 // Logistics
 import LogisticsDashboard from "./pages/logistics/LogisticsDashboard";
+// HR
+import HRDashboard from "./pages/hr/HRDashboard";
+import HREmployeesPage from "./pages/hr/HREmployeesPage";
+import HRAttendancePage from "./pages/hr/HRAttendancePage";
+import HRLeavePage from "./pages/hr/HRLeavePage";
+import HRJobsPage from "./pages/hr/HRJobsPage";
+import HRCandidatesPage from "./pages/hr/HRCandidatesPage";
+import HRPayrollPage from "./pages/hr/HRPayrollPage";
+import HRPerformancePage from "./pages/hr/HRPerformancePage";
+import HRTrainingPage from "./pages/hr/HRTrainingPage";
+import HRBenefitsPage from "./pages/hr/HRBenefitsPage";
+import HROrgChartPage from "./pages/hr/HROrgChartPage";
+import HROnboardingPage from "./pages/hr/HROnboardingPage";
+import HRAnalyticsPage from "./pages/hr/HRAnalyticsPage";
+import HRDocumentsPage from "./pages/hr/HRDocumentsPage";
+import HRSettingsPage from "./pages/hr/HRSettingsPage";
+import HRAIChatPage from "./pages/hr/HRAIChatPage";
 import ShipmentsPage from "./pages/logistics/ShipmentsPage";
 import CarriersPage from "./pages/logistics/CarriersPage";
 import EquipmentPage from "./pages/logistics/EquipmentPage";
@@ -274,6 +291,23 @@ const App = () => (
           <Route path="/logistics/analytics" element={<LogisticsAnalyticsPage />} />
           <Route path="/logistics/billing" element={<LogisticsBillingPage />} />
           <Route path="/logistics/settings" element={<LogisticsSettingsPage />} />
+          {/* HR Routes */}
+          <Route path="/hr" element={<HRDashboard />} />
+          <Route path="/hr/employees" element={<HREmployeesPage />} />
+          <Route path="/hr/attendance" element={<HRAttendancePage />} />
+          <Route path="/hr/leave" element={<HRLeavePage />} />
+          <Route path="/hr/jobs" element={<HRJobsPage />} />
+          <Route path="/hr/candidates" element={<HRCandidatesPage />} />
+          <Route path="/hr/payroll" element={<HRPayrollPage />} />
+          <Route path="/hr/performance" element={<HRPerformancePage />} />
+          <Route path="/hr/training" element={<HRTrainingPage />} />
+          <Route path="/hr/benefits" element={<HRBenefitsPage />} />
+          <Route path="/hr/org-chart" element={<HROrgChartPage />} />
+          <Route path="/hr/onboarding" element={<HROnboardingPage />} />
+          <Route path="/hr/analytics" element={<HRAnalyticsPage />} />
+          <Route path="/hr/documents" element={<HRDocumentsPage />} />
+          <Route path="/hr/settings" element={<HRSettingsPage />} />
+          <Route path="/hr/ai-chat" element={<HRAIChatPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
