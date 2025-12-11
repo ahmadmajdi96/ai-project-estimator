@@ -22,12 +22,18 @@ export default function HREmployeesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({
+  const [newEmployee, setNewEmployee] = useState<{
+    position: string;
+    department_id: string;
+    employee_code: string;
+    salary: number;
+    status: "active" | "inactive" | "on_leave";
+  }>({
     position: "",
     department_id: "",
     employee_code: "",
     salary: 0,
-    status: "active" as const,
+    status: "active",
   });
 
   const filteredEmployees = employees?.filter((emp) => {
