@@ -2866,9 +2866,9 @@ export type Database = {
           notes: string | null
           phone: string | null
           revenue_to_date: number | null
-          sales_stage: Database["public"]["Enums"]["sales_stage"]
+          sales_stage: string
           salesman_id: string | null
-          status: Database["public"]["Enums"]["client_status"]
+          status: string
           updated_at: string
           website: string | null
         }
@@ -2899,9 +2899,9 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           revenue_to_date?: number | null
-          sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          sales_stage?: string
           salesman_id?: string | null
-          status?: Database["public"]["Enums"]["client_status"]
+          status?: string
           updated_at?: string
           website?: string | null
         }
@@ -2932,9 +2932,9 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           revenue_to_date?: number | null
-          sales_stage?: Database["public"]["Enums"]["sales_stage"]
+          sales_stage?: string
           salesman_id?: string | null
-          status?: Database["public"]["Enums"]["client_status"]
+          status?: string
           updated_at?: string
           website?: string | null
         }
