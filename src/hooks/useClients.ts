@@ -120,10 +120,10 @@ export function useUpdateClientStatus() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, status, oldStatus, clientName }: { id: string; status: ClientStatus; oldStatus?: string; clientName?: string }) => {
+    mutationFn: async ({ id, status, oldStatus, clientName }: { id: string; status: string; oldStatus?: string; clientName?: string }) => {
       const { data, error } = await supabase
         .from('clients')
-        .update({ status })
+        .update({ status: status as ClientStatus })
         .eq('id', id)
         .select()
         .single();
@@ -148,10 +148,10 @@ export function useUpdateClientSalesStage() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, sales_stage, oldStage, clientName }: { id: string; sales_stage: SalesStage; oldStage?: string; clientName?: string }) => {
+    mutationFn: async ({ id, sales_stage, oldStage, clientName }: { id: string; sales_stage: string; oldStage?: string; clientName?: string }) => {
       const { data, error } = await supabase
         .from('clients')
-        .update({ sales_stage })
+        .update({ sales_stage: sales_stage as SalesStage })
         .eq('id', id)
         .select()
         .single();

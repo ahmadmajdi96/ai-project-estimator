@@ -1,37 +1,28 @@
-import { useState } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
-import { EnhancedKanbanBoard } from '@/components/crm/EnhancedKanbanBoard';
-import { useClients } from '@/hooks/useClients';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { SALES_STAGES, INDUSTRIES } from '@/types/crm';
-import { 
-  Loader2, 
-  Search, 
-  LayoutGrid,
-  List,
-  Filter
-} from 'lucide-react';
+import { useClients, useUpdateClientSalesStage } from '@/hooks/useClients';
+import { usePipelineStages } from '@/hooks/usePipelineStages';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Loader2, DollarSign, Building2, User, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SalesPipeline() {
   const { data: clients = [], isLoading } = useClients();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [industryFilter, setIndustryFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const { data: stages = [] } = usePipelineStages();
+  const updateSalesStage = useUpdateClientSalesStage();
+  const navigate = useNavigate();
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.contact_person?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIndustry = industryFilter === 'all' || client.industry === industryFilter;
-    return matchesSearch && matchesIndustry;
-  });
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const clientId = result.draggableId;
+    const newStage = result.destination.droppableId;
+    updateSalesStage.mutate({ id: clientId, sales_stage: newStage });
+  };
 
   if (isLoading) {
     return (
-      <CRMLayout title="Sales Pipeline">
+      <CRMLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -40,95 +31,91 @@ export default function SalesPipeline() {
   }
 
   return (
-    <CRMLayout title="Sales Pipeline">
+    <CRMLayout>
       <div className="space-y-6">
-        {/* Filters */}
-        <Card className="p-4 bg-card/50 border-border/50">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search clients..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={industryFilter} onValueChange={setIndustryFilter}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Industries</SelectItem>
-                  {INDUSTRIES.map(industry => (
-                    <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <div>
+          <h1 className="text-3xl font-display font-bold">Sales Pipeline</h1>
+          <p className="text-muted-foreground">Track client progress through sales stages</p>
+        </div>
 
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <Button 
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'} 
-                size="sm"
-                className="rounded-none"
-                onClick={() => setViewMode('kanban')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={viewMode === 'list' ? 'default' : 'ghost'} 
-                size="sm"
-                className="rounded-none border-l border-border"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {stages.map(stage => {
+              const stageClients = clients.filter(c => c.sales_stage === stage.value);
+              const stageTotal = stageClients.reduce((sum, c) => sum + (c.contract_value || 0), 0);
+              
+              return (
+                <div key={stage.id} className="flex-shrink-0 w-80">
+                  <Card className="p-3 mb-3 bg-card/50" style={{ borderTopColor: stage.color, borderTopWidth: 3 }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{stage.name}</span>
+                        <Badge variant="secondary">{stageClients.length}</Badge>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs">
+                      <span className="text-muted-foreground">Total Value</span>
+                      <p className="font-semibold text-primary">${stageTotal.toLocaleString()}</p>
+                    </div>
+                  </Card>
+                  
+                  <Droppable droppableId={stage.value}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 min-h-[400px] p-2 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5 ring-2 ring-primary/20' : 'bg-muted/20'}`}
+                      >
+                        {stageClients.map((client, index) => (
+                          <Draggable key={client.id} draggableId={client.id} index={index}>
+                            {(provided, snapshot) => (
+                              <Card
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-4 bg-card cursor-grab active:cursor-grabbing transition-shadow ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+                                onClick={() => navigate(`/crm/clients/${client.id}`)}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between">
+                                    <h4 className="font-medium">{client.client_name}</h4>
+                                    {client.industry && (
+                                      <Badge variant="outline" className="text-xs">{client.industry}</Badge>
+                                    )}
+                                  </div>
+                                  
+                                  {client.contact_person && (
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <User className="h-3 w-3" />
+                                      <span>{client.contact_person}</span>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-1 text-primary font-semibold">
+                                      <DollarSign className="h-4 w-4" />
+                                      <span>${(client.contract_value || 0).toLocaleString()}</span>
+                                    </div>
+                                    {client.phone && (
+                                      <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Phone className="h-3 w-3" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </Card>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              );
+            })}
           </div>
-        </Card>
-
-        {/* Pipeline View */}
-        {viewMode === 'kanban' ? (
-          <EnhancedKanbanBoard clients={filteredClients} type="sales_stage" />
-        ) : (
-          <Card className="bg-card/50 border-border/50">
-            <div className="p-4">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Client</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Contact</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Stage</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Industry</th>
-                    <th className="text-right p-2 text-sm font-medium text-muted-foreground">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredClients.map(client => {
-                    const stage = SALES_STAGES.find(s => s.value === client.sales_stage);
-                    return (
-                      <tr key={client.id} className="border-b border-border/50 hover:bg-muted/20">
-                        <td className="p-2 font-medium">{client.client_name}</td>
-                        <td className="p-2 text-muted-foreground">{client.contact_person || '-'}</td>
-                        <td className="p-2">
-                          <Badge className={stage?.color}>{stage?.label}</Badge>
-                        </td>
-                        <td className="p-2 text-muted-foreground">{client.industry || '-'}</td>
-                        <td className="p-2 text-right font-medium text-primary">
-                          ${(client.contract_value || 0).toLocaleString()}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
+        </DragDropContext>
       </div>
     </CRMLayout>
   );

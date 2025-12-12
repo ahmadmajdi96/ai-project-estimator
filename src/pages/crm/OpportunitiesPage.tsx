@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { CRMLayout } from '@/components/crm/CRMLayout';
-import { useOpportunities, useAddOpportunity, useUpdateOpportunity, useWinLossReasons } from '@/hooks/useOpportunities';
+import { useOpportunities, useAddOpportunity, useUpdateOpportunity } from '@/hooks/useOpportunities';
 import { useOpportunityStages } from '@/hooks/useOpportunityStages';
 import { useClients } from '@/hooks/useClients';
 import { useSalesmen } from '@/hooks/useSalesmen';
@@ -13,11 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Target, DollarSign, TrendingUp, Calendar, Building2, Search, LayoutGrid, List, Filter, Loader2 } from 'lucide-react';
+import { Plus, DollarSign, Calendar, Building2, Loader2, User } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const LEAD_SOURCES = [
   { value: 'marketing_campaign', label: 'Marketing Campaign' },
@@ -38,10 +37,8 @@ export default function OpportunitiesPage() {
   const { data: salesmen = [] } = useSalesmen();
   const addOpportunity = useAddOpportunity();
   const updateOpportunity = useUpdateOpportunity();
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
-  const [isDragging, setIsDragging] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     client_id: '',
@@ -54,26 +51,16 @@ export default function OpportunitiesPage() {
     description: '',
   });
 
-  const filteredOpportunities = opportunities.filter(opp => {
-    const matchesSearch = opp.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opp.clients?.client_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch && opp.status === 'open';
-  });
+  const openOpportunities = useMemo(() => 
+    opportunities.filter(o => o.status === 'open'),
+  [opportunities]);
 
-  const openOpportunities = opportunities.filter(o => o.status === 'open');
-  const totalValue = openOpportunities.reduce((sum, o) => sum + (o.value || 0), 0);
-  const weightedValue = openOpportunities.reduce((sum, o) => sum + ((o.value || 0) * (o.deal_probability || 0) / 100), 0);
-
-  const oppsByStage = useMemo(() => {
-    const grouped: Record<string, typeof opportunities> = {};
-    stages.forEach(stage => { grouped[stage.value] = []; });
-    filteredOpportunities.forEach(opp => {
-      const stage = opp.sales_stage || 'lead';
-      if (grouped[stage]) grouped[stage].push(opp);
-      else if (grouped['lead']) grouped['lead'].push(opp);
-    });
-    return grouped;
-  }, [filteredOpportunities, stages]);
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const oppId = result.draggableId;
+    const newStage = result.destination.droppableId;
+    updateOpportunity.mutate({ id: oppId, sales_stage: newStage });
+  };
 
   const handleSubmit = async () => {
     await addOpportunity.mutateAsync(formData as any);
@@ -81,141 +68,121 @@ export default function OpportunitiesPage() {
     setFormData({ title: '', client_id: '', salesman_id: '', value: 0, deal_probability: 50, lead_source: 'other', sales_stage: 'lead', expected_close_date: '', description: '' });
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    setIsDragging(false);
-    if (!result.destination) return;
-    const oppId = result.draggableId;
-    const newStage = result.destination.droppableId;
-    await updateOpportunity.mutateAsync({ id: oppId, sales_stage: newStage });
-  };
-
   if (isLoading) {
-    return <CRMLayout title="Opportunities Pipeline"><div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div></CRMLayout>;
+    return (
+      <CRMLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </CRMLayout>
+    );
   }
 
   return (
-    <CRMLayout title="Opportunities Pipeline">
+    <CRMLayout>
       <div className="space-y-6">
-        {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card className="p-4 bg-card/50 border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1"><Target className="h-4 w-4" /><span className="text-sm">Open Opportunities</span></div>
-            <p className="text-2xl font-bold">{openOpportunities.length}</p>
-          </Card>
-          <Card className="p-4 bg-card/50 border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1"><DollarSign className="h-4 w-4" /><span className="text-sm">Total Pipeline</span></div>
-            <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
-          </Card>
-          <Card className="p-4 bg-card/50 border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1"><TrendingUp className="h-4 w-4" /><span className="text-sm">Weighted Value</span></div>
-            <p className="text-2xl font-bold">${weightedValue.toLocaleString()}</p>
-          </Card>
-          <Card className="p-4 bg-card/50 border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1"><Calendar className="h-4 w-4" /><span className="text-sm">Avg. Probability</span></div>
-            <p className="text-2xl font-bold">{openOpportunities.length > 0 ? Math.round(openOpportunities.reduce((sum, o) => sum + (o.deal_probability || 0), 0) / openOpportunities.length) : 0}%</p>
-          </Card>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold">Opportunities Pipeline</h1>
+            <p className="text-muted-foreground">Track deals through sales stages</p>
+          </div>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> New Opportunity
+          </Button>
         </div>
 
-        {/* Filters */}
-        <Card className="p-4 bg-card/50 border-border/50">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search opportunities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
-            </div>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <Button variant={viewMode === 'kanban' ? 'default' : 'ghost'} size="sm" className="rounded-none" onClick={() => setViewMode('kanban')}><LayoutGrid className="h-4 w-4" /></Button>
-              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" className="rounded-none border-l border-border" onClick={() => setViewMode('list')}><List className="h-4 w-4" /></Button>
-            </div>
-            <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> New Opportunity</Button>
-          </div>
-        </Card>
-
-        {/* Pipeline View */}
-        {viewMode === 'kanban' ? (
-          <DragDropContext onDragStart={() => setIsDragging(true)} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4">
-              {stages.map(stage => (
-                <div key={stage.value} className={cn("flex-shrink-0 w-80 rounded-xl border transition-all", isDragging ? "border-dashed border-primary/50" : "border-border/50", "bg-gradient-to-b from-muted/30 to-muted/10")}>
-                  <div className="p-4 rounded-t-xl border-b border-border/50" style={{ backgroundColor: `${stage.color}20`, color: stage.color }}>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {stages.map(stage => {
+              const stageOpps = openOpportunities.filter(o => o.sales_stage === stage.value);
+              const stageTotal = stageOpps.reduce((sum, o) => sum + (o.value || 0), 0);
+              const weightedTotal = stageOpps.reduce((sum, o) => sum + ((o.value || 0) * (o.deal_probability || 0) / 100), 0);
+              
+              return (
+                <div key={stage.id} className="flex-shrink-0 w-80">
+                  <Card className="p-3 mb-3 bg-card/50" style={{ borderTopColor: stage.color, borderTopWidth: 3 }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
-                        <h3 className="font-semibold">{stage.name}</h3>
+                        <span className="font-semibold">{stage.name}</span>
+                        <Badge variant="secondary">{stageOpps.length}</Badge>
                       </div>
-                      <Badge variant="secondary" className="bg-background/30">{oppsByStage[stage.value]?.length || 0}</Badge>
                     </div>
-                    <p className="text-xs mt-1 opacity-80">${(oppsByStage[stage.value]?.reduce((sum, o) => sum + (o.value || 0), 0) || 0).toLocaleString()}</p>
-                  </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Total Value</span>
+                        <p className="font-semibold text-primary">${stageTotal.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Weighted</span>
+                        <p className="font-semibold text-emerald-600">${weightedTotal.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </Card>
+                  
                   <Droppable droppableId={stage.value}>
                     {(provided, snapshot) => (
-                      <ScrollArea className={cn("h-[calc(100vh-380px)] p-2 transition-colors rounded-b-xl", snapshot.isDraggingOver && "bg-primary/5")}>
-                        <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2 min-h-[100px]">
-                          {oppsByStage[stage.value]?.map((opp, index) => (
-                            <Draggable key={opp.id} draggableId={opp.id} index={index}>
-                              {(provided, snapshot) => (
-                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                  <Card className={cn("p-3 cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 bg-card/80", snapshot.isDragging && "shadow-xl ring-2 ring-primary/30")}>
-                                    <h4 className="font-medium text-sm mb-1 truncate">{opp.title}</h4>
-                                    {opp.clients && (
-                                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2"><Building2 className="h-3 w-3" /><span className="truncate">{opp.clients.client_name}</span></div>
-                                    )}
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-primary font-bold text-sm">${opp.value?.toLocaleString()}</span>
-                                      <Badge variant="outline" className="text-xs">{opp.deal_probability}%</Badge>
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 min-h-[400px] p-2 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5 ring-2 ring-primary/20' : 'bg-muted/20'}`}
+                      >
+                        {stageOpps.map((opp, index) => (
+                          <Draggable key={opp.id} draggableId={opp.id} index={index}>
+                            {(provided, snapshot) => (
+                              <Card
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-4 bg-card cursor-grab active:cursor-grabbing transition-shadow ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between">
+                                    <h4 className="font-medium">{opp.title}</h4>
+                                    <Badge variant="outline" className="text-xs">{opp.deal_probability}%</Badge>
+                                  </div>
+                                  
+                                  {opp.clients && (
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <Building2 className="h-3 w-3" />
+                                      <span>{opp.clients.client_name}</span>
                                     </div>
-                                    <Progress value={opp.deal_probability} className="h-1.5 mb-2" />
-                                    {opp.expected_close_date && <p className="text-xs text-muted-foreground">Close: {format(new Date(opp.expected_close_date), 'MMM d')}</p>}
-                                  </Card>
+                                  )}
+                                  
+                                  <Progress value={opp.deal_probability} className="h-1.5" />
+                                  
+                                  <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-1 text-primary font-semibold">
+                                      <DollarSign className="h-4 w-4" />
+                                      <span>${(opp.value || 0).toLocaleString()}</span>
+                                    </div>
+                                    {opp.expected_close_date && (
+                                      <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                                        <Calendar className="h-3 w-3" />
+                                        <span>{format(new Date(opp.expected_close_date), 'MMM d')}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {opp.salesmen && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <User className="h-3 w-3" />
+                                      <span>{opp.salesmen.name}</span>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                          {(oppsByStage[stage.value]?.length || 0) === 0 && (
-                            <div className={cn("text-center py-8 text-muted-foreground text-sm rounded-lg border-2 border-dashed", snapshot.isDraggingOver ? "border-primary/50 bg-primary/5" : "border-border/30")}>
-                              {snapshot.isDraggingOver ? "Drop here" : "No opportunities"}
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
+                              </Card>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
                     )}
                   </Droppable>
                 </div>
-              ))}
-            </div>
-          </DragDropContext>
-        ) : (
-          <Card className="bg-card/50 border-border/50">
-            <div className="p-4">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Title</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Client</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Stage</th>
-                    <th className="text-left p-2 text-sm font-medium text-muted-foreground">Probability</th>
-                    <th className="text-right p-2 text-sm font-medium text-muted-foreground">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOpportunities.map(opp => {
-                    const stage = stages.find(s => s.value === opp.sales_stage);
-                    return (
-                      <tr key={opp.id} className="border-b border-border/50 hover:bg-muted/20">
-                        <td className="p-2 font-medium">{opp.title}</td>
-                        <td className="p-2 text-muted-foreground">{opp.clients?.client_name || '-'}</td>
-                        <td className="p-2"><Badge style={{ backgroundColor: `${stage?.color}20`, color: stage?.color }}>{stage?.name}</Badge></td>
-                        <td className="p-2">{opp.deal_probability}%</td>
-                        <td className="p-2 text-right font-bold text-primary">${opp.value?.toLocaleString()}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
+              );
+            })}
+          </div>
+        </DragDropContext>
       </div>
 
       {/* Add Opportunity Dialog */}
