@@ -4,7 +4,7 @@ import { ChatFlowSidebar } from './ChatFlowSidebar';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { LogIn, UserPlus, LogOut } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, Home } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -104,13 +104,23 @@ export function ChatFlowLayout({ children, title }: ChatFlowLayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <ChatFlowSidebar />
         <main className="flex-1 overflow-auto">
-          <header className="sticky top-0 z-10 h-14 flex items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-            <SidebarTrigger />
-            {title && <h1 className="font-display font-semibold text-lg">{title}</h1>}
-            <div className="ml-auto flex items-center gap-2">
+          <header className="sticky top-0 z-10 h-14 flex items-center justify-between gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <div className="px-2.5 py-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-medium">
+                ChatFlow
+              </div>
+              {title && <h1 className="font-display font-semibold text-lg hidden md:block">{title}</h1>}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => window.location.href = '/'}>
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Main Dashboard</span>
+              </Button>
               {user ? (
                 <>
-                  <span className="text-sm text-muted-foreground">{user.email}</span>
+                  <span className="text-sm text-muted-foreground hidden md:inline">{user.email}</span>
                   <Button variant="ghost" size="sm" onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
