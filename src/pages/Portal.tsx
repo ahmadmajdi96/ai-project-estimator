@@ -31,6 +31,8 @@ import { useEnterpriseAI } from '@/hooks/useEnterpriseAI';
 import { useHRDashboardStats } from '@/hooks/useHR';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
+import { DashboardUserManagement } from '@/components/dashboard/DashboardUserManagement';
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 
 const portals = [
   { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/dashboard', gradient: 'from-slate-500 to-zinc-600' },
@@ -536,6 +538,14 @@ export default function Portal() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Charts Section */}
+            <DashboardCharts />
+
+            {/* User Management Section */}
+            {(role === 'ceo' || role === 'super_admin') && (
+              <DashboardUserManagement />
+            )}
 
             {/* Portal Overview Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
