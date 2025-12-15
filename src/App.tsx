@@ -161,8 +161,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<CompanyProfile />} />
-          <Route path="/dashboard" element={<Portal />} />
+          <Route path="/" element={<Portal />} />
+          <Route path="/company-profile" element={<CompanyProfile />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/crm" element={<CRMDashboard />} />
           <Route path="/crm/sales" element={<SalesPage />} />
