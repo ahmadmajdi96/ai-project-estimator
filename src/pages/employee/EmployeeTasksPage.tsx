@@ -232,7 +232,7 @@ export default function EmployeeTasksPage() {
                           color: 'white'
                         }}
                       >
-                        {task.status.replace('_', ' ')}
+                        {(task.status || 'todo').replace('_', ' ')}
                       </Badge>
                     </div>
                   </div>
