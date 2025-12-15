@@ -460,7 +460,7 @@ export default function Portal() {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="w-full px-4 lg:px-8 py-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Summary KPI Row */}
