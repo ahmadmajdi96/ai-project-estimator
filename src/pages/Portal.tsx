@@ -393,8 +393,8 @@ export default function Portal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* Top Navigation */}
-      <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4">
+      <header className="border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-50 w-full">
+        <div className="w-full px-4 lg:px-8">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
               <img src={coetanexLogo} alt="Coetanex AI Logo" className="w-10 h-10 object-contain" />

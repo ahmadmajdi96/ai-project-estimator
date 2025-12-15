@@ -159,6 +159,8 @@ import EmployeeRequestsPage from "./pages/employee/EmployeeRequestsPage";
 import EmployeeSalaryPage from "./pages/employee/EmployeeSalaryPage";
 import EmployeeAttendancePage from "./pages/employee/EmployeeAttendancePage";
 import EmployeeLeavePage from "./pages/employee/EmployeeLeavePage";
+import EmployeeAIChatPage from "./pages/employee/EmployeeAIChatPage";
+import EmployeeTicketsPage from "./pages/employee/EmployeeTicketsPage";
 
 const queryClient = new QueryClient();
 
@@ -321,9 +323,11 @@ const App = () => (
           <Route path="/employee/tasks" element={<EmployeeTasksPage />} />
           <Route path="/employee/projects" element={<EmployeeProjectsPage />} />
           <Route path="/employee/requests" element={<EmployeeRequestsPage />} />
+          <Route path="/employee/tickets" element={<EmployeeTicketsPage />} />
           <Route path="/employee/salary" element={<EmployeeSalaryPage />} />
           <Route path="/employee/attendance" element={<EmployeeAttendancePage />} />
           <Route path="/employee/leave" element={<EmployeeLeavePage />} />
+          <Route path="/employee/ai-chat" element={<EmployeeAIChatPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
