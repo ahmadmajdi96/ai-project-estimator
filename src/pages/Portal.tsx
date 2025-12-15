@@ -35,15 +35,16 @@ import { DashboardUserManagement } from '@/components/dashboard/DashboardUserMan
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 
 const portals = [
-  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/dashboard', gradient: 'from-slate-500 to-zinc-600' },
+  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/', gradient: 'from-slate-500 to-zinc-600' },
+  { id: 'users', name: 'Users', icon: Shield, path: '/?tab=users', gradient: 'from-red-500 to-rose-600' },
   { id: 'crm', name: 'CRM', icon: Users, path: '/crm', gradient: 'from-blue-500 to-cyan-500' },
   { id: 'management', name: 'Management', icon: UserCheck, path: '/management', gradient: 'from-purple-500 to-pink-500' },
   { id: 'hr', name: 'HR', icon: Building2, path: '/hr', gradient: 'from-teal-500 to-green-500' },
   { id: 'accounting', name: 'Accounting', icon: Calculator, path: '/accounting', gradient: 'from-amber-500 to-orange-500' },
   { id: 'logistics', name: 'Logistics', icon: Truck, path: '/logistics', gradient: 'from-emerald-500 to-teal-500' },
   { id: 'chatflow', name: 'ChatFlow', icon: Bot, path: '/chatflow', gradient: 'from-rose-500 to-red-500' },
-  { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/dashboard?tab=analytics', gradient: 'from-indigo-500 to-blue-600' },
-  { id: 'ai', name: 'AI Center', icon: Brain, path: '/dashboard?tab=ai', gradient: 'from-violet-500 to-purple-600' },
+  { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/?tab=analytics', gradient: 'from-indigo-500 to-blue-600' },
+  { id: 'ai', name: 'AI Center', icon: Brain, path: '/?tab=ai', gradient: 'from-violet-500 to-purple-600' },
 ];
 
 export default function Portal() {
@@ -250,13 +251,16 @@ export default function Portal() {
   const handlePortalClick = (portal: typeof portals[0]) => {
     if (portal.id === 'overview') {
       setActiveTab('overview');
-      navigate('/dashboard');
+      navigate('/');
+    } else if (portal.id === 'users') {
+      setActiveTab('users');
+      navigate('/?tab=users');
     } else if (portal.id === 'ai') {
       setActiveTab('ai');
-      navigate('/dashboard?tab=ai');
+      navigate('/?tab=ai');
     } else if (portal.id === 'analytics') {
       setActiveTab('analytics');
-      navigate('/dashboard?tab=analytics');
+      navigate('/?tab=analytics');
     } else {
       navigate(portal.path);
     }
@@ -542,10 +546,7 @@ export default function Portal() {
             {/* Charts Section */}
             <DashboardCharts />
 
-            {/* User Management Section */}
-            {(role === 'ceo' || role === 'super_admin') && (
-              <DashboardUserManagement />
-            )}
+            {/* Note: User Management has its own dedicated tab now */}
 
             {/* Portal Overview Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -895,6 +896,22 @@ export default function Portal() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Shield className="h-6 w-6 text-red-500" />
+                  User Management & Roles
+                </h2>
+                <p className="text-muted-foreground">Manage system users, roles, and portal permissions</p>
+              </div>
+            </div>
+
+            <DashboardUserManagement />
           </div>
         )}
 
