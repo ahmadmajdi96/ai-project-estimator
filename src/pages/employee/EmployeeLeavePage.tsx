@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,19 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
-import { useLeaveRequests, useAddLeaveRequest } from '@/hooks/useHR';
-import { Plus, Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useLeaveRequests, useAddLeaveRequest, useLeaveTypes } from '@/hooks/useHR';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
-
-const leaveTypes = [
-  { value: 'annual', label: 'Annual Leave' },
-  { value: 'sick', label: 'Sick Leave' },
-  { value: 'personal', label: 'Personal Leave' },
-  { value: 'maternity', label: 'Maternity Leave' },
-  { value: 'paternity', label: 'Paternity Leave' },
-  { value: 'unpaid', label: 'Unpaid Leave' },
-  { value: 'other', label: 'Other' },
-];
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
   pending: { color: 'text-amber-600', bg: 'bg-amber-500' },
@@ -31,36 +22,57 @@ const statusConfig: Record<string, { color: string; bg: string }> = {
 
 export default function EmployeeLeavePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [newLeave, setNewLeave] = useState({
-    leave_type: '',
+    leave_type_id: '',
     start_date: '',
     end_date: '',
     reason: '',
   });
 
   const { data: leaveRequests = [] } = useLeaveRequests();
+  const { data: leaveTypes = [] } = useLeaveTypes();
   const addLeaveRequest = useAddLeaveRequest();
 
+  useEffect(() => {
+    const fetchEmployeeId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: employee } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        if (employee) {
+          setEmployeeId(employee.id);
+        }
+      }
+    };
+    fetchEmployeeId();
+  }, []);
+
+  const calculateDays = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return 0;
+    return differenceInDays(new Date(endDate), new Date(startDate)) + 1;
+  };
+
   const handleSubmit = () => {
-    if (!newLeave.leave_type || !newLeave.start_date || !newLeave.end_date) return;
-    
-    const days = differenceInDays(new Date(newLeave.end_date), new Date(newLeave.start_date)) + 1;
+    if (!newLeave.leave_type_id || !newLeave.start_date || !newLeave.end_date || !employeeId) return;
     
     addLeaveRequest.mutate({
-      leave_type: newLeave.leave_type,
+      employee_id: employeeId,
+      leave_type_id: newLeave.leave_type_id,
       start_date: newLeave.start_date,
       end_date: newLeave.end_date,
       reason: newLeave.reason,
-      days_requested: days,
-      status: 'pending',
     });
-    setNewLeave({ leave_type: '', start_date: '', end_date: '', reason: '' });
+    setNewLeave({ leave_type_id: '', start_date: '', end_date: '', reason: '' });
     setDialogOpen(false);
   };
 
   const pendingLeaves = leaveRequests.filter(l => l.status === 'pending');
   const approvedLeaves = leaveRequests.filter(l => l.status === 'approved');
-  const totalDaysTaken = approvedLeaves.reduce((sum, l) => sum + (l.days_requested || 0), 0);
+  const totalDaysTaken = approvedLeaves.reduce((sum, l) => sum + calculateDays(l.start_date, l.end_date), 0);
 
   return (
     <EmployeeLayout>
@@ -85,15 +97,15 @@ export default function EmployeeLeavePage() {
                 <div className="space-y-2">
                   <Label>Leave Type</Label>
                   <Select 
-                    value={newLeave.leave_type} 
-                    onValueChange={(v) => setNewLeave(p => ({ ...p, leave_type: v }))}
+                    value={newLeave.leave_type_id} 
+                    onValueChange={(v) => setNewLeave(p => ({ ...p, leave_type_id: v }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select leave type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {leaveTypes.map(t => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      {leaveTypes.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -130,7 +142,7 @@ export default function EmployeeLeavePage() {
                     rows={3}
                   />
                 </div>
-                <Button onClick={handleSubmit} className="w-full" disabled={addLeaveRequest.isPending}>
+                <Button onClick={handleSubmit} className="w-full" disabled={addLeaveRequest.isPending || !employeeId}>
                   Submit Request
                 </Button>
               </div>
@@ -208,12 +220,13 @@ export default function EmployeeLeavePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leaveRequests.map((leave) => {
+                {leaveRequests.map((leave: any) => {
                   const config = statusConfig[leave.status || 'pending'];
+                  const days = calculateDays(leave.start_date, leave.end_date);
                   return (
                     <TableRow key={leave.id}>
                       <TableCell className="font-medium capitalize">
-                        {leaveTypes.find(t => t.value === leave.leave_type)?.label || leave.leave_type}
+                        {leave.leave_type?.name || '-'}
                       </TableCell>
                       <TableCell>
                         {leave.start_date ? format(new Date(leave.start_date), 'PPP') : '-'}
@@ -221,7 +234,7 @@ export default function EmployeeLeavePage() {
                       <TableCell>
                         {leave.end_date ? format(new Date(leave.end_date), 'PPP') : '-'}
                       </TableCell>
-                      <TableCell>{leave.days_requested || '-'}</TableCell>
+                      <TableCell>{days || '-'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">
                         {leave.reason || '-'}
                       </TableCell>
