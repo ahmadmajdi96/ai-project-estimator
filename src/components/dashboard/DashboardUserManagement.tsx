@@ -8,8 +8,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Trash2
+  ChevronRight
 } from 'lucide-react';
 
 type AppRole = 'super_admin' | 'ceo' | 'department_head' | 'team_lead' | 'employee';
@@ -43,15 +43,139 @@ const ROLES = [
   { value: 'employee', label: 'Employee', color: 'bg-slate-500/20 text-slate-400' },
 ];
 
-const ALL_PORTALS = [
-  { path: '/crm', label: 'CRM Portal' },
-  { path: '/management', label: 'Management Portal' },
-  { path: '/hr', label: 'HR Portal' },
-  { path: '/accounting', label: 'Accounting Portal' },
-  { path: '/logistics', label: 'Logistics Portal' },
-  { path: '/chatflow', label: 'ChatFlow Portal' },
-  { path: '/cortacentral', label: 'CortaCentral Portal' },
-  { path: '/customer-portal', label: 'Customer Portal' },
+// Define all portals with their pages
+const PORTAL_PAGES = [
+  {
+    portal: 'CRM Portal',
+    basePath: '/crm',
+    pages: [
+      { path: '/crm', label: 'Dashboard' },
+      { path: '/crm/clients', label: 'Clients' },
+      { path: '/crm/sales-pipeline', label: 'Sales Pipeline' },
+      { path: '/crm/opportunities', label: 'Opportunities' },
+      { path: '/crm/quotes', label: 'Quotes' },
+      { path: '/crm/invoices', label: 'Invoices' },
+      { path: '/crm/products', label: 'Products' },
+      { path: '/crm/calendar', label: 'Calendar' },
+      { path: '/crm/reports', label: 'Reports' },
+      { path: '/crm/support-tickets', label: 'Support Tickets' },
+      { path: '/crm/support-pipeline', label: 'Support Pipeline' },
+      { path: '/crm/ai-chat', label: 'AI Chat' },
+      { path: '/crm/ai-insights', label: 'AI Insights' },
+    ]
+  },
+  {
+    portal: 'Management Portal',
+    basePath: '/management',
+    pages: [
+      { path: '/management', label: 'Dashboard' },
+      { path: '/management/employees', label: 'Employees' },
+      { path: '/management/departments', label: 'Departments' },
+      { path: '/management/tasks', label: 'Tasks' },
+      { path: '/management/kpis', label: 'KPIs' },
+      { path: '/management/strategic-goals', label: 'Strategic Goals' },
+      { path: '/management/roadmaps', label: 'Roadmaps' },
+      { path: '/management/okrs', label: 'OKRs' },
+      { path: '/management/documents', label: 'Documents' },
+      { path: '/management/workflows', label: 'Workflows' },
+      { path: '/management/calendar', label: 'Calendar' },
+      { path: '/management/reports', label: 'Reports' },
+      { path: '/management/ai-chat', label: 'AI Chat' },
+      { path: '/management/ai-insights', label: 'AI Insights' },
+    ]
+  },
+  {
+    portal: 'HR Portal',
+    basePath: '/hr',
+    pages: [
+      { path: '/hr', label: 'Dashboard' },
+      { path: '/hr/employees', label: 'Employees' },
+      { path: '/hr/attendance', label: 'Attendance' },
+      { path: '/hr/leave', label: 'Leave Management' },
+      { path: '/hr/payroll', label: 'Payroll' },
+      { path: '/hr/performance', label: 'Performance' },
+      { path: '/hr/training', label: 'Training' },
+      { path: '/hr/onboarding', label: 'Onboarding' },
+      { path: '/hr/candidates', label: 'Candidates' },
+      { path: '/hr/jobs', label: 'Jobs' },
+      { path: '/hr/benefits', label: 'Benefits' },
+      { path: '/hr/documents', label: 'Documents' },
+      { path: '/hr/org-chart', label: 'Org Chart' },
+      { path: '/hr/analytics', label: 'Analytics' },
+    ]
+  },
+  {
+    portal: 'Accounting Portal',
+    basePath: '/accounting',
+    pages: [
+      { path: '/accounting', label: 'Dashboard' },
+      { path: '/accounting/gl/chart-of-accounts', label: 'Chart of Accounts' },
+      { path: '/accounting/gl/journal-entries', label: 'Journal Entries' },
+      { path: '/accounting/gl/trial-balance', label: 'Trial Balance' },
+      { path: '/accounting/ar/invoices', label: 'AR Invoices' },
+      { path: '/accounting/ar/payments', label: 'AR Payments' },
+      { path: '/accounting/ar/customers', label: 'Customers' },
+      { path: '/accounting/ap/bills', label: 'Bills' },
+      { path: '/accounting/ap/payments', label: 'AP Payments' },
+      { path: '/accounting/ap/vendors', label: 'Vendors' },
+      { path: '/accounting/banking/accounts', label: 'Bank Accounts' },
+      { path: '/accounting/banking/transactions', label: 'Transactions' },
+      { path: '/accounting/banking/reconciliation', label: 'Reconciliation' },
+      { path: '/accounting/budgets', label: 'Budgets' },
+      { path: '/accounting/reports', label: 'Reports' },
+    ]
+  },
+  {
+    portal: 'Logistics Portal',
+    basePath: '/logistics',
+    pages: [
+      { path: '/logistics', label: 'Dashboard' },
+      { path: '/logistics/shipments', label: 'Shipments' },
+      { path: '/logistics/dispatch', label: 'Dispatch' },
+      { path: '/logistics/tracking', label: 'Tracking' },
+      { path: '/logistics/carriers', label: 'Carriers' },
+      { path: '/logistics/equipment', label: 'Equipment' },
+      { path: '/logistics/driver-expenses', label: 'Driver Expenses' },
+      { path: '/logistics/settlements', label: 'Settlements' },
+      { path: '/logistics/billing', label: 'Billing' },
+      { path: '/logistics/analytics', label: 'Analytics' },
+    ]
+  },
+  {
+    portal: 'ChatFlow Portal',
+    basePath: '/chatflow',
+    pages: [
+      { path: '/chatflow', label: 'Dashboard' },
+      { path: '/chatflow/chatbots', label: 'Chatbots' },
+      { path: '/chatflow/conversations', label: 'Conversations' },
+      { path: '/chatflow/knowledge-base', label: 'Knowledge Base' },
+      { path: '/chatflow/templates', label: 'Templates' },
+      { path: '/chatflow/integrations', label: 'Integrations' },
+      { path: '/chatflow/analytics', label: 'Analytics' },
+      { path: '/chatflow/team', label: 'Team' },
+    ]
+  },
+  {
+    portal: 'CortaCentral Portal',
+    basePath: '/cortacentral',
+    pages: [
+      { path: '/cortacentral', label: 'Dashboard' },
+      { path: '/cortacentral/workflows', label: 'Workflows' },
+      { path: '/cortacentral/conversations', label: 'Conversations' },
+      { path: '/cortacentral/connectors', label: 'Connectors' },
+      { path: '/cortacentral/analytics', label: 'Analytics' },
+    ]
+  },
+  {
+    portal: 'Customer Portal',
+    basePath: '/customer-portal',
+    pages: [
+      { path: '/customer-portal', label: 'Dashboard' },
+      { path: '/customer-portal/chatbots', label: 'My Chatbots' },
+      { path: '/customer-portal/knowledge-base', label: 'Knowledge Base' },
+      { path: '/customer-portal/training', label: 'Training' },
+    ]
+  },
 ];
 
 export function DashboardUserManagement() {
@@ -112,7 +236,7 @@ export function DashboardUserManagement() {
   // Register new user mutation
   const registerUser = useMutation({
     mutationFn: async (form: typeof registerForm) => {
-      // Create auth user
+      // Create auth user - the trigger will handle profile and role creation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
@@ -125,12 +249,18 @@ export function DashboardUserManagement() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
-      // Set role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{ user_id: authData.user.id, role: form.role }]);
-      
-      if (roleError) throw roleError;
+      // Update the role if it's not the default 'employee'
+      if (form.role !== 'employee') {
+        // Wait a moment for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role: form.role })
+          .eq('user_id', authData.user.id);
+        
+        if (roleError) throw roleError;
+      }
 
       return authData.user;
     },
@@ -208,6 +338,38 @@ export function DashboardUserManagement() {
     },
   });
 
+  // Bulk toggle portal permissions
+  const togglePortalPermissions = useMutation({
+    mutationFn: async ({ userId, basePath, pages, enable }: { userId: string; basePath: string; pages: { path: string }[]; enable: boolean }) => {
+      for (const page of pages) {
+        const { data: existing } = await supabase
+          .from('page_permissions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('page_path', page.path)
+          .single();
+        
+        if (existing) {
+          await supabase
+            .from('page_permissions')
+            .update({ can_access: enable })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('page_permissions')
+            .insert([{ user_id: userId, page_path: page.path, can_access: enable }]);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['page_permissions', selectedUser?.id] });
+      toast.success('Portal permissions updated');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update permissions: ' + error.message);
+    },
+  });
+
   const handleRegister = () => {
     if (!registerForm.email || !registerForm.password) {
       toast.error('Email and password are required');
@@ -222,7 +384,14 @@ export function DashboardUserManagement() {
 
   const getPermissionStatus = (pagePath: string) => {
     const perm = userPermissions.find(p => p.page_path === pagePath);
-    return perm ? perm.can_access : true;
+    return perm ? perm.can_access : true; // Default to true (allowed)
+  };
+
+  const getPortalPermissionStatus = (pages: { path: string }[]) => {
+    const enabledCount = pages.filter(p => getPermissionStatus(p.path)).length;
+    if (enabledCount === pages.length) return 'all';
+    if (enabledCount === 0) return 'none';
+    return 'partial';
   };
 
   if (usersLoading) {
@@ -335,7 +504,7 @@ export function DashboardUserManagement() {
       </CardHeader>
 
       <CardContent>
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[500px]">
           <div className="space-y-2">
             {users.map(user => {
               const roleInfo = ROLES.find(r => r.value === user.role);
@@ -391,35 +560,104 @@ export function DashboardUserManagement() {
         </ScrollArea>
       </CardContent>
 
-      {/* Permissions Dialog */}
+      {/* Permissions Dialog with Dynamic Page Selection */}
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Portal Permissions - {selectedUser?.full_name || selectedUser?.email}
+              Portal & Page Permissions - {selectedUser?.full_name || selectedUser?.email}
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-3">
-              {ALL_PORTALS.map(portal => (
-                <div key={portal.path} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50">
-                  <span className="text-sm font-medium">{portal.label}</span>
-                  <Checkbox
-                    checked={getPermissionStatus(portal.path)}
-                    onCheckedChange={(checked) => {
-                      if (selectedUser) {
-                        setPermission.mutate({ 
-                          userId: selectedUser.id, 
-                          pagePath: portal.path, 
-                          canAccess: checked as boolean 
-                        });
-                      }
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
+          <ScrollArea className="h-[60vh] pr-4">
+            <Accordion type="multiple" className="space-y-2">
+              {PORTAL_PAGES.map((portalGroup) => {
+                const portalStatus = getPortalPermissionStatus(portalGroup.pages);
+                return (
+                  <AccordionItem 
+                    key={portalGroup.basePath} 
+                    value={portalGroup.basePath}
+                    className="border rounded-lg bg-muted/20"
+                  >
+                    <AccordionTrigger className="px-4 hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{portalGroup.portal}</span>
+                          <Badge variant={portalStatus === 'all' ? 'default' : portalStatus === 'none' ? 'destructive' : 'secondary'}>
+                            {portalStatus === 'all' ? 'Full Access' : portalStatus === 'none' ? 'No Access' : 'Partial'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedUser) {
+                                togglePortalPermissions.mutate({
+                                  userId: selectedUser.id,
+                                  basePath: portalGroup.basePath,
+                                  pages: portalGroup.pages,
+                                  enable: true
+                                });
+                              }
+                            }}
+                            className="text-xs h-7"
+                          >
+                            Enable All
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedUser) {
+                                togglePortalPermissions.mutate({
+                                  userId: selectedUser.id,
+                                  basePath: portalGroup.basePath,
+                                  pages: portalGroup.pages,
+                                  enable: false
+                                });
+                              }
+                            }}
+                            className="text-xs h-7 text-destructive hover:text-destructive"
+                          >
+                            Disable All
+                          </Button>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {portalGroup.pages.map((page) => (
+                          <div 
+                            key={page.path} 
+                            className="flex items-center justify-between p-2 rounded-md bg-background/50 hover:bg-background"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">{page.label}</span>
+                            </div>
+                            <Checkbox
+                              checked={getPermissionStatus(page.path)}
+                              onCheckedChange={(checked) => {
+                                if (selectedUser) {
+                                  setPermission.mutate({ 
+                                    userId: selectedUser.id, 
+                                    pagePath: page.path, 
+                                    canAccess: checked as boolean 
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </ScrollArea>
         </DialogContent>
       </Dialog>
