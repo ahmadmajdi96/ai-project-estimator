@@ -145,9 +145,9 @@ export default function EmployeeProjectsPage() {
                             {projectTasks.map((task) => (
                               <div key={task.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
                                 <span className="truncate">{task.title}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {task.status.replace('_', ' ')}
-                                </Badge>
+                                                <Badge variant="outline" className="text-xs">
+                                                  {(task.status || 'todo').replace('_', ' ')}
+                                                </Badge>
                               </div>
                             ))}
                           </div>
