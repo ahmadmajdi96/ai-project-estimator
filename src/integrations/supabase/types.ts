@@ -4542,6 +4542,56 @@ export type Database = {
           },
         ]
       }
+      employee_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          description: string | null
+          employee_id: string | null
+          id: string
+          priority: string | null
+          request_type: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          priority?: string | null
+          request_type: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          priority?: string | null
+          request_type?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_skills: {
         Row: {
           created_at: string | null
@@ -8141,6 +8191,77 @@ export type Database = {
           },
         ]
       }
+      salary_slips: {
+        Row: {
+          allowances: number | null
+          basic_salary: number | null
+          bonuses: number | null
+          created_at: string
+          employee_id: string
+          gross_salary: number | null
+          id: string
+          insurance_deduction: number | null
+          net_salary: number | null
+          notes: string | null
+          other_deductions: number | null
+          payment_date: string | null
+          payment_status: string | null
+          pension_deduction: number | null
+          period_end: string
+          period_start: string
+          tax_deduction: number | null
+          total_deductions: number | null
+        }
+        Insert: {
+          allowances?: number | null
+          basic_salary?: number | null
+          bonuses?: number | null
+          created_at?: string
+          employee_id: string
+          gross_salary?: number | null
+          id?: string
+          insurance_deduction?: number | null
+          net_salary?: number | null
+          notes?: string | null
+          other_deductions?: number | null
+          payment_date?: string | null
+          payment_status?: string | null
+          pension_deduction?: number | null
+          period_end: string
+          period_start: string
+          tax_deduction?: number | null
+          total_deductions?: number | null
+        }
+        Update: {
+          allowances?: number | null
+          basic_salary?: number | null
+          bonuses?: number | null
+          created_at?: string
+          employee_id?: string
+          gross_salary?: number | null
+          id?: string
+          insurance_deduction?: number | null
+          net_salary?: number | null
+          notes?: string | null
+          other_deductions?: number | null
+          payment_date?: string | null
+          payment_status?: string | null
+          pension_deduction?: number | null
+          period_end?: string
+          period_start?: string
+          tax_deduction?: number | null
+          total_deductions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_slips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_performance: {
         Row: {
           conversion_rate: number | null
@@ -8921,6 +9042,47 @@ export type Database = {
           },
         ]
       }
+      task_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          task_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          task_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          task_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_comments: {
         Row: {
           content: string
@@ -9002,6 +9164,7 @@ export type Database = {
           milestone_id: string | null
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"] | null
+          stage_id: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"] | null
           tags: string[] | null
@@ -9029,6 +9192,7 @@ export type Database = {
           milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
+          stage_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null
           tags?: string[] | null
@@ -9056,6 +9220,7 @@ export type Database = {
           milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
+          stage_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null
           tags?: string[] | null
@@ -9103,6 +9268,13 @@ export type Database = {
             columns: ["parent_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "task_stages"
             referencedColumns: ["id"]
           },
         ]
