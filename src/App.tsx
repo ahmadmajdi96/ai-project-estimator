@@ -151,6 +151,14 @@ import SettlementsPage from "./pages/logistics/SettlementsPage";
 import LogisticsAnalyticsPage from "./pages/logistics/AnalyticsPage";
 import LogisticsBillingPage from "./pages/logistics/BillingPage";
 import LogisticsSettingsPage from "./pages/logistics/SettingsPage";
+// Employee Portal
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+import EmployeeTasksPage from "./pages/employee/EmployeeTasksPage";
+import EmployeeProjectsPage from "./pages/employee/EmployeeProjectsPage";
+import EmployeeRequestsPage from "./pages/employee/EmployeeRequestsPage";
+import EmployeeSalaryPage from "./pages/employee/EmployeeSalaryPage";
+import EmployeeAttendancePage from "./pages/employee/EmployeeAttendancePage";
+import EmployeeLeavePage from "./pages/employee/EmployeeLeavePage";
 
 const queryClient = new QueryClient();
 
@@ -308,6 +316,14 @@ const App = () => (
           <Route path="/hr/documents" element={<HRDocumentsPage />} />
           <Route path="/hr/settings" element={<HRSettingsPage />} />
           <Route path="/hr/ai-chat" element={<HRAIChatPage />} />
+          {/* Employee Portal Routes */}
+          <Route path="/employee" element={<EmployeeDashboard />} />
+          <Route path="/employee/tasks" element={<EmployeeTasksPage />} />
+          <Route path="/employee/projects" element={<EmployeeProjectsPage />} />
+          <Route path="/employee/requests" element={<EmployeeRequestsPage />} />
+          <Route path="/employee/salary" element={<EmployeeSalaryPage />} />
+          <Route path="/employee/attendance" element={<EmployeeAttendancePage />} />
+          <Route path="/employee/leave" element={<EmployeeLeavePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
