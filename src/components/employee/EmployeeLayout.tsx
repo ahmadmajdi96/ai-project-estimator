@@ -17,6 +17,8 @@ import {
   LogOut,
   ChevronLeft,
   User,
+  Bot,
+  Ticket,
 } from 'lucide-react';
 
 interface EmployeeLayoutProps {
@@ -28,9 +30,11 @@ const menuItems = [
   { id: 'tasks', label: 'My Tasks', icon: ListTodo, path: '/employee/tasks' },
   { id: 'projects', label: 'My Projects', icon: FolderKanban, path: '/employee/projects' },
   { id: 'requests', label: 'My Requests', icon: Send, path: '/employee/requests' },
+  { id: 'tickets', label: 'Support Tickets', icon: Ticket, path: '/employee/tickets' },
   { id: 'attendance', label: 'Attendance', icon: Clock, path: '/employee/attendance' },
   { id: 'leave', label: 'Leave', icon: Calendar, path: '/employee/leave' },
   { id: 'salary', label: 'Salary Slips', icon: DollarSign, path: '/employee/salary' },
+  { id: 'ai-chat', label: 'AI Assistant', icon: Bot, path: '/employee/ai-chat' },
 ];
 
 export function EmployeeLayout({ children }: EmployeeLayoutProps) {

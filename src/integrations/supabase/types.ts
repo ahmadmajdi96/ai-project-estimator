@@ -4544,12 +4544,23 @@ export type Database = {
       }
       employee_requests: {
         Row: {
+          additional_details: string | null
           approved_at: string | null
           approved_by: string | null
           created_at: string
           description: string | null
+          documents: Json | null
           employee_id: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
+          escalation_resolution: string | null
+          escalation_resolved_at: string | null
+          escalation_resolved_by: string | null
           id: string
+          is_escalated: boolean | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          manager_status: string | null
           priority: string | null
           request_type: string
           status: string | null
@@ -4557,12 +4568,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_details?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
           description?: string | null
+          documents?: Json | null
           employee_id?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
+          escalation_resolution?: string | null
+          escalation_resolved_at?: string | null
+          escalation_resolved_by?: string | null
           id?: string
+          is_escalated?: boolean | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          manager_status?: string | null
           priority?: string | null
           request_type: string
           status?: string | null
@@ -4570,12 +4592,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_details?: string | null
           approved_at?: string | null
           approved_by?: string | null
           created_at?: string
           description?: string | null
+          documents?: Json | null
           employee_id?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
+          escalation_resolution?: string | null
+          escalation_resolved_at?: string | null
+          escalation_resolved_by?: string | null
           id?: string
+          is_escalated?: boolean | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
+          manager_status?: string | null
           priority?: string | null
           request_type?: string
           status?: string | null
@@ -4638,6 +4671,99 @@ export type Database = {
           {
             foreignKeyName: "employee_skills_validated_by_employee_id_fkey"
             columns: ["validated_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_tickets: {
+        Row: {
+          assigned_to: string | null
+          attachments: Json | null
+          category: string
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          employee_id: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
+          first_response_at: string | null
+          id: string
+          is_escalated: boolean | null
+          priority: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          sla_breach: boolean | null
+          status: string | null
+          subject: string
+          tags: string[] | null
+          ticket_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category: string
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
+          first_response_at?: string | null
+          id?: string
+          is_escalated?: boolean | null
+          priority?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sla_breach?: boolean | null
+          status?: string | null
+          subject: string
+          tags?: string[] | null
+          ticket_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
+          first_response_at?: string | null
+          id?: string
+          is_escalated?: boolean | null
+          priority?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          sla_breach?: boolean | null
+          status?: string | null
+          subject?: string
+          tags?: string[] | null
+          ticket_number?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_tickets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_tickets_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
@@ -7508,6 +7634,30 @@ export type Database = {
           },
         ]
       }
+      portal_permissions: {
+        Row: {
+          can_access: boolean | null
+          created_at: string | null
+          id: string
+          portal_path: string
+          role: string
+        }
+        Insert: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: string
+          portal_path: string
+          role: string
+        }
+        Update: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: string
+          portal_path?: string
+          role?: string
+        }
+        Relationships: []
+      }
       portal_users: {
         Row: {
           auth_user_id: string | null
@@ -9364,6 +9514,41 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          ticket_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          ticket_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "employee_tickets"
             referencedColumns: ["id"]
           },
         ]
