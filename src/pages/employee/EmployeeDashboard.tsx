@@ -178,7 +178,7 @@ export default function EmployeeDashboard() {
                           task.status === 'blocked' ? 'bg-red-500' :
                           'bg-slate-500'
                         }>
-                          {task.status.replace('_', ' ')}
+                          {(task.status || 'todo').replace('_', ' ')}
                         </Badge>
                       </div>
                     </div>
