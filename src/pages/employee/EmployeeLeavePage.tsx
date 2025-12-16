@@ -11,8 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
 import { useLeaveRequests, useAddLeaveRequest, useLeaveTypes } from '@/hooks/useHR';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Calendar, Clock, CheckCircle } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { Plus, Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { format, differenceInDays, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 const statusConfig: Record<string, { color: string; bg: string }> = {
   pending: { color: 'text-amber-600', bg: 'bg-amber-500' },
@@ -53,11 +54,23 @@ export default function EmployeeLeavePage() {
 
   const calculateDays = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return 0;
-    return differenceInDays(new Date(endDate), new Date(startDate)) + 1;
+    // Use parseISO for date-only strings to avoid timezone issues
+    return differenceInDays(parseISO(endDate), parseISO(startDate)) + 1;
+  };
+
+  const isValidDateRange = () => {
+    if (!newLeave.start_date || !newLeave.end_date) return true;
+    return parseISO(newLeave.end_date) >= parseISO(newLeave.start_date);
   };
 
   const handleSubmit = () => {
     if (!newLeave.leave_type_id || !newLeave.start_date || !newLeave.end_date || !employeeId) return;
+    
+    // Validate date range
+    if (!isValidDateRange()) {
+      toast.error('End date cannot be earlier than start date');
+      return;
+    }
     
     addLeaveRequest.mutate({
       employee_id: employeeId,
@@ -129,8 +142,15 @@ export default function EmployeeLeavePage() {
                   </div>
                 </div>
                 {newLeave.start_date && newLeave.end_date && (
-                  <div className="text-sm text-muted-foreground">
-                    Duration: {differenceInDays(new Date(newLeave.end_date), new Date(newLeave.start_date)) + 1} days
+                  <div className={`text-sm flex items-center gap-2 ${!isValidDateRange() ? 'text-red-500' : 'text-muted-foreground'}`}>
+                    {!isValidDateRange() ? (
+                      <>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>End date cannot be earlier than start date</span>
+                      </>
+                    ) : (
+                      <span>Duration: {calculateDays(newLeave.start_date, newLeave.end_date)} days</span>
+                    )}
                   </div>
                 )}
                 <div className="space-y-2">
@@ -142,7 +162,11 @@ export default function EmployeeLeavePage() {
                     rows={3}
                   />
                 </div>
-                <Button onClick={handleSubmit} className="w-full" disabled={addLeaveRequest.isPending || !employeeId}>
+                <Button 
+                  onClick={handleSubmit} 
+                  className="w-full" 
+                  disabled={addLeaveRequest.isPending || !employeeId || !isValidDateRange()}
+                >
                   Submit Request
                 </Button>
               </div>
@@ -229,12 +253,12 @@ export default function EmployeeLeavePage() {
                         {leave.leave_type?.name || '-'}
                       </TableCell>
                       <TableCell>
-                        {leave.start_date ? format(new Date(leave.start_date), 'PPP') : '-'}
+                        {leave.start_date ? format(parseISO(leave.start_date), 'PPP') : '-'}
                       </TableCell>
                       <TableCell>
-                        {leave.end_date ? format(new Date(leave.end_date), 'PPP') : '-'}
+                        {leave.end_date ? format(parseISO(leave.end_date), 'PPP') : '-'}
                       </TableCell>
-                      <TableCell>{days || '-'}</TableCell>
+                      <TableCell>{days > 0 ? days : '-'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">
                         {leave.reason || '-'}
                       </TableCell>

@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
 import { useHRAttendance } from '@/hooks/useHR';
 import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, getDay, isFriday, isSaturday } from 'date-fns';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -15,6 +15,7 @@ const statusConfig: Record<string, { color: string; bg: string }> = {
   late: { color: 'text-amber-600', bg: 'bg-amber-500' },
   half_day: { color: 'text-blue-600', bg: 'bg-blue-500' },
   leave: { color: 'text-purple-600', bg: 'bg-purple-500' },
+  weekend: { color: 'text-slate-500', bg: 'bg-slate-400' },
 };
 
 export default function EmployeeAttendancePage() {
@@ -37,7 +38,12 @@ export default function EmployeeAttendancePage() {
   const leaveDays = monthAttendance.filter(a => a.status === 'leave').length;
 
   const getAttendanceForDay = (date: Date) => {
-    return monthAttendance.find(a => a.date && isSameDay(new Date(a.date), date));
+    return monthAttendance.find(a => a.date && isSameDay(parseISO(a.date), date));
+  };
+
+  // Check if day is weekend (Friday and Saturday for Middle Eastern calendar)
+  const isWeekend = (date: Date) => {
+    return isFriday(date) || isSaturday(date);
   };
 
   const prevMonth = () => {
@@ -141,7 +147,12 @@ export default function EmployeeAttendancePage() {
               {daysInMonth.map(day => {
                 const record = getAttendanceForDay(day);
                 const isToday = isSameDay(day, new Date());
-                const config = record ? statusConfig[record.status] || statusConfig.present : null;
+                const weekend = isWeekend(day);
+                const config = record 
+                  ? statusConfig[record.status] || statusConfig.present 
+                  : weekend 
+                    ? statusConfig.weekend 
+                    : null;
                 
                 return (
                   <div
@@ -149,17 +160,19 @@ export default function EmployeeAttendancePage() {
                     className={`
                       p-2 rounded-lg text-center cursor-default transition-colors
                       ${isToday ? 'ring-2 ring-primary' : ''}
-                      ${record ? config?.bg + '/10' : 'bg-muted/30'}
+                      ${record ? config?.bg + '/10' : weekend ? 'bg-slate-200/50 dark:bg-slate-700/30' : 'bg-muted/30'}
                     `}
                   >
-                    <p className={`text-sm font-medium ${record ? config?.color : ''}`}>
+                    <p className={`text-sm font-medium ${record ? config?.color : weekend ? 'text-slate-500' : ''}`}>
                       {format(day, 'd')}
                     </p>
-                    {record && (
+                    {record ? (
                       <p className={`text-xs capitalize ${config?.color}`}>
                         {record.status}
                       </p>
-                    )}
+                    ) : weekend ? (
+                      <p className="text-xs text-slate-500">Weekend</p>
+                    ) : null}
                   </div>
                 );
               })}
@@ -200,7 +213,7 @@ export default function EmployeeAttendancePage() {
                   return (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">
-                        {record.date ? format(new Date(record.date), 'PPP') : '-'}
+                        {record.date ? format(parseISO(record.date), 'PPP') : '-'}
                       </TableCell>
                       <TableCell>{record.clock_in || '-'}</TableCell>
                       <TableCell>{record.clock_out || '-'}</TableCell>

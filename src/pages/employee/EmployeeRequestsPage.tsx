@@ -15,7 +15,7 @@ import { useAddEmployeeRequest, EmployeeRequest } from '@/hooks/useEmployeeDashb
 import { useRoleBasedRequests, useUpdateRequestStatus } from '@/hooks/useRoleBasedData';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Search, Send, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const requestTypes = [
   { value: 'equipment', label: 'Equipment Request' },
@@ -137,7 +137,7 @@ export default function EmployeeRequestsPage() {
           
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              {format(new Date(request.created_at), 'MMM d, yyyy')}
+              {format(parseISO(request.created_at), 'MMM d, yyyy')}
             </span>
             <Badge className={status.bg + ' ' + status.color} variant="secondary">
               {status.label}
