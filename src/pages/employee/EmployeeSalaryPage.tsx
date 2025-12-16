@@ -41,6 +41,9 @@ export default function EmployeeSalaryPage() {
                   <p className="text-2xl font-bold text-green-600">
                     ${latestSlip?.net_salary?.toLocaleString() || '0'}
                   </p>
+                  <p className="text-xs text-green-600">
+                    {latestSlip ? format(new Date(latestSlip.period_end), 'MMM yyyy') : 'No data'}
+                  </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-500" />
               </div>
@@ -51,9 +54,12 @@ export default function EmployeeSalaryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">vs Previous</p>
+                  <p className="text-sm text-muted-foreground">Change vs Previous</p>
                   <p className={`text-2xl font-bold ${netChange > 0 ? 'text-green-600' : netChange < 0 ? 'text-red-600' : ''}`}>
-                    {netChange > 0 ? '+' : ''}{netChange.toLocaleString()}
+                    {netChange > 0 ? '+' : ''}{netChange !== 0 ? `$${Math.abs(netChange).toLocaleString()}` : '$0'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {netChange > 0 ? 'Increase' : netChange < 0 ? 'Decrease' : 'No change'}
                   </p>
                 </div>
                 {netChange > 0 ? (
@@ -71,8 +77,11 @@ export default function EmployeeSalaryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Average Net</p>
-                  <p className="text-2xl font-bold">${avgNetSalary.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">Average Net Salary</p>
+                  <p className="text-2xl font-bold">${Math.round(avgNetSalary).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Based on {salarySlips.length} payment{salarySlips.length !== 1 ? 's' : ''}
+                  </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -83,8 +92,11 @@ export default function EmployeeSalaryPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Slips</p>
+                  <p className="text-sm text-muted-foreground">Total Payments</p>
                   <p className="text-2xl font-bold">{salarySlips.length}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Salary slips on record
+                  </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>

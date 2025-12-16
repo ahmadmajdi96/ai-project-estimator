@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,11 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   MessageSquare, Paperclip, Send, Trash2, Download, Clock, User, 
-  Calendar, Flag, MoveRight, FileText, Image, File
+  Calendar, MoveRight, FileText, Image, File
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Task, useUpdateTask } from '@/hooks/useTasks';
-import { useTaskStages, TaskStage } from '@/hooks/useTaskStages';
+import { useTaskStages } from '@/hooks/useTaskStages';
 import { 
   useTaskComments, useAddTaskComment, useDeleteTaskComment,
   useTaskAttachments, useAddTaskAttachment, useDeleteTaskAttachment 
@@ -42,13 +42,22 @@ const statusColors: Record<string, string> = {
   blocked: 'bg-red-500',
 };
 
+const statusOptions = [
+  { value: 'todo', label: 'To Do' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'review', label: 'Review' },
+  { value: 'done', label: 'Done' },
+  { value: 'blocked', label: 'Blocked' },
+];
+
 export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogProps) {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState('details');
+  const [localStatus, setLocalStatus] = useState<string>('');
   
   const { data: stages = [] } = useTaskStages();
-  const { data: comments = [] } = useTaskComments(task?.id || '');
+  const { data: comments = [], refetch: refetchComments } = useTaskComments(task?.id || '');
   const { data: attachments = [] } = useTaskAttachments(task?.id || '');
   
   const updateTask = useUpdateTask();
@@ -57,24 +66,33 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
   const addAttachment = useAddTaskAttachment();
   const deleteAttachment = useDeleteTaskAttachment();
 
+  // Sync local status with task status
+  useEffect(() => {
+    if (task) {
+      setLocalStatus(task.status);
+    }
+  }, [task]);
+
   if (!task) return null;
 
-  const handleStatusChange = (newStatus: string) => {
-    updateTask.mutate({ id: task.id, status: newStatus as Task['status'] });
+  const handleStatusChange = async (newStatus: string) => {
+    setLocalStatus(newStatus); // Update UI immediately
+    await updateTask.mutateAsync({ id: task.id, status: newStatus as Task['status'] });
   };
 
-  const handleStageChange = (stageId: string) => {
-    updateTask.mutate({ id: task.id, stage_id: stageId } as any);
+  const handleStageChange = async (stageId: string) => {
+    await updateTask.mutateAsync({ id: task.id, stage_id: stageId } as any);
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    addComment.mutate({
+    await addComment.mutateAsync({
       task_id: task.id,
       content: newComment,
       user_id: user?.id,
     });
     setNewComment('');
+    refetchComments();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,7 +125,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
           <DialogTitle className="flex items-center gap-3">
             <span className="flex-1">{task.title}</span>
             <Badge className={priorityColors[task.priority]}>{task.priority}</Badge>
-            <Badge className={statusColors[task.status]}>{task.status.replace('_', ' ')}</Badge>
+            <Badge className={statusColors[localStatus]}>{localStatus.replace('_', ' ')}</Badge>
           </DialogTitle>
         </DialogHeader>
 
@@ -125,49 +143,23 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Status</label>
-                <Select value={task.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todo">To Do</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {stages.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Pipeline Stage</label>
-                  <Select 
-                    value={(task as any).stage_id || ''} 
-                    onValueChange={handleStageChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stages.map((stage) => (
-                        <SelectItem key={stage.id} value={stage.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: stage.color }}
-                            />
-                            {stage.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">Status</label>
+              <Select value={localStatus} onValueChange={handleStatusChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${statusColors[option.value]}`} />
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -193,13 +185,13 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
               {task.estimated_hours && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Estimated: {task.estimated_hours}h</span>
+                  <span>Estimated: {Math.floor(task.estimated_hours)}h</span>
                 </div>
               )}
               {task.actual_hours && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Actual: {task.actual_hours}h</span>
+                  <span>Actual: {Math.floor(task.actual_hours)}h</span>
                 </div>
               )}
             </div>
@@ -216,7 +208,7 @@ export function TaskDetailDialog({ task, open, onOpenChange }: TaskDetailDialogP
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <MoveRight className="h-4 w-4" />
-                  Move to Stage
+                  Pipeline Stage
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {stages.map((stage) => (

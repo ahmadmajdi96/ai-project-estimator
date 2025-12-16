@@ -69,7 +69,8 @@ export default function EmployeeRequestsPage() {
       const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
       const matchesType = filterType === 'all' || request.request_type === filterType;
       const matchesSearch = searchQuery === '' || 
-        request.title.toLowerCase().includes(searchQuery.toLowerCase());
+        request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        request.description?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesStatus && matchesType && matchesSearch;
     });
   };
