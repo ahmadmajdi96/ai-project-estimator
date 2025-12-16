@@ -223,30 +223,46 @@ export default function EmployeeTasksPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {/* Assignee Filter - Show for team leads */}
-              {(canViewTeamData || assigneeOptions.length > 0) && (
-                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <Users className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Assignees</SelectItem>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarFallback className="text-[10px]">
-                              {(emp.full_name || emp.email || 'U').slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          {emp.full_name || emp.email || 'Unknown'}
+              {/* Assignee Filter */}
+              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">
+                      {assigneeFilter === 'all' 
+                        ? 'All Assignees' 
+                        : getAssigneeName(assigneeFilter)}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="w-[250px]">
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <span>All Assignees</span>
+                    </div>
+                  </SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                            {(emp.full_name || emp.email || 'U').slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm">{emp.full_name || 'Unknown'}</span>
+                          {emp.email && emp.full_name && (
+                            <span className="text-xs text-muted-foreground">{emp.email}</span>
+                          )}
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-[220px] justify-start text-left font-normal">
