@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
 import { RequestDetailSheet } from '@/components/employee/RequestDetailSheet';
-import { useEmployeeRequests, useAddEmployeeRequest, EmployeeRequest } from '@/hooks/useEmployeeDashboard';
-import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Send } from 'lucide-react';
+import { useAddEmployeeRequest, EmployeeRequest } from '@/hooks/useEmployeeDashboard';
+import { useRoleBasedRequests, useUpdateRequestStatus } from '@/hooks/useRoleBasedData';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Search, Send, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 const requestTypes = [
@@ -24,7 +27,7 @@ const requestTypes = [
   { value: 'other', label: 'Other' },
 ];
 
-const priorityConfig = {
+const priorityConfig: Record<string, { color: string; label: string }> = {
   low: { color: 'bg-slate-500', label: 'Low' },
   medium: { color: 'bg-blue-500', label: 'Medium' },
   high: { color: 'bg-orange-500', label: 'High' },
@@ -44,6 +47,7 @@ export default function EmployeeRequestsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('my-requests');
   
   const [newRequest, setNewRequest] = useState({
     request_type: '',
@@ -52,20 +56,30 @@ export default function EmployeeRequestsPage() {
     priority: 'medium',
   });
 
-  const { data: requests = [] } = useEmployeeRequests();
+  const { data: roleBasedData, isLoading } = useRoleBasedRequests();
+  const { canApproveRequests, canViewTeamData, employeeId } = useUserRole();
   const addRequest = useAddEmployeeRequest();
+  const updateRequestStatus = useUpdateRequestStatus();
 
-  const filteredRequests = requests.filter(request => {
-    const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
-    const matchesType = filterType === 'all' || request.request_type === filterType;
-    const matchesSearch = searchQuery === '' || 
-      request.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesType && matchesSearch;
-  });
+  const myRequests = roleBasedData?.myRequests || [];
+  const teamRequests = roleBasedData?.teamRequests || [];
+
+  const filterRequests = (requests: any[]) => {
+    return requests.filter(request => {
+      const matchesStatus = filterStatus === 'all' || request.status === filterStatus;
+      const matchesType = filterType === 'all' || request.request_type === filterType;
+      const matchesSearch = searchQuery === '' || 
+        request.title.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesType && matchesSearch;
+    });
+  };
+
+  const filteredMyRequests = filterRequests(myRequests);
+  const filteredTeamRequests = filterRequests(teamRequests);
 
   const handleSubmit = () => {
     if (!newRequest.request_type || !newRequest.title) return;
-    addRequest.mutate(newRequest);
+    addRequest.mutate({ ...newRequest, employee_id: employeeId || undefined });
     setNewRequest({ request_type: '', title: '', description: '', priority: 'medium' });
     setDialogOpen(false);
   };
@@ -75,10 +89,89 @@ export default function EmployeeRequestsPage() {
     setSheetOpen(true);
   };
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const inReviewRequests = requests.filter(r => r.status === 'in_review');
-  const approvedRequests = requests.filter(r => r.status === 'approved');
-  const rejectedRequests = requests.filter(r => r.status === 'rejected');
+  const handleApprove = (requestId: string) => {
+    updateRequestStatus.mutate({ requestId, status: 'approved' });
+  };
+
+  const handleReject = (requestId: string) => {
+    updateRequestStatus.mutate({ requestId, status: 'rejected' });
+  };
+
+  const pendingRequests = myRequests.filter(r => r.status === 'pending');
+  const inReviewRequests = myRequests.filter(r => r.status === 'in_review');
+  const approvedRequests = myRequests.filter(r => r.status === 'approved');
+  const rejectedRequests = myRequests.filter(r => r.status === 'rejected');
+
+  const teamPendingCount = teamRequests.filter(r => r.status === 'pending' || r.status === 'in_review').length;
+
+  const RequestCard = ({ request, showActions = false }: { request: any; showActions?: boolean }) => {
+    const status = statusConfig[request.status] || statusConfig.pending;
+    const StatusIcon = status.icon;
+    const priority = priorityConfig[request.priority] || priorityConfig.medium;
+
+    return (
+      <Card 
+        className="hover:shadow-md transition-shadow cursor-pointer"
+        onClick={() => handleRequestClick(request)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className={`p-2 rounded-lg ${status.bg}`}>
+                <StatusIcon className={`h-4 w-4 ${status.color}`} />
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {requestTypes.find(t => t.value === request.request_type)?.label || request.request_type}
+              </Badge>
+            </div>
+            <div className={`w-2 h-2 rounded-full ${priority.color}`} title={priority.label} />
+          </div>
+          
+          <h3 className="font-medium mb-1 line-clamp-1">{request.title}</h3>
+          {request.employees?.full_name && (
+            <p className="text-xs text-muted-foreground mb-2">By: {request.employees.full_name}</p>
+          )}
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {request.description || 'No description provided'}
+          </p>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {format(new Date(request.created_at), 'MMM d, yyyy')}
+            </span>
+            <Badge className={status.bg + ' ' + status.color} variant="secondary">
+              {status.label}
+            </Badge>
+          </div>
+
+          {showActions && (request.status === 'pending' || request.status === 'in_review') && canApproveRequests && (
+            <div className="flex gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="flex-1 text-green-600 hover:bg-green-50"
+                onClick={() => handleApprove(request.id)}
+                disabled={updateRequestStatus.isPending}
+              >
+                <ThumbsUp className="h-4 w-4 mr-1" />
+                Approve
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="flex-1 text-red-600 hover:bg-red-50"
+                onClick={() => handleReject(request.id)}
+                disabled={updateRequestStatus.isPending}
+              >
+                <ThumbsDown className="h-4 w-4 mr-1" />
+                Reject
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <EmployeeLayout>
@@ -87,9 +180,11 @@ export default function EmployeeRequestsPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Send className="h-8 w-8" />
-              My Requests
+              {canViewTeamData ? 'Requests Management' : 'My Requests'}
             </h1>
-            <p className="text-muted-foreground">Submit and track your requests</p>
+            <p className="text-muted-foreground">
+              {canViewTeamData ? 'Manage your requests and review team requests' : 'Submit and track your requests'}
+            </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -167,15 +262,15 @@ export default function EmployeeRequestsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-lg bg-muted">
                 <AlertCircle className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{requests.length}</p>
-                <p className="text-sm text-muted-foreground">Total Requests</p>
+                <p className="text-2xl font-bold">{myRequests.length}</p>
+                <p className="text-sm text-muted-foreground">Total</p>
               </div>
             </CardContent>
           </Card>
@@ -212,111 +307,123 @@ export default function EmployeeRequestsPage() {
               </div>
             </CardContent>
           </Card>
+          {canViewTeamData && (
+            <Card className="border-primary/50 bg-primary/5">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{teamPendingCount}</p>
+                  <p className="text-sm text-muted-foreground">Team Pending</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* Requests List */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search requests..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[130px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_review">In Review</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {requestTypes.map(t => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[calc(100vh-450px)]">
-              <div className="space-y-3">
-                {filteredRequests.map((request) => {
-                  const config = statusConfig[request.status] || statusConfig.pending;
-                  const priority = priorityConfig[request.priority as keyof typeof priorityConfig] || priorityConfig.medium;
-                  const StatusIcon = config.icon;
-                  
-                  return (
-                    <div 
-                      key={request.id} 
-                      onClick={() => handleRequestClick(request)}
-                      className="flex items-start gap-4 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-colors"
-                    >
-                      <div className={`p-2 rounded-lg ${config.bg}`}>
-                        <StatusIcon className={`h-5 w-5 ${config.color}`} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-medium">{request.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {requestTypes.find(t => t.value === request.request_type)?.label || request.request_type}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${priority.color} text-white text-xs`}>
-                              {priority.label}
-                            </Badge>
-                            <Badge variant="outline" className={config.color}>
-                              {config.label}
-                            </Badge>
-                          </div>
-                        </div>
-                        {request.description && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{request.description}</p>
-                        )}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span>Submitted: {format(new Date(request.created_at), 'PPP')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {filteredRequests.length === 0 && (
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search requests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_review">In Review</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {requestTypes.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Content based on role */}
+        {canViewTeamData ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="my-requests">My Requests ({filteredMyRequests.length})</TabsTrigger>
+              <TabsTrigger value="team-requests" className="relative">
+                Team Requests ({filteredTeamRequests.length})
+                {teamPendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {teamPendingCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="my-requests" className="mt-6">
+              <ScrollArea className="h-[calc(100vh-450px)]">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredMyRequests.map(request => (
+                    <RequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+                {filteredMyRequests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
-                    <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No requests found. Click "New Request" to submit one.</p>
+                    No requests found
                   </div>
                 )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            </TabsContent>
 
-        {/* Request Detail Sheet */}
-        <RequestDetailSheet
-          request={selectedRequest}
-          open={sheetOpen}
-          onOpenChange={setSheetOpen}
-        />
+            <TabsContent value="team-requests" className="mt-6">
+              <ScrollArea className="h-[calc(100vh-450px)]">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTeamRequests.map(request => (
+                    <RequestCard key={request.id} request={request} showActions />
+                  ))}
+                </div>
+                {filteredTeamRequests.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No team requests found
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ScrollArea className="h-[calc(100vh-400px)]">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredMyRequests.map(request => (
+                <RequestCard key={request.id} request={request} />
+              ))}
+            </div>
+            {filteredMyRequests.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                No requests found
+              </div>
+            )}
+          </ScrollArea>
+        )}
       </div>
+
+      <RequestDetailSheet
+        request={selectedRequest}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </EmployeeLayout>
   );
 }
