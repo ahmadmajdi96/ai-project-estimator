@@ -19,7 +19,7 @@ import {
   Plus, Search, Ticket, Clock, CheckCircle, XCircle, AlertCircle, 
   AlertTriangle, Filter, ArrowUpCircle, Tag
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const ticketCategories = [
   { value: 'it_support', label: 'IT Support' },
@@ -342,7 +342,7 @@ export default function EmployeeTicketsPage() {
                             <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <span>{ticketCategories.find(c => c.value === ticket.category)?.label}</span>
                               <span>•</span>
-                              <span>{format(new Date(ticket.created_at), 'PPp')}</span>
+                              <span>{format(parseISO(ticket.created_at), 'PPp')}</span>
                             </div>
                           </div>
                         </div>

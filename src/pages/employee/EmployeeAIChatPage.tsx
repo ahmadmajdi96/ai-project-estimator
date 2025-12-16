@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,15 +20,23 @@ export default function EmployeeAIChatPage() {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Fetch all employee-related data
-  const { data: tasks = [] } = useTasks();
-  const { data: requests = [] } = useEmployeeRequests();
+  // Fetch all employee-related data with fresh data on mount
+  const { data: tasks = [], refetch: refetchTasks } = useTasks();
+  const { data: requests = [], refetch: refetchRequests } = useEmployeeRequests();
   const { data: salarySlips = [] } = useSalarySlips();
-  const { data: leaveRequests = [] } = useLeaveRequests();
+  const { data: leaveRequests = [], refetch: refetchLeave } = useLeaveRequests();
   const { data: attendance = [] } = useHRAttendance();
-  const { data: tickets = [] } = useEmployeeTickets();
+  const { data: tickets = [], refetch: refetchTickets } = useEmployeeTickets();
   const { data: employees = [] } = useEmployees();
   const { data: departments = [] } = useDepartments();
+
+  // Refetch critical data when component mounts to ensure AI has latest info
+  useEffect(() => {
+    refetchTasks();
+    refetchRequests();
+    refetchLeave();
+    refetchTickets();
+  }, []);
 
   // Build comprehensive context for AI
   const aiContext = useMemo(() => ({
