@@ -154,6 +154,7 @@ import LogisticsSettingsPage from "./pages/logistics/SettingsPage";
 // Employee Portal
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeTasksPage from "./pages/employee/EmployeeTasksPage";
+import EmployeeTaskProfilePage from "./pages/employee/EmployeeTaskProfilePage";
 import EmployeeProjectsPage from "./pages/employee/EmployeeProjectsPage";
 import EmployeeRequestsPage from "./pages/employee/EmployeeRequestsPage";
 import EmployeeSalaryPage from "./pages/employee/EmployeeSalaryPage";
@@ -323,6 +324,7 @@ const App = () => (
           <Route path="/employee" element={<EmployeeDashboard />} />
           <Route path="/employee/schedule" element={<EmployeeSchedulePage />} />
           <Route path="/employee/tasks" element={<EmployeeTasksPage />} />
+          <Route path="/employee/tasks/:id" element={<EmployeeTaskProfilePage />} />
           <Route path="/employee/projects" element={<EmployeeProjectsPage />} />
           <Route path="/employee/requests" element={<EmployeeRequestsPage />} />
           <Route path="/employee/tickets" element={<EmployeeTicketsPage />} />

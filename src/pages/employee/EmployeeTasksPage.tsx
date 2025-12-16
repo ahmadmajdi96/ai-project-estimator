@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
-import { EnhancedTaskDetailSheet } from '@/components/employee/EnhancedTaskDetailSheet';
 import { CreateTaskDialog } from '@/components/employee/CreateTaskDialog';
 import { useTasks, Task, useUpdateTaskStatus } from '@/hooks/useTasks';
 import { useTaskStages } from '@/hooks/useTaskStages';
@@ -37,13 +37,12 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function EmployeeTasksPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
@@ -119,8 +118,7 @@ export default function EmployeeTasksPage() {
   };
 
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setSheetOpen(true);
+    navigate(`/employee/tasks/${task.id}`);
   };
 
   const getAssigneeName = (assignedTo: string | null) => {
@@ -461,19 +459,6 @@ export default function EmployeeTasksPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Enhanced Task Detail Sheet */}
-        <EnhancedTaskDetailSheet
-          task={selectedTask}
-          open={sheetOpen}
-          onOpenChange={(open) => {
-            setSheetOpen(open);
-            if (!open) {
-              refetch();
-            }
-          }}
-          onTaskUpdate={() => refetch()}
-        />
 
         {/* Create Task Dialog */}
         <CreateTaskDialog
