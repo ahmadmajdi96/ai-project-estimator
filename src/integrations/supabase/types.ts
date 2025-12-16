@@ -4542,6 +4542,50 @@ export type Database = {
           },
         ]
       }
+      employee_documents: {
+        Row: {
+          created_at: string
+          document_name: string
+          document_type: string | null
+          employee_id: string
+          file_size: number | null
+          file_url: string
+          id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_name: string
+          document_type?: string | null
+          employee_id: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_name?: string
+          document_type?: string | null
+          employee_id?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_requests: {
         Row: {
           additional_details: string | null
@@ -4560,9 +4604,12 @@ export type Database = {
           is_escalated: boolean | null
           manager_approved_at: string | null
           manager_approved_by: string | null
+          manager_id: string | null
+          manager_notes: string | null
           manager_status: string | null
           priority: string | null
           request_type: string
+          reviewed_at: string | null
           status: string | null
           title: string
           updated_at: string
@@ -4584,9 +4631,12 @@ export type Database = {
           is_escalated?: boolean | null
           manager_approved_at?: string | null
           manager_approved_by?: string | null
+          manager_id?: string | null
+          manager_notes?: string | null
           manager_status?: string | null
           priority?: string | null
           request_type: string
+          reviewed_at?: string | null
           status?: string | null
           title: string
           updated_at?: string
@@ -4608,9 +4658,12 @@ export type Database = {
           is_escalated?: boolean | null
           manager_approved_at?: string | null
           manager_approved_by?: string | null
+          manager_id?: string | null
+          manager_notes?: string | null
           manager_status?: string | null
           priority?: string | null
           request_type?: string
+          reviewed_at?: string | null
           status?: string | null
           title?: string
           updated_at?: string
@@ -4619,6 +4672,13 @@ export type Database = {
           {
             foreignKeyName: "employee_requests_employee_id_fkey"
             columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_requests_manager_id_fkey"
+            columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
@@ -4772,13 +4832,22 @@ export type Database = {
       }
       employees: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string | null
           department_id: string | null
+          email: string | null
+          emergency_contact: string | null
           employee_code: string | null
+          full_name: string | null
           hire_date: string | null
           id: string
+          level: string | null
           manager_id: string | null
+          must_change_password: boolean | null
+          national_id: string | null
+          notes: string | null
+          phone: string | null
           position: string | null
           position_id: string | null
           responsibilities: string[] | null
@@ -4791,13 +4860,22 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string | null
           department_id?: string | null
+          email?: string | null
+          emergency_contact?: string | null
           employee_code?: string | null
+          full_name?: string | null
           hire_date?: string | null
           id?: string
+          level?: string | null
           manager_id?: string | null
+          must_change_password?: boolean | null
+          national_id?: string | null
+          notes?: string | null
+          phone?: string | null
           position?: string | null
           position_id?: string | null
           responsibilities?: string[] | null
@@ -4810,13 +4888,22 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string | null
           department_id?: string | null
+          email?: string | null
+          emergency_contact?: string | null
           employee_code?: string | null
+          full_name?: string | null
           hire_date?: string | null
           id?: string
+          level?: string | null
           manager_id?: string | null
+          must_change_password?: boolean | null
+          national_id?: string | null
+          notes?: string | null
+          phone?: string | null
           position?: string | null
           position_id?: string | null
           responsibilities?: string[] | null
