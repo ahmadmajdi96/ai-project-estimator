@@ -9265,6 +9265,47 @@ export type Database = {
           },
         ]
       }
+      task_feedback: {
+        Row: {
+          content: string
+          created_at: string
+          feedback_type: string
+          id: string
+          is_approved: boolean | null
+          task_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          is_approved?: boolean | null
+          task_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          is_approved?: boolean | null
+          task_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_feedback_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_stages: {
         Row: {
           color: string | null
@@ -9296,6 +9337,9 @@ export type Database = {
         Row: {
           actual_hours: number | null
           ai_estimation_id: string | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           assigned_team_id: string | null
           assigned_to: string | null
           blocked_by: string[] | null
@@ -9314,6 +9358,7 @@ export type Database = {
           milestone_id: string | null
           parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"] | null
+          requires_approval: boolean | null
           stage_id: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["task_status"] | null
@@ -9324,6 +9369,9 @@ export type Database = {
         Insert: {
           actual_hours?: number | null
           ai_estimation_id?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_team_id?: string | null
           assigned_to?: string | null
           blocked_by?: string[] | null
@@ -9342,6 +9390,7 @@ export type Database = {
           milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
+          requires_approval?: boolean | null
           stage_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null
@@ -9352,6 +9401,9 @@ export type Database = {
         Update: {
           actual_hours?: number | null
           ai_estimation_id?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_team_id?: string | null
           assigned_to?: string | null
           blocked_by?: string[] | null
@@ -9370,6 +9422,7 @@ export type Database = {
           milestone_id?: string | null
           parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"] | null
+          requires_approval?: boolean | null
           stage_id?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["task_status"] | null

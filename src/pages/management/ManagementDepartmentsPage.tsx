@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ManagementLayout } from '@/components/management/ManagementLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Building, Edit, Trash2, Users } from 'lucide-react';
+import { Plus, Building, Edit, Trash2, Users, Loader2 } from 'lucide-react';
 import { useDepartments, useAddDepartment, useUpdateDepartment, useDeleteDepartment, Department } from '@/hooks/useDepartments';
 import { useEmployees } from '@/hooks/useEmployees';
+import { toast } from 'sonner';
+
+interface FormData {
+  name: string;
+  description: string;
+  budget: string;
+  color: string;
+  parent_department_id: string;
+}
+
+const initialFormData: FormData = {
+  name: '',
+  description: '',
+  budget: '',
+  color: '#3b82f6',
+  parent_department_id: '',
+};
 
 export default function ManagementDepartmentsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    budget: '',
-    color: '#3b82f6',
-    parent_department_id: '',
-  });
+  const formRef = useRef<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
 
   const { data: departments, isLoading } = useDepartments();
   const { data: employees } = useEmployees();
@@ -34,22 +46,42 @@ export default function ManagementDepartmentsPage() {
   };
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      budget: '',
-      color: '#3b82f6',
-      parent_department_id: '',
-    });
+    formRef.current = initialFormData;
+    setFormData(initialFormData);
+  };
+
+  useEffect(() => {
+    if (editingDepartment) {
+      const data = {
+        name: editingDepartment.name,
+        description: editingDepartment.description || '',
+        budget: editingDepartment.budget?.toString() || '',
+        color: editingDepartment.color || '#3b82f6',
+        parent_department_id: editingDepartment.parent_department_id || '',
+      };
+      formRef.current = data;
+      setFormData(data);
+    }
+  }, [editingDepartment]);
+
+  const updateField = (field: keyof FormData, value: string) => {
+    formRef.current = { ...formRef.current, [field]: value };
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleAdd = () => {
+    const data = formRef.current;
+    if (!data.name.trim()) {
+      toast.error('Department name is required');
+      return;
+    }
+
     addDepartment.mutate({
-      name: formData.name,
-      description: formData.description || undefined,
-      budget: formData.budget ? parseFloat(formData.budget) : undefined,
-      color: formData.color,
-      parent_department_id: formData.parent_department_id || undefined,
+      name: data.name.trim(),
+      description: data.description.trim() || undefined,
+      budget: data.budget ? parseFloat(data.budget) : undefined,
+      color: data.color,
+      parent_department_id: data.parent_department_id || undefined,
     }, {
       onSuccess: () => {
         setIsAddOpen(false);
@@ -60,24 +92,24 @@ export default function ManagementDepartmentsPage() {
 
   const handleEdit = (dept: Department) => {
     setEditingDepartment(dept);
-    setFormData({
-      name: dept.name,
-      description: dept.description || '',
-      budget: dept.budget?.toString() || '',
-      color: dept.color || '#3b82f6',
-      parent_department_id: dept.parent_department_id || '',
-    });
   };
 
   const handleUpdate = () => {
     if (!editingDepartment) return;
+    const data = formRef.current;
+    
+    if (!data.name.trim()) {
+      toast.error('Department name is required');
+      return;
+    }
+
     updateDepartment.mutate({
       id: editingDepartment.id,
-      name: formData.name,
-      description: formData.description || null,
-      budget: formData.budget ? parseFloat(formData.budget) : null,
-      color: formData.color,
-      parent_department_id: formData.parent_department_id || null,
+      name: data.name.trim(),
+      description: data.description.trim() || null,
+      budget: data.budget ? parseFloat(data.budget) : null,
+      color: data.color,
+      parent_department_id: data.parent_department_id || null,
     }, {
       onSuccess: () => {
         setEditingDepartment(null);
@@ -86,22 +118,22 @@ export default function ManagementDepartmentsPage() {
     });
   };
 
-  const DepartmentForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
+  const DepartmentForm = ({ onSubmit, submitLabel, isPending }: { onSubmit: () => void; submitLabel: string; isPending: boolean }) => (
     <div className="space-y-4">
       <div>
         <Label>Name *</Label>
         <Input 
           placeholder="e.g., Engineering"
-          value={formData.name}
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          defaultValue={formData.name}
+          onBlur={(e) => updateField('name', e.target.value)}
         />
       </div>
       <div>
         <Label>Description</Label>
         <Textarea 
           placeholder="Department description..."
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          defaultValue={formData.description}
+          onBlur={(e) => updateField('description', e.target.value)}
         />
       </div>
       <div>
@@ -109,8 +141,8 @@ export default function ManagementDepartmentsPage() {
         <Input 
           type="number"
           placeholder="e.g., 100000"
-          value={formData.budget}
-          onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+          defaultValue={formData.budget}
+          onBlur={(e) => updateField('budget', e.target.value)}
         />
       </div>
       <div>
@@ -119,12 +151,12 @@ export default function ManagementDepartmentsPage() {
           <Input 
             type="color"
             value={formData.color}
-            onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+            onChange={(e) => updateField('color', e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input 
             value={formData.color}
-            onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+            onChange={(e) => updateField('color', e.target.value)}
             className="flex-1"
           />
         </div>
@@ -133,7 +165,7 @@ export default function ManagementDepartmentsPage() {
         <Label>Parent Department</Label>
         <Select 
           value={formData.parent_department_id || "__none__"} 
-          onValueChange={(v) => setFormData(prev => ({ ...prev, parent_department_id: v === "__none__" ? "" : v }))}
+          onValueChange={(v) => updateField('parent_department_id', v === "__none__" ? "" : v)}
         >
           <SelectTrigger>
             <SelectValue placeholder="None (Top Level)" />
@@ -148,7 +180,8 @@ export default function ManagementDepartmentsPage() {
           </SelectContent>
         </Select>
       </div>
-      <Button onClick={onSubmit} className="w-full" disabled={!formData.name}>
+      <Button onClick={onSubmit} className="w-full" disabled={isPending}>
+        {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
         {submitLabel}
       </Button>
     </div>
@@ -157,102 +190,118 @@ export default function ManagementDepartmentsPage() {
   return (
     <ManagementLayout title="Departments">
       <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-display font-bold">Departments</h1>
-                <p className="text-muted-foreground">Manage organizational departments</p>
-              </div>
-              <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => { resetForm(); setIsAddOpen(true); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Department
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Department</DialogTitle>
-                  </DialogHeader>
-                  <DepartmentForm onSubmit={handleAdd} submitLabel="Add Department" />
-                </DialogContent>
-              </Dialog>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold">Departments</h1>
+            <p className="text-muted-foreground">Manage organizational departments</p>
+          </div>
+          <Dialog open={isAddOpen} onOpenChange={(open) => {
+            setIsAddOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { resetForm(); setIsAddOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Department
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Department</DialogTitle>
+              </DialogHeader>
+              <DepartmentForm 
+                onSubmit={handleAdd} 
+                submitLabel="Add Department" 
+                isPending={addDepartment.isPending}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {isLoading ? (
-                <div className="col-span-full text-center py-12 text-muted-foreground">
-                  Loading departments...
-                </div>
-              ) : departments?.length === 0 ? (
-                <div className="col-span-full text-center py-12 text-muted-foreground">
-                  No departments found. Create your first department.
-                </div>
-              ) : (
-                departments?.map((dept) => (
-                  <Card key={dept.id} className="relative overflow-hidden">
-                    <div 
-                      className="absolute top-0 left-0 w-1 h-full"
-                      style={{ backgroundColor: dept.color || '#3b82f6' }}
-                    />
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: `${dept.color}20` }}
-                          >
-                            <Building className="h-4 w-4" style={{ color: dept.color }} />
-                          </div>
-                          <CardTitle className="text-lg">{dept.name}</CardTitle>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleEdit(dept)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => deleteDepartment.mutate(dept.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {dept.description || 'No description'}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {getEmployeeCount(dept.id)} employees
-                        </Badge>
-                        {dept.budget && (
-                          <span className="text-sm font-medium">
-                            ${dept.budget.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoading ? (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Loading departments...
             </div>
+          ) : departments?.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              No departments found. Create your first department.
+            </div>
+          ) : (
+            departments?.map((dept) => (
+              <Card key={dept.id} className="relative overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 w-1 h-full"
+                  style={{ backgroundColor: dept.color || '#3b82f6' }}
+                />
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${dept.color}20` }}
+                      >
+                        <Building className="h-4 w-4" style={{ color: dept.color }} />
+                      </div>
+                      <CardTitle className="text-lg">{dept.name}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEdit(dept)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => deleteDepartment.mutate(dept.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {dept.description || 'No description'}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {getEmployeeCount(dept.id)} employees
+                    </Badge>
+                    {dept.budget && (
+                      <span className="text-sm font-medium">
+                        ${dept.budget.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
 
-            {/* Edit Dialog */}
-            <Dialog open={!!editingDepartment} onOpenChange={(open) => !open && setEditingDepartment(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit Department</DialogTitle>
-                </DialogHeader>
-                <DepartmentForm onSubmit={handleUpdate} submitLabel="Update Department" />
-              </DialogContent>
-            </Dialog>
+        {/* Edit Dialog */}
+        <Dialog open={!!editingDepartment} onOpenChange={(open) => {
+          if (!open) {
+            setEditingDepartment(null);
+            resetForm();
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Department</DialogTitle>
+            </DialogHeader>
+            <DepartmentForm 
+              onSubmit={handleUpdate} 
+              submitLabel="Update Department" 
+              isPending={updateDepartment.isPending}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </ManagementLayout>
   );
