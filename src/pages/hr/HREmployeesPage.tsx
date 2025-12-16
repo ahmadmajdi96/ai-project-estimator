@@ -49,6 +49,7 @@ export default function HREmployeesPage() {
     if (!newEmployee.position) return;
     
     await addEmployee.mutateAsync({
+      full_name: newEmployee.position,
       position: newEmployee.position,
       department_id: newEmployee.department_id || undefined,
       employee_code: newEmployee.employee_code || undefined,

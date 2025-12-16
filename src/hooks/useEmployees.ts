@@ -13,6 +13,15 @@ export interface Employee {
   skills: string[] | null;
   status: 'active' | 'inactive' | 'on_leave';
   manager_id: string | null;
+  full_name: string | null;
+  national_id: string | null;
+  level: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  emergency_contact: string | null;
+  notes: string | null;
+  must_change_password: boolean | null;
   created_at: string;
   updated_at: string;
   departments?: {
@@ -64,6 +73,7 @@ export function useAddEmployee() {
   
   return useMutation({
     mutationFn: async (emp: { 
+      full_name: string;
       position: string; 
       department_id?: string; 
       employee_code?: string;
@@ -71,6 +81,13 @@ export function useAddEmployee() {
       skills?: string[];
       status?: 'active' | 'inactive' | 'on_leave';
       hire_date?: string;
+      national_id?: string;
+      level?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+      emergency_contact?: string;
+      notes?: string;
     }) => {
       const insertData = {
         ...emp,

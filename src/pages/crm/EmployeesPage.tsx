@@ -35,6 +35,7 @@ export default function EmployeesPage() {
     }
     
     await addEmployee.mutateAsync({
+      full_name: position,
       position,
       department_id: departmentId || undefined,
       employee_code: employeeCode || undefined,
