@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,13 @@ import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
 import { TaskDetailDialog } from '@/components/employee/TaskDetailDialog';
 import { useTasks, Task, useUpdateTaskStatus } from '@/hooks/useTasks';
 import { useTaskStages } from '@/hooks/useTaskStages';
-import { Search, Filter, Calendar, Clock, GripVertical } from 'lucide-react';
-import { format } from 'date-fns';
+import { useRoadmaps } from '@/hooks/useRoadmaps';
+import { Search, Filter, Calendar, GripVertical, FolderKanban, CalendarRange } from 'lucide-react';
+import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
 
 const defaultStatuses = [
   { id: 'todo', name: 'To Do', color: '#64748b' },
@@ -31,28 +35,76 @@ const priorityColors: Record<string, string> = {
 export default function EmployeeTasksPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const { data: tasks = [] } = useTasks();
+  const { data: tasks = [], refetch } = useTasks();
   const { data: customStages = [] } = useTaskStages();
+  const { data: roadmaps = [] } = useRoadmaps();
   const updateTaskStatus = useUpdateTaskStatus();
 
-  // Use custom stages if defined, otherwise use default statuses
-  const stages = customStages.length > 0 
-    ? customStages.map(s => ({ id: s.value, name: s.name, color: s.color }))
-    : defaultStatuses;
+  // Use default statuses only (not pipeline stages - they are different)
+  const stages = defaultStatuses;
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
-    return matchesSearch && matchesPriority;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+      const matchesProject = projectFilter === 'all' || (task as any).roadmap_id === projectFilter;
+      
+      // Date range filter
+      let matchesDate = true;
+      if (dateRange?.from && task.due_date) {
+        const dueDate = parseISO(task.due_date);
+        matchesDate = isAfter(dueDate, startOfDay(dateRange.from)) || 
+                      format(dueDate, 'yyyy-MM-dd') === format(dateRange.from, 'yyyy-MM-dd');
+        if (dateRange.to) {
+          matchesDate = matchesDate && (isBefore(dueDate, endOfDay(dateRange.to)) || 
+                        format(dueDate, 'yyyy-MM-dd') === format(dateRange.to, 'yyyy-MM-dd'));
+        }
+      }
+      
+      return matchesSearch && matchesPriority && matchesProject && matchesDate;
+    });
+  }, [tasks, searchTerm, priorityFilter, projectFilter, dateRange]);
+
+  // Sort tasks by due date for list view
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => {
+      // First sort by status priority
+      const statusOrder: Record<string, number> = { todo: 0, in_progress: 1, review: 2, blocked: 3, done: 4 };
+      const statusDiff = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+      if (statusDiff !== 0) return statusDiff;
+      
+      // Then sort by due date
+      if (a.due_date && b.due_date) {
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      }
+      if (a.due_date) return -1;
+      if (b.due_date) return 1;
+      
+      // Then by priority
+      const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+      return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+    });
+  }, [filteredTasks]);
 
   const getTasksByStatus = (status: string) => {
-    return filteredTasks.filter(task => task.status === status);
+    return filteredTasks
+      .filter(task => task.status === status)
+      .sort((a, b) => {
+        // Sort by due date within each column
+        if (a.due_date && b.due_date) {
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        }
+        if (a.due_date) return -1;
+        if (b.due_date) return 1;
+        return 0;
+      });
   };
 
   const handleTaskClick = (task: Task) => {
@@ -60,13 +112,28 @@ export default function EmployeeTasksPage() {
     setDialogOpen(true);
   };
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     
     const taskId = result.draggableId;
     const newStatus = result.destination.droppableId as Task['status'];
+    const destinationIndex = result.destination.index;
     
-    updateTaskStatus.mutate({ id: taskId, status: newStatus });
+    // Update the task status
+    await updateTaskStatus.mutateAsync({ id: taskId, status: newStatus });
+    
+    // Refetch to get updated data
+    refetch();
+  };
+
+  const getProjectName = (roadmapId: string | null) => {
+    if (!roadmapId) return null;
+    const project = roadmaps.find(r => r.id === roadmapId);
+    return project?.title || null;
+  };
+
+  const clearDateFilter = () => {
+    setDateRange(undefined);
   };
 
   return (
@@ -98,8 +165,8 @@ export default function EmployeeTasksPage() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-wrap gap-4">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search tasks..."
@@ -109,7 +176,7 @@ export default function EmployeeTasksPage() {
                 />
               </div>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[150px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
@@ -121,6 +188,53 @@ export default function EmployeeTasksPage() {
                   <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <FolderKanban className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {roadmaps.map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[220px] justify-start text-left font-normal">
+                    <CalendarRange className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, 'LLL dd')} - {format(dateRange.to, 'LLL dd')}
+                        </>
+                      ) : (
+                        format(dateRange.from, 'LLL dd, y')
+                      )
+                    ) : (
+                      <span>Due date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                  {dateRange && (
+                    <div className="p-2 border-t">
+                      <Button variant="ghost" size="sm" onClick={clearDateFilter} className="w-full">
+                        Clear filter
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>
@@ -172,6 +286,14 @@ export default function EmployeeTasksPage() {
                                             {task.description}
                                           </p>
                                         )}
+                                        {getProjectName((task as any).roadmap_id) && (
+                                          <div className="flex items-center gap-1 mt-1">
+                                            <FolderKanban className="h-3 w-3 text-muted-foreground" />
+                                            <span className="text-xs text-muted-foreground truncate">
+                                              {getProjectName((task as any).roadmap_id)}
+                                            </span>
+                                          </div>
+                                        )}
                                         <div className="flex items-center gap-2 mt-2">
                                           <Badge variant="outline" className={`text-xs ${priorityColors[task.priority]}`}>
                                             {task.priority}
@@ -183,6 +305,11 @@ export default function EmployeeTasksPage() {
                                             </span>
                                           )}
                                         </div>
+                                        {task.estimated_hours && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            Est: {Math.floor(task.estimated_hours)}h
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
                                   </CardContent>
@@ -206,7 +333,7 @@ export default function EmployeeTasksPage() {
           <Card>
             <CardContent className="p-0">
               <div className="divide-y">
-                {filteredTasks.map((task) => (
+                {sortedTasks.map((task) => (
                   <div
                     key={task.id}
                     className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors"
@@ -214,9 +341,25 @@ export default function EmployeeTasksPage() {
                   >
                     <div className="flex-1">
                       <p className="font-medium">{task.title}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="line-clamp-1">{task.description}</span>
+                        {getProjectName((task as any).roadmap_id) && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <FolderKanban className="h-3 w-3" />
+                              {getProjectName((task as any).roadmap_id)}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {task.estimated_hours && (
+                        <span className="text-sm text-muted-foreground">
+                          {Math.floor(task.estimated_hours)}h
+                        </span>
+                      )}
                       {task.due_date && (
                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
@@ -237,7 +380,7 @@ export default function EmployeeTasksPage() {
                     </div>
                   </div>
                 ))}
-                {filteredTasks.length === 0 && (
+                {sortedTasks.length === 0 && (
                   <div className="p-8 text-center text-muted-foreground">
                     No tasks found
                   </div>
@@ -251,7 +394,13 @@ export default function EmployeeTasksPage() {
         <TaskDetailDialog
           task={selectedTask}
           open={dialogOpen}
-          onOpenChange={setDialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              // Refresh to get latest data when dialog closes
+              refetch();
+            }
+          }}
         />
       </div>
     </EmployeeLayout>

@@ -40,11 +40,11 @@ const priorityConfig = {
 };
 
 const statusConfig = {
-  open: { icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Open' },
-  in_progress: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'In Progress' },
-  pending: { icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Pending' },
-  resolved: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Resolved' },
-  closed: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Closed' },
+  open: { icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Open', description: 'Awaiting assignment' },
+  in_progress: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'In Progress', description: 'Being worked on' },
+  pending: { icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Pending', description: 'Waiting for response' },
+  resolved: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Resolved', description: 'Issue fixed' },
+  closed: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Closed', description: 'No further action' },
 };
 
 export default function EmployeeTicketsPage() {
@@ -71,9 +71,14 @@ export default function EmployeeTicketsPage() {
     const matchesCategory = filterCategory === 'all' || ticket.category === filterCategory;
     const matchesSearch = searchQuery === '' || 
       ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.ticket_number.toLowerCase().includes(searchQuery.toLowerCase());
+      ticket.description?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesCategory && matchesSearch;
   });
+
+  // Generate shorter display ID (last 6 chars of UUID)
+  const getDisplayId = (ticketNumber: string) => {
+    return `#${ticketNumber.slice(-6).toUpperCase()}`;
+  };
 
   const handleCreateTicket = () => {
     if (!newTicket.category || !newTicket.subject) return;
@@ -328,8 +333,8 @@ export default function EmployeeTicketsPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm text-muted-foreground">
-                                {ticket.ticket_number}
+                              <span className="font-mono text-sm text-muted-foreground" title={ticket.ticket_number}>
+                                {getDisplayId(ticket.ticket_number)}
                               </span>
                               {ticket.is_escalated && (
                                 <Badge variant="destructive" className="text-xs">

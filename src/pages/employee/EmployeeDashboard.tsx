@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,10 +6,12 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
+import { TaskDetailDialog } from '@/components/employee/TaskDetailDialog';
 import { useAuth } from '@/hooks/useAuth';
-import { useTasks } from '@/hooks/useTasks';
+import { useTasks, Task } from '@/hooks/useTasks';
 import { useEmployeeRequests, useSalarySlips } from '@/hooks/useEmployeeDashboard';
 import { useLeaveRequests, useHRAttendance } from '@/hooks/useHR';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ListTodo,
   CheckCircle,
@@ -18,7 +20,6 @@ import {
   Calendar,
   DollarSign,
   Send,
-  TrendingUp,
   ArrowRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -26,6 +27,9 @@ import { format } from 'date-fns';
 export default function EmployeeDashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [employeeName, setEmployeeName] = useState<string>('');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const { data: allTasks = [] } = useTasks();
   const { data: requests = [] } = useEmployeeRequests();
@@ -38,6 +42,23 @@ export default function EmployeeDashboard() {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  // Fetch employee name
+  useEffect(() => {
+    const fetchEmployeeName = async () => {
+      if (user?.id) {
+        const { data } = await supabase
+          .from('employees')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        if (data?.full_name) {
+          setEmployeeName(data.full_name);
+        }
+      }
+    };
+    fetchEmployeeName();
+  }, [user?.id]);
 
   // For now, show all tasks - in production, filter by assigned_to = current employee
   const myTasks = allTasks;
@@ -54,10 +75,16 @@ export default function EmployeeDashboard() {
     : 0;
 
   const currentMonth = format(new Date(), 'yyyy-MM');
+  const currentMonthName = format(new Date(), 'MMMM yyyy');
   const thisMonthAttendance = attendance.filter(a => a.date?.startsWith(currentMonth));
   const presentDays = thisMonthAttendance.filter(a => a.status === 'present').length;
   const lateDays = thisMonthAttendance.filter(a => a.status === 'late').length;
   const absentDays = thisMonthAttendance.filter(a => a.status === 'absent').length;
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setDialogOpen(true);
+  };
 
   if (loading) {
     return (
@@ -74,13 +101,18 @@ export default function EmployeeDashboard() {
       <div className="space-y-6">
         {/* Welcome Header */}
         <div>
-          <h1 className="text-3xl font-bold">Welcome Back!</h1>
+          <h1 className="text-3xl font-bold">
+            Welcome Back{employeeName ? `, ${employeeName}` : ''}!
+          </h1>
           <p className="text-muted-foreground">Here's an overview of your work and activities.</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+          <Card 
+            className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/employee/tasks')}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -93,7 +125,10 @@ export default function EmployeeDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+          <Card 
+            className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/employee/tasks')}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -106,28 +141,40 @@ export default function EmployeeDashboard() {
             </CardContent>
           </Card>
 
-          <Card className={`bg-gradient-to-br ${overdueTasks.length > 0 ? 'from-red-500/10 to-orange-500/10 border-red-500/20' : 'from-amber-500/10 to-yellow-500/10 border-amber-500/20'}`}>
+          <Card 
+            className={`cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br ${overdueTasks.length > 0 ? 'from-red-500/10 to-orange-500/10 border-red-500/20' : 'from-amber-500/10 to-yellow-500/10 border-amber-500/20'}`}
+            onClick={() => navigate('/employee/tasks')}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-sm text-muted-foreground">To Do</p>
                   <p className="text-2xl font-bold">{pendingTasks.length}</p>
                   <p className={`text-xs ${overdueTasks.length > 0 ? 'text-red-600' : 'text-amber-600'}`}>
-                    {overdueTasks.length} overdue
+                    {overdueTasks.length > 0 ? `${overdueTasks.length} past due date` : 'All on track'}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-amber-500" />
+                {overdueTasks.length > 0 ? (
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                ) : (
+                  <Clock className="h-8 w-8 text-amber-500" />
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+          <Card 
+            className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/employee/requests')}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Requests</p>
+                  <p className="text-sm text-muted-foreground">My Requests</p>
                   <p className="text-2xl font-bold">{requests.length}</p>
-                  <p className="text-xs text-purple-600">{pendingRequests.length} pending</p>
+                  <p className="text-xs text-purple-600">
+                    {pendingRequests.length} awaiting approval
+                  </p>
                 </div>
                 <Send className="h-8 w-8 text-purple-500" />
               </div>
@@ -155,7 +202,7 @@ export default function EmployeeDashboard() {
                     <div 
                       key={task.id} 
                       className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate('/employee/tasks')}
+                      onClick={() => handleTaskClick(task)}
                     >
                       <div className="flex-1">
                         <p className="font-medium">{task.title}</p>
@@ -196,7 +243,7 @@ export default function EmployeeDashboard() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Task Progress */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/employee/tasks')}>
               <CardHeader>
                 <CardTitle className="text-base">Task Progress</CardTitle>
               </CardHeader>
@@ -224,11 +271,11 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Attendance Summary */}
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/employee/attendance')}>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  This Month Attendance
+                  {currentMonthName} Attendance
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -251,7 +298,7 @@ export default function EmployeeDashboard() {
 
             {/* Latest Salary */}
             {latestSalary && (
-              <Card>
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/employee/salary')}>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <DollarSign className="h-4 w-4" />
@@ -285,6 +332,13 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Task Detail Dialog */}
+      <TaskDetailDialog
+        task={selectedTask}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </EmployeeLayout>
   );
 }
