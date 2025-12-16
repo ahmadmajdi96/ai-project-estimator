@@ -4,19 +4,29 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
 import coetanexLogo from '@/assets/coetanex-logo.png';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Invalid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
+type AppRole = 'super_admin' | 'ceo' | 'department_head' | 'team_lead' | 'employee';
+
+// Map emails to roles for test accounts
+const EMAIL_ROLE_MAP: Record<string, AppRole> = {
+  'ahmad@cortanex.com': 'employee',
+  'mohammad@cortanex.com': 'team_lead',
+  'mahmoud@cortanex.com': 'department_head',
+};
+
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, role } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [loginEmail, setLoginEmail] = useState('');
@@ -27,10 +37,51 @@ export default function Auth() {
   const [signupName, setSignupName] = useState('');
 
   useEffect(() => {
-    if (user && !loading) {
-      navigate('/dashboard');
+    if (user && !loading && role) {
+      // Route based on role
+      if (role === 'employee' || role === 'team_lead') {
+        navigate('/employee');
+      } else if (role === 'department_head' || role === 'ceo' || role === 'super_admin') {
+        navigate('/crm');
+      } else {
+        navigate('/');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, role, navigate]);
+
+  const assignRoleAndLinkEmployee = async (userId: string, email: string) => {
+    // Determine role from email mapping or default to employee
+    const assignedRole: AppRole = EMAIL_ROLE_MAP[email.toLowerCase()] || 'employee';
+    
+    // Check if role already exists
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!existingRole) {
+      // Insert role
+      await supabase.from('user_roles').insert({
+        user_id: userId,
+        role: assignedRole,
+      });
+    }
+    
+    // Link employee record if exists
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+    
+    if (employee) {
+      await supabase
+        .from('employees')
+        .update({ user_id: userId })
+        .eq('id', employee.id);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +98,21 @@ export default function Auth() {
 
     setIsSubmitting(true);
     const { error } = await signIn(loginEmail, loginPassword);
-    setIsSubmitting(false);
-
+    
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('Invalid login')) {
         toast.error('Invalid email or password');
       } else {
         toast.error(error.message);
       }
+    } else {
+      // Get user and assign role if needed
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await assignRoleAndLinkEmployee(authUser.id, loginEmail);
+      }
+      setIsSubmitting(false);
     }
   };
 
@@ -77,16 +135,22 @@ export default function Auth() {
 
     setIsSubmitting(true);
     const { error } = await signUp(signupEmail, signupPassword, signupName);
-    setIsSubmitting(false);
-
+    
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('already registered')) {
         toast.error('This email is already registered');
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created! You can now sign in.');
+      // Get user and assign role
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await assignRoleAndLinkEmployee(authUser.id, signupEmail);
+      }
+      toast.success('Account created successfully!');
+      setIsSubmitting(false);
     }
   };
 
