@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,22 +8,29 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useEnterpriseAI } from '@/hooks/useEnterpriseAI';
 import { useTasks } from '@/hooks/useTasks';
 import { useEmployeeRequests, useSalarySlips } from '@/hooks/useEmployeeDashboard';
+import { useEmployeeTickets } from '@/hooks/useEmployeeTickets';
 import { useLeaveRequests, useHRAttendance } from '@/hooks/useHR';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useDepartments } from '@/hooks/useDepartments';
 import { MarkdownRenderer } from '@/components/chat/MarkdownRenderer';
 import { Bot, User, Send, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useMemo } from 'react';
 
 export default function EmployeeAIChatPage() {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   
+  // Fetch all employee-related data
   const { data: tasks = [] } = useTasks();
   const { data: requests = [] } = useEmployeeRequests();
   const { data: salarySlips = [] } = useSalarySlips();
   const { data: leaveRequests = [] } = useLeaveRequests();
   const { data: attendance = [] } = useHRAttendance();
+  const { data: tickets = [] } = useEmployeeTickets();
+  const { data: employees = [] } = useEmployees();
+  const { data: departments = [] } = useDepartments();
 
+  // Build comprehensive context for AI
   const aiContext = useMemo(() => ({
     employeeData: {
       tasks: {
@@ -32,11 +39,18 @@ export default function EmployeeAIChatPage() {
         inProgress: tasks.filter(t => t.status === 'in_progress').length,
         completed: tasks.filter(t => t.status === 'done').length,
         overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'done').length,
-        recentTasks: tasks.slice(0, 5).map(t => ({
+        byPriority: {
+          critical: tasks.filter(t => t.priority === 'critical').length,
+          high: tasks.filter(t => t.priority === 'high').length,
+          medium: tasks.filter(t => t.priority === 'medium').length,
+          low: tasks.filter(t => t.priority === 'low').length,
+        },
+        recentTasks: tasks.slice(0, 10).map(t => ({
           title: t.title,
           status: t.status,
           priority: t.priority,
           dueDate: t.due_date,
+          description: t.description?.slice(0, 100),
         })),
       },
       requests: {
@@ -44,11 +58,32 @@ export default function EmployeeAIChatPage() {
         pending: requests.filter(r => r.status === 'pending').length,
         approved: requests.filter(r => r.status === 'approved').length,
         rejected: requests.filter(r => r.status === 'rejected').length,
+        inReview: requests.filter(r => r.status === 'in_review').length,
+        recentRequests: requests.slice(0, 5).map(r => ({
+          title: r.title,
+          type: r.request_type,
+          status: r.status,
+          priority: r.priority,
+        })),
+      },
+      tickets: {
+        total: tickets.length,
+        open: tickets.filter(t => t.status === 'open').length,
+        inProgress: tickets.filter(t => t.status === 'in_progress').length,
+        resolved: tickets.filter(t => t.status === 'resolved').length,
+        escalated: tickets.filter(t => t.is_escalated).length,
+        recentTickets: tickets.slice(0, 5).map(t => ({
+          subject: t.subject,
+          category: t.category,
+          status: t.status,
+          priority: t.priority,
+        })),
       },
       leave: {
         total: leaveRequests.length,
         pending: leaveRequests.filter(l => l.status === 'pending').length,
         approved: leaveRequests.filter(l => l.status === 'approved').length,
+        rejected: leaveRequests.filter(l => l.status === 'rejected').length,
       },
       attendance: {
         thisMonth: attendance.filter(a => a.date?.startsWith(format(new Date(), 'yyyy-MM'))).length,
@@ -59,10 +94,17 @@ export default function EmployeeAIChatPage() {
       salary: salarySlips.length > 0 ? {
         lastPayment: salarySlips[0]?.net_salary,
         lastPeriod: salarySlips[0]?.period_end,
+        totalSlips: salarySlips.length,
       } : null,
     },
+    organization: {
+      totalEmployees: employees.length,
+      departments: departments.map(d => d.name),
+      departmentCount: departments.length,
+    },
     currentDate: format(new Date(), 'PPP'),
-  }), [tasks, requests, leaveRequests, attendance, salarySlips]);
+    currentTime: format(new Date(), 'p'),
+  }), [tasks, requests, leaveRequests, attendance, salarySlips, tickets, employees, departments]);
 
   const { messages, isLoading, sendMessage, clearMessages } = useEnterpriseAI({ context: aiContext });
 
@@ -89,9 +131,10 @@ export default function EmployeeAIChatPage() {
   const suggestedQuestions = [
     "How many tasks do I have pending?",
     "What's my attendance this month?",
-    "Any overdue tasks I should prioritize?",
+    "Show me my open tickets",
     "Summarize my work status",
-    "How can I improve my productivity?",
+    "Any overdue tasks I should prioritize?",
+    "What requests are pending approval?",
   ];
 
   return (
@@ -103,7 +146,7 @@ export default function EmployeeAIChatPage() {
               <Sparkles className="h-8 w-8 text-primary" />
               AI Assistant
             </h1>
-            <p className="text-muted-foreground">Get help with your tasks, requests, and work-related questions</p>
+            <p className="text-muted-foreground">Ask about your tasks, requests, tickets, and work status</p>
           </div>
           <Button variant="outline" onClick={clearMessages} disabled={messages.length === 0}>
             <Trash2 className="h-4 w-4 mr-2" />
@@ -119,20 +162,11 @@ export default function EmployeeAIChatPage() {
                   <Bot className="h-16 w-16 text-primary/50 mb-4" />
                   <h3 className="text-xl font-semibold mb-2">How can I help you today?</h3>
                   <p className="text-muted-foreground mb-6 max-w-md">
-                    I can help you with task management, leave requests, attendance tracking, 
-                    and answer questions about your work.
+                    I have access to your tasks, requests, tickets, attendance, and more. Ask me anything!
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                     {suggestedQuestions.map((q, i) => (
-                      <Button
-                        key={i}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setInput(q);
-                          sendMessage(q);
-                        }}
-                      >
+                      <Button key={i} variant="outline" size="sm" onClick={() => sendMessage(q)}>
                         {q}
                       </Button>
                     ))}
@@ -141,10 +175,7 @@ export default function EmployeeAIChatPage() {
               ) : (
                 <div className="space-y-4">
                   {messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                    <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {msg.role === 'assistant' && (
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -152,24 +183,12 @@ export default function EmployeeAIChatPage() {
                           </AvatarFallback>
                         </Avatar>
                       )}
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        {msg.role === 'assistant' ? (
-                          <MarkdownRenderer content={msg.content} />
-                        ) : (
-                          <p>{msg.content}</p>
-                        )}
+                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : <p>{msg.content}</p>}
                       </div>
                       {msg.role === 'user' && (
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-secondary">
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
+                          <AvatarFallback className="bg-secondary"><User className="h-4 w-4" /></AvatarFallback>
                         </Avatar>
                       )}
                     </div>
@@ -177,9 +196,7 @@ export default function EmployeeAIChatPage() {
                   {isLoading && (
                     <div className="flex gap-3 justify-start">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          <Bot className="h-4 w-4" />
-                        </AvatarFallback>
+                        <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></AvatarFallback>
                       </Avatar>
                       <div className="bg-muted rounded-lg p-3 flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />

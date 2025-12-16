@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,23 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { TicketDetailSheet } from '@/components/employee/TicketDetailSheet';
 import { 
   useEmployeeTickets, 
   useAddEmployeeTicket, 
-  useUpdateEmployeeTicket,
-  useTicketComments,
-  useAddTicketComment,
-  useEscalateTicket,
-  useResolveTicket,
   EmployeeTicket
 } from '@/hooks/useEmployeeTickets';
 import { 
   Plus, Search, Ticket, Clock, CheckCircle, XCircle, AlertCircle, 
-  MessageSquare, Paperclip, AlertTriangle, Filter, ArrowUpCircle,
-  Calendar, Tag
+  AlertTriangle, Filter, ArrowUpCircle, Tag
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -57,29 +50,21 @@ const statusConfig = {
 export default function EmployeeTicketsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<EmployeeTicket | null>(null);
-  const [escalateDialogOpen, setEscalateDialogOpen] = useState(false);
-  const [escalationReason, setEscalationReason] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [newComment, setNewComment] = useState('');
   
   const [newTicket, setNewTicket] = useState({
     category: '',
     subject: '',
     description: '',
     priority: 'medium',
-    attachments: [] as any[],
     tags: [] as string[],
   });
 
   const { data: tickets = [] } = useEmployeeTickets();
-  const { data: comments = [] } = useTicketComments(selectedTicket?.id || '');
   const addTicket = useAddEmployeeTicket();
-  const updateTicket = useUpdateEmployeeTicket();
-  const addComment = useAddTicketComment();
-  const escalateTicket = useEscalateTicket();
-  const resolveTicket = useResolveTicket();
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
@@ -99,7 +84,7 @@ export default function EmployeeTicketsPage() {
       description: newTicket.description,
       priority: newTicket.priority,
       status: 'open',
-      attachments: newTicket.attachments,
+      attachments: [],
       tags: newTicket.tags,
       employee_id: null,
       assigned_to: null,
@@ -120,30 +105,14 @@ export default function EmployeeTicketsPage() {
       subject: '',
       description: '',
       priority: 'medium',
-      attachments: [],
       tags: [],
     });
     setDialogOpen(false);
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim() || !selectedTicket) return;
-    
-    addComment.mutate({
-      ticket_id: selectedTicket.id,
-      content: newComment,
-      user_id: null,
-      is_internal: false,
-    });
-    setNewComment('');
-  };
-
-  const handleEscalate = () => {
-    if (!selectedTicket || !escalationReason.trim()) return;
-    
-    escalateTicket.mutate({ id: selectedTicket.id, reason: escalationReason });
-    setEscalationReason('');
-    setEscalateDialogOpen(false);
+  const handleTicketClick = (ticket: EmployeeTicket) => {
+    setSelectedTicket(ticket);
+    setSheetOpen(true);
   };
 
   const openTickets = tickets.filter(t => t.status === 'open').length;
@@ -296,270 +265,123 @@ export default function EmployeeTicketsPage() {
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Tickets List */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search tickets..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-[130px]">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterCategory} onValueChange={setFilterCategory}>
-                    <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {ticketCategories.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Tickets List */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tickets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {filteredTickets.map(ticket => {
-                    const status = statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open;
-                    const priority = priorityConfig[ticket.priority as keyof typeof priorityConfig] || priorityConfig.medium;
-                    const StatusIcon = status.icon;
-                    const isSelected = selectedTicket?.id === ticket.id;
-                    
-                    return (
-                      <div
-                        key={ticket.id}
-                        onClick={() => setSelectedTicket(ticket)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-lg ${status.bg}`}>
-                              <StatusIcon className={`h-4 w-4 ${status.color}`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm text-muted-foreground">
-                                  {ticket.ticket_number}
-                                </span>
-                                {ticket.is_escalated && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    <ArrowUpCircle className="h-3 w-3 mr-1" />
-                                    Escalated
-                                  </Badge>
-                                )}
-                              </div>
-                              <h4 className="font-medium mt-1">{ticket.subject}</h4>
-                              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                                <span>{ticketCategories.find(c => c.value === ticket.category)?.label}</span>
-                                <span>•</span>
-                                <span>{format(new Date(ticket.created_at), 'PPp')}</span>
-                              </div>
-                            </div>
+              <div className="flex gap-2">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[130px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {ticketCategories.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[calc(100vh-450px)]">
+              <div className="space-y-3">
+                {filteredTickets.map(ticket => {
+                  const status = statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open;
+                  const priority = priorityConfig[ticket.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+                  const StatusIcon = status.icon;
+                  
+                  return (
+                    <div
+                      key={ticket.id}
+                      onClick={() => handleTicketClick(ticket)}
+                      className="p-4 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 hover:border-primary/50"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${status.bg}`}>
+                            <StatusIcon className={`h-4 w-4 ${status.color}`} />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${priority.color} text-white text-xs`}>
-                              {priority.label}
-                            </Badge>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-sm text-muted-foreground">
+                                {ticket.ticket_number}
+                              </span>
+                              {ticket.is_escalated && (
+                                <Badge variant="destructive" className="text-xs">
+                                  <ArrowUpCircle className="h-3 w-3 mr-1" />
+                                  Escalated
+                                </Badge>
+                              )}
+                            </div>
+                            <h4 className="font-medium mt-1">{ticket.subject}</h4>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <span>{ticketCategories.find(c => c.value === ticket.category)?.label}</span>
+                              <span>•</span>
+                              <span>{format(new Date(ticket.created_at), 'PPp')}</span>
+                            </div>
                           </div>
                         </div>
-                        {ticket.tags && ticket.tags.length > 0 && (
-                          <div className="flex items-center gap-1 mt-2 flex-wrap">
-                            <Tag className="h-3 w-3 text-muted-foreground" />
-                            {ticket.tags.map((tag, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${priority.color} text-white text-xs`}>
+                            {priority.label}
+                          </Badge>
+                        </div>
                       </div>
-                    );
-                  })}
-                  {filteredTickets.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No tickets found
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Ticket Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedTicket ? (
-                <div className="space-y-4">
-                  <div>
-                    <span className="font-mono text-sm text-muted-foreground">
-                      {selectedTicket.ticket_number}
-                    </span>
-                    <h3 className="font-semibold text-lg mt-1">{selectedTicket.subject}</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Status</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={statusConfig[selectedTicket.status as keyof typeof statusConfig]?.color || ''}>
-                          {statusConfig[selectedTicket.status as keyof typeof statusConfig]?.label || selectedTicket.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Priority</span>
-                      <div className="mt-1">
-                        <Badge className={`${priorityConfig[selectedTicket.priority as keyof typeof priorityConfig]?.color || 'bg-slate-500'} text-white`}>
-                          {priorityConfig[selectedTicket.priority as keyof typeof priorityConfig]?.label || selectedTicket.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Category</span>
-                      <p className="mt-1">{ticketCategories.find(c => c.value === selectedTicket.category)?.label}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Created</span>
-                      <p className="mt-1">{format(new Date(selectedTicket.created_at), 'PPp')}</p>
-                    </div>
-                  </div>
-
-                  {selectedTicket.description && (
-                    <div>
-                      <span className="text-muted-foreground text-sm">Description</span>
-                      <p className="mt-1 text-sm">{selectedTicket.description}</p>
-                    </div>
-                  )}
-
-                  {selectedTicket.is_escalated && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <div className="flex items-center gap-2 text-red-600 font-medium">
-                        <AlertTriangle className="h-4 w-4" />
-                        Escalated
-                      </div>
-                      {selectedTicket.escalation_reason && (
-                        <p className="text-sm mt-1">{selectedTicket.escalation_reason}</p>
+                      {ticket.tags && ticket.tags.length > 0 && (
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          <Tag className="h-3 w-3 text-muted-foreground" />
+                          {ticket.tags.map((tag, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </div>
-                  )}
-
-                  {selectedTicket.resolution && (
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <span className="text-green-600 font-medium">Resolution</span>
-                      <p className="text-sm mt-1">{selectedTicket.resolution}</p>
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  {/* Comments */}
-                  <div>
-                    <h4 className="font-medium flex items-center gap-2 mb-3">
-                      <MessageSquare className="h-4 w-4" />
-                      Comments ({comments.length})
-                    </h4>
-                    <ScrollArea className="h-[150px] mb-3">
-                      <div className="space-y-3">
-                        {comments.map(comment => (
-                          <div key={comment.id} className="p-2 rounded bg-muted/50 text-sm">
-                            <p>{comment.content}</p>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(comment.created_at), 'PPp')}
-                            </span>
-                          </div>
-                        ))}
-                        {comments.length === 0 && (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            No comments yet
-                          </p>
-                        )}
-                      </div>
-                    </ScrollArea>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                      />
-                      <Button size="icon" onClick={handleAddComment} disabled={!newComment.trim()}>
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  );
+                })}
+                {filteredTickets.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No tickets found</p>
                   </div>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-                  <Separator />
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {selectedTicket.status !== 'resolved' && !selectedTicket.is_escalated && (
-                      <Dialog open={escalateDialogOpen} onOpenChange={setEscalateDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" className="flex-1 text-orange-600">
-                            <ArrowUpCircle className="h-4 w-4 mr-2" />
-                            Escalate
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Escalate Ticket</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Reason for Escalation</Label>
-                              <Textarea
-                                value={escalationReason}
-                                onChange={(e) => setEscalationReason(e.target.value)}
-                                placeholder="Explain why this ticket needs escalation..."
-                                rows={4}
-                              />
-                            </div>
-                            <Button onClick={handleEscalate} className="w-full" disabled={!escalationReason.trim()}>
-                              Escalate Ticket
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Select a ticket to view details</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {/* Ticket Detail Sheet */}
+        <TicketDetailSheet
+          ticket={selectedTicket}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
       </div>
     </EmployeeLayout>
   );
