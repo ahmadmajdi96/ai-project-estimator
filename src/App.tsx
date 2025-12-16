@@ -161,6 +161,7 @@ import EmployeeAttendancePage from "./pages/employee/EmployeeAttendancePage";
 import EmployeeLeavePage from "./pages/employee/EmployeeLeavePage";
 import EmployeeAIChatPage from "./pages/employee/EmployeeAIChatPage";
 import EmployeeTicketsPage from "./pages/employee/EmployeeTicketsPage";
+import EmployeeSchedulePage from "./pages/employee/EmployeeSchedulePage";
 
 const queryClient = new QueryClient();
 
@@ -320,6 +321,7 @@ const App = () => (
           <Route path="/hr/ai-chat" element={<HRAIChatPage />} />
           {/* Employee Portal Routes */}
           <Route path="/employee" element={<EmployeeDashboard />} />
+          <Route path="/employee/schedule" element={<EmployeeSchedulePage />} />
           <Route path="/employee/tasks" element={<EmployeeTasksPage />} />
           <Route path="/employee/projects" element={<EmployeeProjectsPage />} />
           <Route path="/employee/requests" element={<EmployeeRequestsPage />} />

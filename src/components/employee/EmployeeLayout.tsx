@@ -27,6 +27,7 @@ interface EmployeeLayoutProps {
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/employee' },
+  { id: 'schedule', label: 'My Schedule', icon: Calendar, path: '/employee/schedule' },
   { id: 'tasks', label: 'My Tasks', icon: ListTodo, path: '/employee/tasks' },
   { id: 'projects', label: 'My Projects', icon: FolderKanban, path: '/employee/projects' },
   { id: 'requests', label: 'My Requests', icon: Send, path: '/employee/requests' },
