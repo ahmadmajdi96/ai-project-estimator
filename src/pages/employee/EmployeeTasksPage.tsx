@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { EmployeeLayout } from '@/components/employee/EmployeeLayout';
-import { TaskDetailDialog } from '@/components/employee/TaskDetailDialog';
+import { EnhancedTaskDetailSheet } from '@/components/employee/EnhancedTaskDetailSheet';
+import { CreateTaskDialog } from '@/components/employee/CreateTaskDialog';
 import { useTasks, Task, useUpdateTaskStatus } from '@/hooks/useTasks';
 import { useTaskStages } from '@/hooks/useTaskStages';
 import { useRoadmaps } from '@/hooks/useRoadmaps';
-import { Search, Filter, Calendar, GripVertical, FolderKanban, CalendarRange } from 'lucide-react';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useUserRole, useTeamMembers } from '@/hooks/useUserRole';
+import { Search, Filter, Calendar, GripVertical, FolderKanban, CalendarRange, Plus, Users } from 'lucide-react';
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -36,15 +40,21 @@ export default function EmployeeTasksPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const { data: tasks = [], refetch } = useTasks();
   const { data: customStages = [] } = useTaskStages();
   const { data: roadmaps = [] } = useRoadmaps();
+  const { data: employees = [] } = useEmployees();
   const updateTaskStatus = useUpdateTaskStatus();
+  
+  const { canViewTeamData, employeeId } = useUserRole();
+  const { data: teamMembers = [] } = useTeamMembers(canViewTeamData ? employeeId : null);
 
   // Use default statuses only (not pipeline stages - they are different)
   const stages = defaultStatuses;
@@ -55,6 +65,7 @@ export default function EmployeeTasksPage() {
         task.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
       const matchesProject = projectFilter === 'all' || (task as any).roadmap_id === projectFilter;
+      const matchesAssignee = assigneeFilter === 'all' || task.assigned_to === assigneeFilter;
       
       // Date range filter
       let matchesDate = true;
@@ -68,9 +79,9 @@ export default function EmployeeTasksPage() {
         }
       }
       
-      return matchesSearch && matchesPriority && matchesProject && matchesDate;
+      return matchesSearch && matchesPriority && matchesProject && matchesAssignee && matchesDate;
     });
-  }, [tasks, searchTerm, priorityFilter, projectFilter, dateRange]);
+  }, [tasks, searchTerm, priorityFilter, projectFilter, assigneeFilter, dateRange]);
 
   // Sort tasks by due date for list view
   const sortedTasks = useMemo(() => {
@@ -109,8 +120,16 @@ export default function EmployeeTasksPage() {
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
+
+  const getAssigneeName = (assignedTo: string | null) => {
+    if (!assignedTo) return 'Unassigned';
+    return employees.find(e => e.id === assignedTo)?.full_name || 'Unknown';
+  };
+
+  // Get list of assignees for filter (team members for team leads, all employees otherwise)
+  const assigneeOptions = canViewTeamData ? teamMembers : employees;
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -145,6 +164,10 @@ export default function EmployeeTasksPage() {
             <p className="text-muted-foreground">Manage and track your assigned tasks</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Task
+            </Button>
             <Button
               variant={viewMode === 'kanban' ? 'default' : 'outline'}
               size="sm"
@@ -200,6 +223,30 @@ export default function EmployeeTasksPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {/* Assignee Filter - Show for team leads */}
+              {(canViewTeamData || assigneeOptions.length > 0) && (
+                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <Users className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Assignees</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-[10px]">
+                              {(emp.full_name || emp.email || 'U').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {emp.full_name || emp.email || 'Unknown'}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-[220px] justify-start text-left font-normal">
@@ -294,15 +341,24 @@ export default function EmployeeTasksPage() {
                                             </span>
                                           </div>
                                         )}
-                                        <div className="flex items-center gap-2 mt-2">
-                                          <Badge variant="outline" className={`text-xs ${priorityColors[task.priority]}`}>
-                                            {task.priority}
-                                          </Badge>
-                                          {task.due_date && (
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                              <Calendar className="h-3 w-3" />
-                                              {format(new Date(task.due_date), 'MMM d')}
-                                            </span>
+                                        <div className="flex items-center justify-between mt-2">
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className={`text-xs ${priorityColors[task.priority]}`}>
+                                              {task.priority}
+                                            </Badge>
+                                            {task.due_date && (
+                                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                {format(new Date(task.due_date), 'MMM d')}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {task.assigned_to && (
+                                            <Avatar className="h-6 w-6">
+                                              <AvatarFallback className="text-[10px]">
+                                                {getAssigneeName(task.assigned_to).slice(0, 2).toUpperCase()}
+                                              </AvatarFallback>
+                                            </Avatar>
                                           )}
                                         </div>
                                         {task.estimated_hours && (
@@ -390,17 +446,24 @@ export default function EmployeeTasksPage() {
           </Card>
         )}
 
-        {/* Task Detail Dialog */}
-        <TaskDetailDialog
+        {/* Enhanced Task Detail Sheet */}
+        <EnhancedTaskDetailSheet
           task={selectedTask}
-          open={dialogOpen}
+          open={sheetOpen}
           onOpenChange={(open) => {
-            setDialogOpen(open);
+            setSheetOpen(open);
             if (!open) {
-              // Refresh to get latest data when dialog closes
               refetch();
             }
           }}
+          onTaskUpdate={() => refetch()}
+        />
+
+        {/* Create Task Dialog */}
+        <CreateTaskDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onSuccess={() => refetch()}
         />
       </div>
     </EmployeeLayout>
