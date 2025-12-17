@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   useSalesmenWithRoles, 
   useUpdateSalesmanPosition,
@@ -19,7 +20,8 @@ import {
   SalesPosition,
   SalesmanWithRole
 } from '@/hooks/useSalesmenRoles';
-import { useAddSalesman } from '@/hooks/useSalesmen';
+import { useAddSalesman, useUpdateSalesman, useDeleteSalesman } from '@/hooks/useSalesmen';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   UserPlus, 
@@ -30,7 +32,10 @@ import {
   Settings,
   Loader2,
   Briefcase,
-  Search
+  Search,
+  Pencil,
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,23 +56,41 @@ const CRM_PAGES = [
   { path: '/crm/config', label: 'Configuration' },
 ];
 
+interface TeamMemberForm {
+  name: string;
+  email: string;
+  phone: string;
+  territory: string;
+  position: SalesPosition;
+  password: string;
+}
+
+const initialFormState: TeamMemberForm = {
+  name: '',
+  email: '',
+  phone: '',
+  territory: '',
+  position: 'salesman',
+  password: '',
+};
+
 export function SalesTeamManagement() {
   const { data: salesmenWithRoles = [], isLoading, refetch } = useSalesmenWithRoles();
   const updatePosition = useUpdateSalesmanPosition();
   const setPermission = useSetSalesmanPagePermission();
   const addSalesman = useAddSalesman();
+  const updateSalesman = useUpdateSalesman();
+  const deleteSalesman = useDeleteSalesman();
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [selectedSalesman, setSelectedSalesman] = useState<SalesmanWithRole | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [addForm, setAddForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    territory: '',
-    position: 'salesman' as SalesPosition,
-  });
+  const [addForm, setAddForm] = useState<TeamMemberForm>(initialFormState);
+  const [editForm, setEditForm] = useState<TeamMemberForm>(initialFormState);
+  const [isCreating, setIsCreating] = useState(false);
 
   const { data: permissions = [] } = useSalesmanPagePermissions(selectedSalesman?.id);
 
@@ -76,23 +99,145 @@ export function SalesTeamManagement() {
       toast.error('Name is required');
       return;
     }
+    if (!addForm.email) {
+      toast.error('Email is required');
+      return;
+    }
+    if (!addForm.password || addForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    setIsCreating(true);
     
     try {
-      // Add salesman with position - employee record is created automatically in the hook
-      await addSalesman.mutateAsync({
-        name: addForm.name,
-        email: addForm.email || undefined,
-        phone: addForm.phone || undefined,
-        territory: addForm.territory || undefined,
-        position: addForm.position,
+      // Create auth user with password
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: addForm.email,
+        password: addForm.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: { full_name: addForm.name },
+        },
       });
       
+      if (authError) throw authError;
+      
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
+      }
+      
+      // Determine the role based on position
+      const positionInfo = SALES_POSITIONS.find(p => p.value === addForm.position);
+      const role = positionInfo?.role || 'employee';
+      
+      // Create user role
+      await supabase.from('user_roles').insert({
+        user_id: authData.user.id,
+        role: role,
+      });
+      
+      // Create employee record with position and name
+      const { data: employee, error: empError } = await supabase
+        .from('employees')
+        .insert([{ 
+          position: addForm.position,
+          status: 'active',
+          user_id: authData.user.id,
+          email: addForm.email,
+        }])
+        .select()
+        .single();
+      
+      if (empError) throw empError;
+      
+      // Create salesman linked to employee
+      const { error: salesError } = await supabase
+        .from('salesmen')
+        .insert([{ 
+          name: addForm.name,
+          email: addForm.email,
+          phone: addForm.phone || null,
+          territory: addForm.territory || null,
+          employee_id: employee.id,
+        }])
+        .select()
+        .single();
+      
+      if (salesError) throw salesError;
+      
+      toast.success('Team member created successfully');
       setAddDialogOpen(false);
-      setAddForm({ name: '', email: '', phone: '', territory: '', position: 'salesman' });
+      setAddForm(initialFormState);
       refetch();
     } catch (error: any) {
       toast.error('Failed to add team member: ' + error.message);
+    } finally {
+      setIsCreating(false);
     }
+  };
+
+  const handleEditSalesman = async () => {
+    if (!selectedSalesman || !editForm.name) {
+      toast.error('Name is required');
+      return;
+    }
+    
+    try {
+      // Update salesman record
+      await updateSalesman.mutateAsync({
+        id: selectedSalesman.id,
+        name: editForm.name,
+        email: editForm.email || null,
+        phone: editForm.phone || null,
+        territory: editForm.territory || null,
+      });
+      
+      // Update position if changed
+      if (editForm.position !== selectedSalesman.position) {
+        await updatePosition.mutateAsync({ 
+          salesmanId: selectedSalesman.id, 
+          position: editForm.position 
+        });
+      }
+      
+      setEditDialogOpen(false);
+      setSelectedSalesman(null);
+      refetch();
+    } catch (error: any) {
+      toast.error('Failed to update team member: ' + error.message);
+    }
+  };
+
+  const handleDeleteSalesman = async () => {
+    if (!selectedSalesman) return;
+    
+    try {
+      await deleteSalesman.mutateAsync(selectedSalesman.id);
+      setDeleteDialogOpen(false);
+      setSelectedSalesman(null);
+      refetch();
+    } catch (error: any) {
+      toast.error('Failed to delete team member: ' + error.message);
+    }
+  };
+
+  const openEditDialog = (salesman: SalesmanWithRole) => {
+    setSelectedSalesman(salesman);
+    setEditForm({
+      name: salesman.name,
+      email: salesman.email || '',
+      phone: salesman.phone || '',
+      territory: salesman.territory || '',
+      position: salesman.position,
+      password: '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (salesman: SalesmanWithRole) => {
+    setSelectedSalesman(salesman);
+    setDeleteDialogOpen(true);
   };
 
   const handlePositionChange = async (salesmanId: string, position: SalesPosition) => {
@@ -162,7 +307,7 @@ export function SalesTeamManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>Email *</Label>
                   <Input
                     type="email"
                     value={addForm.email}
@@ -171,6 +316,21 @@ export function SalesTeamManagement() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      value={addForm.password}
+                      onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                      placeholder="Min 6 characters"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Phone</Label>
                   <Input
                     value={addForm.phone}
@@ -178,8 +338,6 @@ export function SalesTeamManagement() {
                     placeholder="+1 234 567 890"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Territory</Label>
                   <Input
@@ -188,24 +346,24 @@ export function SalesTeamManagement() {
                     placeholder="Region/Area"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Position</Label>
-                  <Select 
-                    value={addForm.position} 
-                    onValueChange={(v) => setAddForm({ ...addForm, position: v as SalesPosition })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SALES_POSITIONS.map(pos => (
-                        <SelectItem key={pos.value} value={pos.value}>
-                          {pos.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Position</Label>
+                <Select 
+                  value={addForm.position} 
+                  onValueChange={(v) => setAddForm({ ...addForm, position: v as SalesPosition })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SALES_POSITIONS.map(pos => (
+                      <SelectItem key={pos.value} value={pos.value}>
+                        {pos.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="bg-muted/30 p-3 rounded-lg">
                 <p className="text-sm text-muted-foreground">
@@ -219,9 +377,9 @@ export function SalesTeamManagement() {
               <Button 
                 onClick={handleAddSalesman} 
                 className="w-full" 
-                disabled={addSalesman.isPending}
+                disabled={isCreating}
               >
-                {addSalesman.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Add Team Member
               </Button>
             </div>
@@ -300,6 +458,16 @@ export function SalesTeamManagement() {
                     </Badge>
                   </div>
                   
+                  {/* Edit Button */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => openEditDialog(salesman)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  
                   {/* Permissions Button */}
                   <Button
                     variant="outline"
@@ -311,6 +479,17 @@ export function SalesTeamManagement() {
                     title="Manage Permissions"
                   >
                     <Settings className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Delete Button */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => openDeleteDialog(salesman)}
+                    className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -326,6 +505,112 @@ export function SalesTeamManagement() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Full name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="email@company.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="+1 234 567 890"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Territory</Label>
+                <Input
+                  value={editForm.territory}
+                  onChange={(e) => setEditForm({ ...editForm, territory: e.target.value })}
+                  placeholder="Region/Area"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Position</Label>
+                <Select 
+                  value={editForm.position} 
+                  onValueChange={(v) => setEditForm({ ...editForm, position: v as SalesPosition })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SALES_POSITIONS.map(pos => (
+                      <SelectItem key={pos.value} value={pos.value}>
+                        {pos.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="bg-muted/30 p-3 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <Shield className="h-4 w-4 inline mr-1" />
+                Role will be updated based on position:
+                <strong className="ml-1">
+                  {ROLE_INFO[SALES_POSITIONS.find(p => p.value === editForm.position)?.role || 'employee'].label}
+                </strong>
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditSalesman} disabled={updateSalesman.isPending}>
+              {updateSalesman.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedSalesman?.name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteSalesman}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteSalesman.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Permissions Dialog */}
       <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
