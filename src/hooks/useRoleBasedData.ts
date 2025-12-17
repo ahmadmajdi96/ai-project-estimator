@@ -381,8 +381,3 @@ export function useRoleBasedProjects() {
     enabled: !!user?.id,
   });
 }
-      return { myProjects, teamProjects };
-    },
-    enabled: !!user?.id,
-  });
-}
