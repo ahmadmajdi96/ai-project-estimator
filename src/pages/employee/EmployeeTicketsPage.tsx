@@ -276,13 +276,14 @@ export default function EmployeeTicketsPage() {
               {canViewTeamData ? 'Manage your tickets and resolve team tickets' : 'Create and track support tickets'}
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="shadow-lg shadow-primary/20">
-                <Plus className="h-4 w-4 mr-2" />
-                New Ticket
-              </Button>
-            </DialogTrigger>
+          {canApproveRequests && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="shadow-lg shadow-primary/20">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Ticket
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create Support Ticket</DialogTitle>
@@ -360,6 +361,7 @@ export default function EmployeeTicketsPage() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         {/* Stats */}
