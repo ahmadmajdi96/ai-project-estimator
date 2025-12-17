@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import coetanexLogo from '@/assets/coetanex-logo.png';
 import {
   LayoutDashboard,
   ListTodo,
@@ -14,12 +13,10 @@ import {
   DollarSign,
   Send,
   LogOut,
-  ChevronLeft,
   User,
   Bot,
   Ticket,
   Menu,
-  X,
   ChevronRight,
   Bell,
   Search,
@@ -27,7 +24,6 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EmployeeLayoutProps {
@@ -115,30 +111,6 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
 
   const SidebarContent = ({ isMobile = false }) => (
     <div className="flex flex-col h-full">
-      {/* Logo Section */}
-      <div className={cn(
-        'flex items-center gap-3 px-4 py-5 border-b border-border/50',
-        sidebarCollapsed && !isMobile && 'justify-center px-2'
-      )}>
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl blur-lg" />
-          <img 
-            src={coetanexLogo} 
-            alt="Logo" 
-            className="relative w-10 h-10 object-contain rounded-xl"
-          />
-        </div>
-        {(!sidebarCollapsed || isMobile) && (
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Employee
-            </span>
-            <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">
-              Portal
-            </span>
-          </div>
-        )}
-      </div>
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-4">
