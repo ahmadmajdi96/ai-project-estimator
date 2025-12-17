@@ -6,18 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TicketDetailSheet } from '@/components/employee/TicketDetailSheet';
-import { 
-  useEmployeeTickets, 
-  useAddEmployeeTicket, 
-  EmployeeTicket
-} from '@/hooks/useEmployeeTickets';
+import { useRoleBasedTickets, useUpdateTicketStatus } from '@/hooks/useRoleBasedData';
+import { useAddEmployeeTicket, EmployeeTicket } from '@/hooks/useEmployeeTickets';
+import { useUserRole } from '@/hooks/useUserRole';
 import { 
   Plus, Search, Ticket, Clock, CheckCircle, XCircle, AlertCircle, 
-  AlertTriangle, Filter, ArrowUpCircle, Tag
+  AlertTriangle, Filter, ArrowUpCircle, Tag, Users, User
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
@@ -40,11 +40,11 @@ const priorityConfig = {
 };
 
 const statusConfig = {
-  open: { icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Open', description: 'Awaiting assignment' },
-  in_progress: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'In Progress', description: 'Being worked on' },
-  pending: { icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Pending', description: 'Waiting for response' },
-  resolved: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Resolved', description: 'Issue fixed' },
-  closed: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Closed', description: 'No further action' },
+  open: { icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Open' },
+  in_progress: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'In Progress' },
+  pending: { icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Pending' },
+  resolved: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Resolved' },
+  closed: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-500/10', label: 'Closed' },
 };
 
 export default function EmployeeTicketsPage() {
@@ -54,6 +54,12 @@ export default function EmployeeTicketsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('my-tickets');
+  
+  // Resolution dialog state
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [resolvingTicketId, setResolvingTicketId] = useState<string | null>(null);
+  const [resolution, setResolution] = useState('');
   
   const [newTicket, setNewTicket] = useState({
     category: '',
@@ -63,19 +69,28 @@ export default function EmployeeTicketsPage() {
     tags: [] as string[],
   });
 
-  const { data: tickets = [] } = useEmployeeTickets();
+  const { data: roleBasedData } = useRoleBasedTickets();
+  const { canApproveRequests, canViewTeamData, employeeId } = useUserRole();
   const addTicket = useAddEmployeeTicket();
+  const updateTicketStatus = useUpdateTicketStatus();
 
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
-    const matchesCategory = filterCategory === 'all' || ticket.category === filterCategory;
-    const matchesSearch = searchQuery === '' || 
-      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesCategory && matchesSearch;
-  });
+  const myTickets = roleBasedData?.myTickets || [];
+  const teamTickets = roleBasedData?.teamTickets || [];
 
-  // Generate shorter display ID (last 6 chars of UUID)
+  const filterTickets = (tickets: any[]) => {
+    return tickets.filter(ticket => {
+      const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
+      const matchesCategory = filterCategory === 'all' || ticket.category === filterCategory;
+      const matchesSearch = searchQuery === '' || 
+        ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesCategory && matchesSearch;
+    });
+  };
+
+  const filteredMyTickets = filterTickets(myTickets);
+  const filteredTeamTickets = filterTickets(teamTickets);
+
   const getDisplayId = (ticketNumber: string) => {
     return `#${ticketNumber.slice(-6).toUpperCase()}`;
   };
@@ -91,7 +106,7 @@ export default function EmployeeTicketsPage() {
       status: 'open',
       attachments: [],
       tags: newTicket.tags,
-      employee_id: null,
+      employee_id: employeeId,
       assigned_to: null,
       department_id: null,
       resolution: null,
@@ -120,25 +135,150 @@ export default function EmployeeTicketsPage() {
     setSheetOpen(true);
   };
 
-  const openTickets = tickets.filter(t => t.status === 'open').length;
-  const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
-  const resolvedTickets = tickets.filter(t => t.status === 'resolved').length;
-  const escalatedTickets = tickets.filter(t => t.is_escalated).length;
+  const handleResolveClick = (ticketId: string) => {
+    setResolvingTicketId(ticketId);
+    setResolution('');
+    setResolveDialogOpen(true);
+  };
+
+  const handleResolveConfirm = () => {
+    if (!resolvingTicketId) return;
+    updateTicketStatus.mutate({ 
+      ticketId: resolvingTicketId, 
+      status: 'resolved',
+      resolution: resolution || undefined
+    });
+    setResolveDialogOpen(false);
+    setResolvingTicketId(null);
+    setResolution('');
+  };
+
+  const handleCloseTicket = (ticketId: string) => {
+    updateTicketStatus.mutate({ ticketId, status: 'closed' });
+  };
+
+  const openTickets = myTickets.filter(t => t.status === 'open').length;
+  const inProgressTickets = myTickets.filter(t => t.status === 'in_progress').length;
+  const resolvedTickets = myTickets.filter(t => t.status === 'resolved').length;
+  const teamOpenCount = teamTickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
+
+  const TicketCard = ({ ticket, showActions = false }: { ticket: any; showActions?: boolean }) => {
+    const status = statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open;
+    const priority = priorityConfig[ticket.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+    const StatusIcon = status.icon;
+    const employeeName = ticket.employees?.full_name || 'Unknown';
+    const initials = employeeName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    
+    return (
+      <div
+        onClick={() => handleTicketClick(ticket)}
+        className="p-4 rounded-xl border-0 bg-card shadow-sm cursor-pointer transition-all hover:shadow-md"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            <div className={`p-2 rounded-lg ${status.bg}`}>
+              <StatusIcon className={`h-4 w-4 ${status.color}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-xs text-muted-foreground">
+                  {getDisplayId(ticket.ticket_number)}
+                </span>
+                {ticket.is_escalated && (
+                  <Badge variant="destructive" className="text-xs h-5">
+                    <ArrowUpCircle className="h-3 w-3 mr-1" />
+                    Escalated
+                  </Badge>
+                )}
+              </div>
+              <h4 className="font-medium mt-1 line-clamp-1">{ticket.subject}</h4>
+              
+              {showActions && ticket.employees?.full_name && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Avatar className="h-5 w-5">
+                    <AvatarFallback className="text-[10px] bg-primary/10">{initials}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground">{ticket.employees.full_name}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <span>{ticketCategories.find(c => c.value === ticket.category)?.label}</span>
+                <span>•</span>
+                <span>{format(parseISO(ticket.created_at), 'MMM d, yyyy')}</span>
+              </div>
+            </div>
+          </div>
+          <Badge className={`${priority.color} text-white text-xs`}>
+            {priority.label}
+          </Badge>
+        </div>
+        
+        {ticket.tags && ticket.tags.length > 0 && (
+          <div className="flex items-center gap-1 mt-3 flex-wrap">
+            <Tag className="h-3 w-3 text-muted-foreground" />
+            {ticket.tags.slice(0, 3).map((tag: string, i: number) => (
+              <Badge key={i} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {ticket.tags.length > 3 && (
+              <span className="text-xs text-muted-foreground">+{ticket.tags.length - 3}</span>
+            )}
+          </div>
+        )}
+
+        {ticket.resolution && (
+          <div className="mt-3 p-2 rounded bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+            <p className="text-xs text-green-600 dark:text-green-400">
+              <strong>Resolution:</strong> {ticket.resolution}
+            </p>
+          </div>
+        )}
+
+        {showActions && (ticket.status === 'open' || ticket.status === 'in_progress') && canApproveRequests && (
+          <div className="flex gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+            <Button 
+              size="sm" 
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => handleResolveClick(ticket.id)}
+              disabled={updateTicketStatus.isPending}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Resolve
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleCloseTicket(ticket.id)}
+              disabled={updateTicketStatus.isPending}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Close
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <EmployeeLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Ticket className="h-8 w-8" />
-              Support Tickets
+            <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+              <Ticket className="h-7 w-7" />
+              {canViewTeamData ? 'Ticket Management' : 'Support Tickets'}
             </h1>
-            <p className="text-muted-foreground">Create and track support tickets</p>
+            <p className="text-muted-foreground">
+              {canViewTeamData ? 'Manage your tickets and resolve team tickets' : 'Create and track support tickets'}
+            </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shadow-lg shadow-primary/20">
                 <Plus className="h-4 w-4 mr-2" />
                 New Ticket
               </Button>
@@ -223,163 +363,134 @@ export default function EmployeeTicketsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-blue-500/10">
-                <AlertCircle className="h-6 w-6 text-blue-500" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {[
+            { label: 'Open', value: openTickets, icon: AlertCircle, color: 'from-blue-500 to-cyan-500' },
+            { label: 'In Progress', value: inProgressTickets, icon: Clock, color: 'from-amber-500 to-orange-500' },
+            { label: 'Resolved', value: resolvedTickets, icon: CheckCircle, color: 'from-emerald-500 to-green-500' },
+            { label: 'Escalated', value: myTickets.filter(t => t.is_escalated).length, icon: AlertTriangle, color: 'from-red-500 to-rose-500' },
+            ...(canViewTeamData ? [{ label: 'Team Open', value: teamOpenCount, icon: Users, color: 'from-purple-500 to-pink-500' }] : []),
+          ].map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className={`relative overflow-hidden rounded-xl p-4 bg-gradient-to-br text-white ${stat.color}`}>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+                <Icon className="h-5 w-5 mb-2 opacity-80" />
+                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-white/80 text-xs">{stat.label}</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{openTickets}</p>
-                <p className="text-sm text-muted-foreground">Open</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-amber-500/10">
-                <Clock className="h-6 w-6 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{inProgressTickets}</p>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{resolvedTickets}</p>
-                <p className="text-sm text-muted-foreground">Resolved</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-red-500/10">
-                <AlertTriangle className="h-6 w-6 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{escalatedTickets}</p>
-                <p className="text-sm text-muted-foreground">Escalated</p>
-              </div>
-            </CardContent>
-          </Card>
+            );
+          })}
         </div>
 
-        {/* Tickets List */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4">
+        {/* Filters */}
+        <Card className="border-0 shadow-lg shadow-black/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search tickets..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-10 bg-muted/50 border-0"
                 />
               </div>
-              <div className="flex gap-2">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[130px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {ticketCategories.map(cat => (
-                      <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-[130px] bg-muted/50 border-0">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-full sm:w-[150px] bg-muted/50 border-0">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {ticketCategories.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[calc(100vh-450px)]">
-              <div className="space-y-3">
-                {filteredTickets.map(ticket => {
-                  const status = statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open;
-                  const priority = priorityConfig[ticket.priority as keyof typeof priorityConfig] || priorityConfig.medium;
-                  const StatusIcon = status.icon;
-                  
-                  return (
-                    <div
-                      key={ticket.id}
-                      onClick={() => handleTicketClick(ticket)}
-                      className="p-4 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50 hover:border-primary/50"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg ${status.bg}`}>
-                            <StatusIcon className={`h-4 w-4 ${status.color}`} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm text-muted-foreground" title={ticket.ticket_number}>
-                                {getDisplayId(ticket.ticket_number)}
-                              </span>
-                              {ticket.is_escalated && (
-                                <Badge variant="destructive" className="text-xs">
-                                  <ArrowUpCircle className="h-3 w-3 mr-1" />
-                                  Escalated
-                                </Badge>
-                              )}
-                            </div>
-                            <h4 className="font-medium mt-1">{ticket.subject}</h4>
-                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                              <span>{ticketCategories.find(c => c.value === ticket.category)?.label}</span>
-                              <span>•</span>
-                              <span>{format(parseISO(ticket.created_at), 'PPp')}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`${priority.color} text-white text-xs`}>
-                            {priority.label}
-                          </Badge>
-                        </div>
-                      </div>
-                      {ticket.tags && ticket.tags.length > 0 && (
-                        <div className="flex items-center gap-1 mt-2 flex-wrap">
-                          <Tag className="h-3 w-3 text-muted-foreground" />
-                          {ticket.tags.map((tag, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {filteredTickets.length === 0 && (
+          </CardContent>
+        </Card>
+
+        {/* Content */}
+        {canViewTeamData ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="my-tickets" className="flex-1 sm:flex-none">
+                <User className="h-4 w-4 mr-2" />
+                My Tickets ({filteredMyTickets.length})
+              </TabsTrigger>
+              <TabsTrigger value="team-tickets" className="flex-1 sm:flex-none relative">
+                <Users className="h-4 w-4 mr-2" />
+                Team Tickets ({filteredTeamTickets.length})
+                {teamOpenCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {teamOpenCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="my-tickets" className="mt-6">
+              <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
+                  {filteredMyTickets.map(ticket => (
+                    <TicketCard key={ticket.id} ticket={ticket} />
+                  ))}
+                </div>
+                {filteredMyTickets.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No tickets found</p>
                   </div>
                 )}
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="team-tickets" className="mt-6">
+              <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
+                  {filteredTeamTickets.map(ticket => (
+                    <TicketCard key={ticket.id} ticket={ticket} showActions />
+                  ))}
+                </div>
+                {filteredTeamTickets.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No team tickets found</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ScrollArea className="h-[calc(100vh-450px)] min-h-[400px]">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
+              {filteredMyTickets.map(ticket => (
+                <TicketCard key={ticket.id} ticket={ticket} />
+              ))}
+            </div>
+            {filteredMyTickets.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No tickets found. Click "New Ticket" to create one.</p>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+            )}
+          </ScrollArea>
+        )}
 
         {/* Ticket Detail Sheet */}
         <TicketDetailSheet
@@ -387,6 +498,38 @@ export default function EmployeeTicketsPage() {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
         />
+
+        {/* Resolution Dialog */}
+        <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Resolve Ticket</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Resolution Notes</Label>
+                <Textarea
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  placeholder="Describe how the issue was resolved..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResolveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleResolveConfirm}
+                disabled={updateTicketStatus.isPending}
+              >
+                Confirm Resolution
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </EmployeeLayout>
   );
