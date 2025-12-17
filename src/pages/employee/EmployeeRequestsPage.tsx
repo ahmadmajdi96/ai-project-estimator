@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,8 +14,9 @@ import { RequestDetailSheet } from '@/components/employee/RequestDetailSheet';
 import { useAddEmployeeRequest, EmployeeRequest } from '@/hooks/useEmployeeDashboard';
 import { useRoleBasedRequests, useUpdateRequestStatus } from '@/hooks/useRoleBasedData';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Search, Send, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus, Clock, CheckCircle, XCircle, AlertCircle, Search, Send, Users, ThumbsUp, ThumbsDown, User } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const requestTypes = [
   { value: 'equipment', label: 'Equipment Request' },
@@ -48,6 +49,11 @@ export default function EmployeeRequestsPage() {
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('my-requests');
+  
+  // Rejection dialog state
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   
   const [newRequest, setNewRequest] = useState({
     request_type: '',
@@ -94,12 +100,25 @@ export default function EmployeeRequestsPage() {
     updateRequestStatus.mutate({ requestId, status: 'approved' });
   };
 
-  const handleReject = (requestId: string) => {
-    updateRequestStatus.mutate({ requestId, status: 'rejected' });
+  const handleRejectClick = (requestId: string) => {
+    setRejectingRequestId(requestId);
+    setRejectionReason('');
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectConfirm = () => {
+    if (!rejectingRequestId) return;
+    updateRequestStatus.mutate({ 
+      requestId: rejectingRequestId, 
+      status: 'rejected',
+      rejectionReason: rejectionReason || undefined
+    });
+    setRejectDialogOpen(false);
+    setRejectingRequestId(null);
+    setRejectionReason('');
   };
 
   const pendingRequests = myRequests.filter(r => r.status === 'pending');
-  const inReviewRequests = myRequests.filter(r => r.status === 'in_review');
   const approvedRequests = myRequests.filter(r => r.status === 'approved');
   const rejectedRequests = myRequests.filter(r => r.status === 'rejected');
 
@@ -109,10 +128,12 @@ export default function EmployeeRequestsPage() {
     const status = statusConfig[request.status] || statusConfig.pending;
     const StatusIcon = status.icon;
     const priority = priorityConfig[request.priority] || priorityConfig.medium;
+    const employeeName = request.employees?.full_name || 'Unknown';
+    const initials = employeeName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
     return (
       <Card 
-        className="hover:shadow-md transition-shadow cursor-pointer"
+        className="hover:shadow-md transition-all cursor-pointer border-0 shadow-sm"
         onClick={() => handleRequestClick(request)}
       >
         <CardContent className="p-4">
@@ -129,12 +150,27 @@ export default function EmployeeRequestsPage() {
           </div>
           
           <h3 className="font-medium mb-1 line-clamp-1">{request.title}</h3>
-          {request.employees?.full_name && (
-            <p className="text-xs text-muted-foreground mb-2">By: {request.employees.full_name}</p>
+          
+          {showActions && request.employees?.full_name && (
+            <div className="flex items-center gap-2 mb-2">
+              <Avatar className="h-5 w-5">
+                <AvatarFallback className="text-[10px] bg-primary/10">{initials}</AvatarFallback>
+              </Avatar>
+              <p className="text-xs text-muted-foreground">{request.employees.full_name}</p>
+            </div>
           )}
+          
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
             {request.description || 'No description provided'}
           </p>
+
+          {request.rejection_reason && request.status === 'rejected' && (
+            <div className="mb-3 p-2 rounded bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
+              <p className="text-xs text-red-600 dark:text-red-400">
+                <strong>Rejection reason:</strong> {request.rejection_reason}
+              </p>
+            </div>
+          )}
           
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
@@ -149,8 +185,7 @@ export default function EmployeeRequestsPage() {
             <div className="flex gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="flex-1 text-green-600 hover:bg-green-50"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 onClick={() => handleApprove(request.id)}
                 disabled={updateRequestStatus.isPending}
               >
@@ -159,9 +194,9 @@ export default function EmployeeRequestsPage() {
               </Button>
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="flex-1 text-red-600 hover:bg-red-50"
-                onClick={() => handleReject(request.id)}
+                variant="destructive"
+                className="flex-1"
+                onClick={() => handleRejectClick(request.id)}
                 disabled={updateRequestStatus.isPending}
               >
                 <ThumbsDown className="h-4 w-4 mr-1" />
@@ -176,11 +211,11 @@ export default function EmployeeRequestsPage() {
 
   return (
     <EmployeeLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Send className="h-8 w-8" />
+            <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+              <Send className="h-7 w-7" />
               {canViewTeamData ? 'Requests Management' : 'My Requests'}
             </h1>
             <p className="text-muted-foreground">
@@ -189,7 +224,7 @@ export default function EmployeeRequestsPage() {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shadow-lg shadow-primary/20">
                 <Plus className="h-4 w-4 mr-2" />
                 New Request
               </Button>
@@ -263,111 +298,79 @@ export default function EmployeeRequestsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-muted">
-                <AlertCircle className="h-6 w-6" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {[
+            { label: 'Total', value: myRequests.length, icon: AlertCircle, color: 'from-slate-500 to-slate-600' },
+            { label: 'Pending', value: pendingRequests.length, icon: Clock, color: 'from-amber-500 to-orange-500' },
+            { label: 'Approved', value: approvedRequests.length, icon: CheckCircle, color: 'from-emerald-500 to-green-500' },
+            { label: 'Rejected', value: rejectedRequests.length, icon: XCircle, color: 'from-red-500 to-rose-500' },
+            ...(canViewTeamData ? [{ label: 'Team Pending', value: teamPendingCount, icon: Users, color: 'from-blue-500 to-cyan-500' }] : []),
+          ].map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className={`relative overflow-hidden rounded-xl p-4 bg-gradient-to-br text-white ${stat.color}`}>
+                <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+                <Icon className="h-5 w-5 mb-2 opacity-80" />
+                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-white/80 text-xs">{stat.label}</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{myRequests.length}</p>
-                <p className="text-sm text-muted-foreground">Total</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-amber-500/10">
-                <Clock className="h-6 w-6 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{pendingRequests.length}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{approvedRequests.length}</p>
-                <p className="text-sm text-muted-foreground">Approved</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-red-500/10">
-                <XCircle className="h-6 w-6 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{rejectedRequests.length}</p>
-                <p className="text-sm text-muted-foreground">Rejected</p>
-              </div>
-            </CardContent>
-          </Card>
-          {canViewTeamData && (
-            <Card className="border-primary/50 bg-primary/5">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{teamPendingCount}</p>
-                  <p className="text-sm text-muted-foreground">Team Pending</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+            );
+          })}
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search requests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in_review">In Review</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {requestTypes.map(t => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Card className="border-0 shadow-lg shadow-black/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search requests..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-muted/50 border-0"
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-[150px] bg-muted/50 border-0">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_review">In Review</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full sm:w-[150px] bg-muted/50 border-0">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {requestTypes.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Content based on role */}
         {canViewTeamData ? (
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="my-requests">My Requests ({filteredMyRequests.length})</TabsTrigger>
-              <TabsTrigger value="team-requests" className="relative">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="my-requests" className="flex-1 sm:flex-none">
+                <User className="h-4 w-4 mr-2" />
+                My Requests ({filteredMyRequests.length})
+              </TabsTrigger>
+              <TabsTrigger value="team-requests" className="flex-1 sm:flex-none relative">
+                <Users className="h-4 w-4 mr-2" />
                 Team Requests ({filteredTeamRequests.length})
                 {teamPendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {teamPendingCount}
                   </span>
                 )}
@@ -375,56 +378,92 @@ export default function EmployeeRequestsPage() {
             </TabsList>
             
             <TabsContent value="my-requests" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-450px)]">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
                   {filteredMyRequests.map(request => (
                     <RequestCard key={request.id} request={request} />
                   ))}
                 </div>
                 {filteredMyRequests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
-                    No requests found
+                    <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No requests found</p>
                   </div>
                 )}
               </ScrollArea>
             </TabsContent>
 
             <TabsContent value="team-requests" className="mt-6">
-              <ScrollArea className="h-[calc(100vh-450px)]">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <ScrollArea className="h-[calc(100vh-500px)] min-h-[400px]">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
                   {filteredTeamRequests.map(request => (
                     <RequestCard key={request.id} request={request} showActions />
                   ))}
                 </div>
                 {filteredTeamRequests.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
-                    No team requests found
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No team requests found</p>
                   </div>
                 )}
               </ScrollArea>
             </TabsContent>
           </Tabs>
         ) : (
-          <ScrollArea className="h-[calc(100vh-400px)]">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ScrollArea className="h-[calc(100vh-450px)] min-h-[400px]">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pr-4">
               {filteredMyRequests.map(request => (
                 <RequestCard key={request.id} request={request} />
               ))}
             </div>
             {filteredMyRequests.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
-                No requests found
+                <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No requests found. Click "New Request" to submit one.</p>
               </div>
             )}
           </ScrollArea>
         )}
-      </div>
 
-      <RequestDetailSheet
-        request={selectedRequest}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-      />
+        {/* Request Detail Sheet */}
+        <RequestDetailSheet
+          request={selectedRequest}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
+
+        {/* Rejection Dialog */}
+        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Request</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Rejection Reason (Optional)</Label>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Provide a reason for rejection..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleRejectConfirm}
+                disabled={updateRequestStatus.isPending}
+              >
+                Confirm Rejection
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </EmployeeLayout>
   );
 }

@@ -18,7 +18,7 @@ export function useRoleBasedRequests() {
       // Get my requests
       let myQuery = supabase
         .from('employee_requests')
-        .select('*, employees!employee_requests_employee_id_fkey(full_name)')
+        .select('*, employees!employee_requests_employee_id_fkey(full_name, email)')
         .order('created_at', { ascending: false });
 
       if (employeeId) {
@@ -40,7 +40,7 @@ export function useRoleBasedRequests() {
           const teamIds = teamMembers.map(m => m.id);
           const { data } = await supabase
             .from('employee_requests')
-            .select('*, employees!employee_requests_employee_id_fkey(full_name)')
+            .select('*, employees!employee_requests_employee_id_fkey(full_name, email)')
             .in('employee_id', teamIds)
             .order('created_at', { ascending: false });
           teamRequests = data || [];
@@ -53,7 +53,7 @@ export function useRoleBasedRequests() {
   });
 }
 
-// Hook to approve/reject requests
+// Hook to approve/reject requests with reason
 export function useUpdateRequestStatus() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -62,11 +62,11 @@ export function useUpdateRequestStatus() {
     mutationFn: async ({ 
       requestId, 
       status, 
-      notes 
+      rejectionReason 
     }: { 
       requestId: string; 
       status: 'approved' | 'rejected' | 'in_review'; 
-      notes?: string;
+      rejectionReason?: string;
     }) => {
       const updateData: any = {
         status,
@@ -76,6 +76,10 @@ export function useUpdateRequestStatus() {
       if (status === 'approved' || status === 'rejected') {
         updateData.approved_by = user?.id;
         updateData.approved_at = new Date().toISOString();
+      }
+
+      if (status === 'rejected' && rejectionReason) {
+        updateData.rejection_reason = rejectionReason;
       }
 
       const { data, error } = await supabase
@@ -88,16 +92,16 @@ export function useUpdateRequestStatus() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['role_based_requests'] });
       queryClient.invalidateQueries({ queryKey: ['employee_requests'] });
-      toast.success('Request updated successfully');
+      toast.success(`Request ${variables.status} successfully`);
     },
     onError: (error) => toast.error('Failed to update request: ' + error.message),
   });
 }
 
-// Hook to get tasks based on role
+// Hook to get tasks based on role  
 export function useRoleBasedTasks() {
   const { user } = useAuth();
   const { role, employeeId } = useUserRole();
@@ -105,13 +109,14 @@ export function useRoleBasedTasks() {
   return useQuery({
     queryKey: ['role_based_tasks', user?.id, role, employeeId],
     queryFn: async (): Promise<{ myTasks: any[]; teamTasks: any[] }> => {
-      if (!user?.id) return { myTasks: [], teamTasks: [] };
+      if (!user?.id || !employeeId) return { myTasks: [], teamTasks: [] };
 
-      // Get my tasks using raw query to avoid type issues
-      const { data: myTasks } = await (supabase as any)
+      // Get my tasks
+      const { data: myTasks } = await supabase
         .from('tasks')
-        .select('id, title, description, status, priority, due_date, assignee_id, created_at')
-        .eq('assignee_id', employeeId || '');
+        .select('*, employees!tasks_assigned_to_fkey(full_name, email), departments(name)')
+        .eq('assigned_to', employeeId)
+        .order('created_at', { ascending: false });
 
       // Get team tasks (for team lead and above)
       let teamTasks: any[] = [];
@@ -119,14 +124,15 @@ export function useRoleBasedTasks() {
         const { data: teamMembers } = await supabase
           .from('employees')
           .select('id')
-          .eq('manager_id', employeeId || '');
+          .eq('manager_id', employeeId);
 
         if (teamMembers && teamMembers.length > 0) {
           const teamIds = teamMembers.map(m => m.id);
-          const { data } = await (supabase as any)
+          const { data } = await supabase
             .from('tasks')
-            .select('id, title, description, status, priority, due_date, assignee_id, created_at')
-            .in('assignee_id', teamIds);
+            .select('*, employees!tasks_assigned_to_fkey(full_name, email), departments(name)')
+            .in('assigned_to', teamIds)
+            .order('created_at', { ascending: false });
           teamTasks = data || [];
         }
       }
@@ -145,12 +151,12 @@ export function useRoleBasedTickets() {
   return useQuery({
     queryKey: ['role_based_tickets', user?.id, role, employeeId],
     queryFn: async () => {
-      if (!user?.id) return { myTickets: [], teamTickets: [] };
+      if (!user?.id || !employeeId) return { myTickets: [], teamTickets: [] };
 
       // Get my tickets
       const { data: myTickets = [] } = await supabase
         .from('employee_tickets')
-        .select('*')
+        .select('*, employees!employee_tickets_employee_id_fkey(full_name, email)')
         .eq('employee_id', employeeId)
         .order('created_at', { ascending: false });
 
@@ -166,7 +172,7 @@ export function useRoleBasedTickets() {
           const teamIds = teamMembers.map(m => m.id);
           const { data } = await supabase
             .from('employee_tickets')
-            .select('*, employees!employee_tickets_employee_id_fkey(full_name)')
+            .select('*, employees!employee_tickets_employee_id_fkey(full_name, email)')
             .in('employee_id', teamIds)
             .order('created_at', { ascending: false });
           teamTickets = data || [];
@@ -179,7 +185,7 @@ export function useRoleBasedTickets() {
   });
 }
 
-// Hook to update ticket status
+// Hook to update ticket status with resolution
 export function useUpdateTicketStatus() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -199,7 +205,7 @@ export function useUpdateTicketStatus() {
         updated_at: new Date().toISOString(),
       };
 
-      if (status === 'resolved') {
+      if (status === 'resolved' || status === 'closed') {
         updateData.resolved_at = new Date().toISOString();
         updateData.resolved_by = user?.id;
         if (resolution) updateData.resolution = resolution;
@@ -221,5 +227,162 @@ export function useUpdateTicketStatus() {
       toast.success('Ticket updated successfully');
     },
     onError: (error) => toast.error('Failed to update ticket: ' + error.message),
+  });
+}
+
+// Hook to get leave requests based on role
+export function useRoleBasedLeaveRequests() {
+  const { user } = useAuth();
+  const { role, employeeId } = useUserRole();
+
+  return useQuery({
+    queryKey: ['role_based_leave_requests', user?.id, role, employeeId],
+    queryFn: async () => {
+      if (!user?.id || !employeeId) return { myLeaves: [], teamLeaves: [] };
+
+      // Get my leave requests
+      const { data: myLeaves = [] } = await (supabase as any)
+        .from('leave_requests')
+        .select('*, leave_type:leave_types(name, color), employees(full_name, email)')
+        .eq('employee_id', employeeId)
+        .order('created_at', { ascending: false });
+
+      // Get team leave requests (for team lead and above)
+      let teamLeaves: any[] = [];
+      if (role === 'team_lead' || role === 'department_head' || role === 'super_admin' || role === 'ceo') {
+        const { data: teamMembers } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('manager_id', employeeId);
+
+        if (teamMembers && teamMembers.length > 0) {
+          const teamIds = teamMembers.map(m => m.id);
+          const { data } = await (supabase as any)
+            .from('leave_requests')
+            .select('*, leave_type:leave_types(name, color), employees(full_name, email)')
+            .in('employee_id', teamIds)
+            .order('created_at', { ascending: false });
+          teamLeaves = data || [];
+        }
+      }
+
+      return { myLeaves, teamLeaves };
+    },
+    enabled: !!user?.id,
+  });
+}
+
+// Hook to update leave request status
+export function useUpdateLeaveStatus() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ 
+      leaveId, 
+      status, 
+      rejectionReason 
+    }: { 
+      leaveId: string; 
+      status: 'approved' | 'rejected'; 
+      rejectionReason?: string;
+    }) => {
+      const updateData: any = {
+        status,
+        approved_by: user?.id,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (status === 'rejected' && rejectionReason) {
+        updateData.rejection_reason = rejectionReason;
+      }
+
+      const { data, error } = await (supabase as any)
+        .from('leave_requests')
+        .update(updateData)
+        .eq('id', leaveId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['role_based_leave_requests'] });
+      queryClient.invalidateQueries({ queryKey: ['leave_requests'] });
+      toast.success(`Leave request ${variables.status} successfully`);
+    },
+    onError: (error: any) => toast.error('Failed to update leave request: ' + error.message),
+  });
+}
+
+// Hook to get attendance based on role
+export function useRoleBasedAttendance() {
+  const { user } = useAuth();
+  const { role, employeeId } = useUserRole();
+
+  return useQuery({
+    queryKey: ['role_based_attendance', user?.id, role, employeeId],
+    queryFn: async () => {
+      if (!user?.id || !employeeId) return { myAttendance: [], teamAttendance: [] };
+
+      // Get my attendance
+      const { data: myAttendance = [] } = await supabase
+        .from('hr_attendance')
+        .select('*, employees!hr_attendance_employee_id_fkey(full_name, email)')
+        .eq('employee_id', employeeId)
+        .order('date', { ascending: false });
+
+      // Get team attendance (for team lead and above)
+      let teamAttendance: any[] = [];
+      if (role === 'team_lead' || role === 'department_head' || role === 'super_admin' || role === 'ceo') {
+        const { data: teamMembers } = await supabase
+          .from('employees')
+          .select('id, full_name')
+          .eq('manager_id', employeeId);
+
+        if (teamMembers && teamMembers.length > 0) {
+          const teamIds = teamMembers.map(m => m.id);
+          const { data } = await supabase
+            .from('hr_attendance')
+            .select('*, employees!hr_attendance_employee_id_fkey(full_name, email)')
+            .in('employee_id', teamIds)
+            .order('date', { ascending: false });
+          teamAttendance = data || [];
+        }
+      }
+
+      return { myAttendance, teamAttendance };
+    },
+    enabled: !!user?.id,
+  });
+}
+
+// Hook to get projects based on role  
+export function useRoleBasedProjects() {
+  const { user } = useAuth();
+  const { role, employeeId } = useUserRole();
+
+  return useQuery({
+    queryKey: ['role_based_projects', user?.id, role, employeeId],
+    queryFn: async () => {
+      if (!user?.id || !employeeId) return { myProjects: [], teamProjects: [] };
+
+      // Get all roadmaps for now - filtering by task assignment would need schema changes
+      const { data: myProjects } = await supabase
+        .from('roadmaps')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      let teamProjects: any[] = [];
+      
+      return { myProjects: myProjects || [], teamProjects };
+    },
+    enabled: !!user?.id,
+  });
+}
+      return { myProjects, teamProjects };
+    },
+    enabled: !!user?.id,
   });
 }

@@ -305,8 +305,8 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 min-h-[calc(100vh-4rem)]">
-            <div className="p-4 lg:p-6 xl:p-8 max-w-7xl mx-auto">
+          <main className="flex-1 min-h-[calc(100vh-4rem)] w-full">
+            <div className="p-4 lg:p-6 xl:p-8 w-full">
               {children}
             </div>
           </main>
