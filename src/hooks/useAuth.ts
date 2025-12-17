@@ -86,7 +86,14 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
+    // Clear state immediately before calling signOut
+    setState({
+      user: null,
+      session: null,
+      loading: false,
+      role: null,
+    });
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     return { error };
   };
 

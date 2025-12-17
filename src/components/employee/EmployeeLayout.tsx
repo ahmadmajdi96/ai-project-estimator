@@ -198,23 +198,6 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
                   <SidebarContent isMobile />
                 </SheetContent>
               </Sheet>
-
-              {/* Logo and Portal Name */}
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl blur-lg" />
-                  <img 
-                    src={coetanexLogo} 
-                    alt="Logo" 
-                    className="relative w-9 h-9 object-contain rounded-xl"
-                  />
-                </div>
-                <div className="hidden sm:block">
-                  <span className="font-display font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    Employee Portal
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Right Section */}
