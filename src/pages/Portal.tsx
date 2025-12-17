@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAllowedPortals } from '@/hooks/usePortalPermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ import {
   Brain, TrendingUp, MessageSquare, Lightbulb, Scale, BarChart3,
   DollarSign, Package, UserCheck, Activity, AlertTriangle, CheckCircle,
   Target, FileText, Briefcase, HeadphonesIcon, Clock, Star, ArrowUpRight,
-  ArrowDownRight, PieChart, Zap, Shield, RefreshCw, Building2
+  ArrowDownRight, PieChart, Zap, Shield, RefreshCw, Building2, User
 } from 'lucide-react';
 import coetanexLogo from '@/assets/coetanex-logo.png';
 import { useShipments, useCarriers, useDriverExpenses, useCarrierSettlements } from '@/hooks/useLogistics';
@@ -35,25 +36,62 @@ import { DashboardUserManagement } from '@/components/dashboard/DashboardUserMan
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts';
 
 const portals = [
-  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/', gradient: 'from-slate-500 to-zinc-600' },
-  { id: 'users', name: 'Users', icon: Shield, path: '/?tab=users', gradient: 'from-red-500 to-rose-600' },
-  { id: 'crm', name: 'CRM', icon: Users, path: '/crm', gradient: 'from-blue-500 to-cyan-500' },
-  { id: 'management', name: 'Management', icon: UserCheck, path: '/management', gradient: 'from-purple-500 to-pink-500' },
-  { id: 'hr', name: 'HR', icon: Building2, path: '/hr', gradient: 'from-teal-500 to-green-500' },
-  { id: 'accounting', name: 'Accounting', icon: Calculator, path: '/accounting', gradient: 'from-amber-500 to-orange-500' },
-  { id: 'logistics', name: 'Logistics', icon: Truck, path: '/logistics', gradient: 'from-emerald-500 to-teal-500' },
-  { id: 'chatflow', name: 'ChatFlow', icon: Bot, path: '/chatflow', gradient: 'from-rose-500 to-red-500' },
-  { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/?tab=analytics', gradient: 'from-indigo-500 to-blue-600' },
-  { id: 'ai', name: 'AI Center', icon: Brain, path: '/?tab=ai', gradient: 'from-violet-500 to-purple-600' },
+  { id: 'overview', name: 'Overview', icon: LayoutDashboard, path: '/', gradient: 'from-slate-500 to-zinc-600', requiredPath: null },
+  { id: 'users', name: 'Users', icon: Shield, path: '/?tab=users', gradient: 'from-red-500 to-rose-600', requiredPath: null },
+  { id: 'crm', name: 'CRM', icon: Users, path: '/crm', gradient: 'from-blue-500 to-cyan-500', requiredPath: '/crm' },
+  { id: 'management', name: 'Management', icon: UserCheck, path: '/management', gradient: 'from-purple-500 to-pink-500', requiredPath: '/management' },
+  { id: 'hr', name: 'HR', icon: Building2, path: '/hr', gradient: 'from-teal-500 to-green-500', requiredPath: '/hr' },
+  { id: 'accounting', name: 'Accounting', icon: Calculator, path: '/accounting', gradient: 'from-amber-500 to-orange-500', requiredPath: '/accounting' },
+  { id: 'logistics', name: 'Logistics', icon: Truck, path: '/logistics', gradient: 'from-emerald-500 to-teal-500', requiredPath: '/logistics' },
+  { id: 'chatflow', name: 'ChatFlow', icon: Bot, path: '/chatflow', gradient: 'from-rose-500 to-red-500', requiredPath: '/chatflow' },
+  { id: 'employee', name: 'Employee', icon: User, path: '/employee', gradient: 'from-indigo-500 to-violet-500', requiredPath: '/employee' },
+  { id: 'analytics', name: 'Analytics', icon: BarChart3, path: '/?tab=analytics', gradient: 'from-indigo-500 to-blue-600', requiredPath: null },
+  { id: 'ai', name: 'AI Center', icon: Brain, path: '/?tab=ai', gradient: 'from-violet-500 to-purple-600', requiredPath: null },
 ];
 
 export default function Portal() {
   const { user, role, loading, signOut } = useAuth();
+  const { allowedPaths, isLoading: permissionsLoading } = useAllowedPortals();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInput, setAiInput] = useState('');
   const [aiSubTab, setAiSubTab] = useState('chat');
+
+  // Filter portals based on permissions
+  const visiblePortals = useMemo(() => {
+    // Super admin and CEO can see all
+    if (role === 'super_admin' || role === 'ceo') {
+      return portals;
+    }
+    
+    // Employee and team_lead only see employee portal by default unless given explicit permissions
+    if (role === 'employee' || role === 'team_lead') {
+      return portals.filter(portal => {
+        // Always show employee portal for employees/team leads
+        if (portal.id === 'employee') return true;
+        // Show if no requiredPath (overview, analytics, ai)
+        if (!portal.requiredPath) return false;
+        // Check if they have explicit permission
+        return allowedPaths.includes(portal.requiredPath);
+      });
+    }
+    
+    // Department head can see management and assigned portals
+    if (role === 'department_head') {
+      return portals.filter(portal => {
+        if (!portal.requiredPath) return true;
+        if (portal.id === 'employee' || portal.id === 'management') return true;
+        return allowedPaths.includes(portal.requiredPath);
+      });
+    }
+    
+    // Default: filter by allowed paths
+    return portals.filter(portal => {
+      if (!portal.requiredPath) return true;
+      return allowedPaths.includes(portal.requiredPath);
+    });
+  }, [role, allowedPaths]);
 
   // CRM Data
   const { data: clients = [] } = useClients();
@@ -382,7 +420,7 @@ export default function Portal() {
     return recommendations;
   }, [pendingTasks, openTickets, quotes, carriers, opportunities]);
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -406,7 +444,7 @@ export default function Portal() {
             
             {/* Portal Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
-              {portals.map((portal) => {
+              {visiblePortals.map((portal) => {
                 const Icon = portal.icon;
                 const isActive = activeTab === portal.id || 
                   (portal.id !== 'overview' && portal.id !== 'ai' && location.pathname.startsWith(portal.path));
@@ -441,7 +479,7 @@ export default function Portal() {
       {/* Mobile Navigation */}
       <div className="lg:hidden border-b border-border/50 bg-background/80 overflow-x-auto">
         <div className="flex items-center gap-1 p-2 min-w-max">
-          {portals.map((portal) => {
+          {visiblePortals.map((portal) => {
             const Icon = portal.icon;
             const isActive = activeTab === portal.id;
             return (

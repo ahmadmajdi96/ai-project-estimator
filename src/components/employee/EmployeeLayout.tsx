@@ -35,16 +35,16 @@ interface EmployeeLayoutProps {
 }
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/employee', badge: null },
-  { id: 'schedule', label: 'My Schedule', icon: Calendar, path: '/employee/schedule', badge: null },
-  { id: 'tasks', label: 'My Tasks', icon: ListTodo, path: '/employee/tasks', badge: '5' },
-  { id: 'projects', label: 'My Projects', icon: FolderKanban, path: '/employee/projects', badge: null },
-  { id: 'requests', label: 'My Requests', icon: Send, path: '/employee/requests', badge: '2' },
-  { id: 'tickets', label: 'Support Tickets', icon: Ticket, path: '/employee/tickets', badge: null },
-  { id: 'attendance', label: 'Attendance', icon: Clock, path: '/employee/attendance', badge: null },
-  { id: 'leave', label: 'Leave', icon: Calendar, path: '/employee/leave', badge: null },
-  { id: 'salary', label: 'Salary Slips', icon: DollarSign, path: '/employee/salary', badge: null },
-  { id: 'ai-chat', label: 'AI Assistant', icon: Bot, path: '/employee/ai-chat', badge: 'New' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/employee' },
+  { id: 'schedule', label: 'My Schedule', icon: Calendar, path: '/employee/schedule' },
+  { id: 'tasks', label: 'My Tasks', icon: ListTodo, path: '/employee/tasks' },
+  { id: 'projects', label: 'My Projects', icon: FolderKanban, path: '/employee/projects' },
+  { id: 'requests', label: 'My Requests', icon: Send, path: '/employee/requests' },
+  { id: 'tickets', label: 'Support Tickets', icon: Ticket, path: '/employee/tickets' },
+  { id: 'attendance', label: 'Attendance', icon: Clock, path: '/employee/attendance' },
+  { id: 'leave', label: 'Leave', icon: Calendar, path: '/employee/leave' },
+  { id: 'salary', label: 'Salary Slips', icon: DollarSign, path: '/employee/salary' },
+  { id: 'ai-chat', label: 'AI Assistant', icon: Bot, path: '/employee/ai-chat' },
 ];
 
 function NavItem({ item, isActive, isCollapsed }: { item: typeof menuItems[0]; isActive: boolean; isCollapsed?: boolean }) {
@@ -60,7 +60,6 @@ function NavItem({ item, isActive, isCollapsed }: { item: typeof menuItems[0]; i
           isCollapsed && 'justify-center px-2'
         )}
       >
-        {/* Active indicator */}
         {isActive && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-primary to-accent rounded-r-full" />
         )}
@@ -75,26 +74,12 @@ function NavItem({ item, isActive, isCollapsed }: { item: typeof menuItems[0]; i
         </div>
         
         {!isCollapsed && (
-          <>
-            <span className={cn(
-              'flex-1 font-medium text-sm transition-colors',
-              isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
-            )}>
-              {item.label}
-            </span>
-            
-            {item.badge && (
-              <Badge 
-                variant={item.badge === 'New' ? 'default' : 'secondary'}
-                className={cn(
-                  'h-5 px-1.5 text-[10px] font-semibold',
-                  item.badge === 'New' && 'bg-gradient-to-r from-primary to-accent border-0'
-                )}
-              >
-                {item.badge}
-              </Badge>
-            )}
-          </>
+          <span className={cn(
+            'flex-1 font-medium text-sm transition-colors',
+            isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
+          )}>
+            {item.label}
+          </span>
         )}
       </div>
     </Link>
@@ -104,13 +89,8 @@ function NavItem({ item, isActive, isCollapsed }: { item: typeof menuItems[0]; i
     return (
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent side="right" className="flex items-center gap-2">
+        <TooltipContent side="right">
           {item.label}
-          {item.badge && (
-            <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-              {item.badge}
-            </Badge>
-          )}
         </TooltipContent>
       </Tooltip>
     );
@@ -219,20 +199,21 @@ export function EmployeeLayout({ children }: EmployeeLayoutProps) {
                 </SheetContent>
               </Sheet>
 
-              {/* Back Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => navigate('/')}
-                className="hidden lg:flex hover:bg-primary/10"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-
-              {/* Page Title */}
-              <div className="hidden sm:block">
-                <h1 className="font-display font-semibold text-lg">Employee Portal</h1>
-                <p className="text-xs text-muted-foreground">Manage your work & activities</p>
+              {/* Logo and Portal Name */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl blur-lg" />
+                  <img 
+                    src={coetanexLogo} 
+                    alt="Logo" 
+                    className="relative w-9 h-9 object-contain rounded-xl"
+                  />
+                </div>
+                <div className="hidden sm:block">
+                  <span className="font-display font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    Employee Portal
+                  </span>
+                </div>
               </div>
             </div>
 
